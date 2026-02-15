@@ -1,0 +1,458 @@
+/*
+    --------------------------------------------------------------
+        style.qss - Stíluslap a Pénzügyi Napló alkalmazáshoz 
+    --------------------------------------------------------------
+*/
+
+/* Globális betűk / alap */
+QWidget {
+    font-size: 13px;
+}
+
+/* Oldalcím */
+QLabel#pageTitle {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+QLabel#pageHint {
+    color: #555;
+}
+
+/* Settings “kártya” panel */
+QFrame#settingsPanel {
+    background: rgba(134, 131, 131, 0.04);
+    border: 10px solid rgba(77, 72, 72, 0.1);
+    border-radius: 10px;
+}
+
+/* Ribbon */
+QWidget#ribbonBar {
+    background: rgba(230, 67, 67, 0.03);
+}
+
+QToolButton#ribbonFileButton {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+/* Elválasztó vonalak */
+QFrame[frameShape="4"] {
+    /* HLine: Qt-en belül ez jellemzően 4 */
+    color: rgba(255, 255, 255, 0.12);
+}
+
+
+/* Lapok */
+/* ---------------*/
+
+/* --- SettingsPage: olvasható szövegek világos háttéren --- */
+#settingsPage {
+    background: transparent;
+    color: #222;
+    /* alap szöveg */
+}
+
+#settingsPage QLabel#pageHint {
+    color: #555;
+    /* halványabb “hint” */
+}
+
+/* beviteli mezők (ComboBox / LineEdit) – világos háttér */
+#settingsPage QLineEdit,
+#settingsPage QComboBox,
+#settingsPage QTextEdit,
+#settingsPage QSpinBox,
+#settingsPage QDoubleSpinBox {
+    color: #222;
+    background: #ffffff;
+    border: 1px solid #c9c9c9;
+    padding: 6px;
+}
+
+
+
+
+/* Settings - leíró szöveg legyen olvasható világos háttéren is */
+QLabel#settingsSubtitle {
+    color: #555;
+    /* világos témán jól olvasható */
+    /* opcionális: font-size: 12px; */
+}
+
+#settingsPage QLabel {
+    color: #222;
+}
+
+#settingsPage QLabel#settingsSubtitle {
+    color: #555;
+}
+
+
+/* --- SettingsPage: cím alatti hint szöveg legyen olvasható --- */
+#settingsPage QLabel#pageHint {
+    color: #555;
+}
+
+
+
+
+
+
+QPushButton#navSettings {
+    padding: 4px 10px;
+    border-width: 2px;
+    border-style: solid;
+
+    /* “3D” bevel: felül/bal világosabb, alul/jobb sötétebb */
+    border-top-color: #ffffff;
+    border-left-color: #ffffff;
+    border-bottom-color: #b0b0b0;
+    border-right-color: #b0b0b0;
+
+    border-radius: 3px;
+
+    /* enyhe, állandó “kiemelés” */
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+            stop:0 #fafafa,
+            stop:1 #e9e9e9);
+}
+
+
+
+
+
+
+
+
+
+
+QPushButton#navSettings {
+    padding: 4px 10px;
+
+    border-width: 1px;
+    border-style: solid;
+
+    /* 3D bevel */
+    border-top-color: #ffffff;
+    border-left-color: #ffffff;
+    border-bottom-color: #b5b5b5;
+    border-right-color: #b5b5b5;
+
+    border-radius: 3px;
+
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+            stop:0 #fafafa,
+            stop:1 #e7e7e7);
+}
+
+
+QPushButton#navSettings:checked {
+    border-top-color: #b5b5b5;
+    border-left-color: #b5b5b5;
+    border-bottom-color: #ffffff;
+    border-right-color: #ffffff;
+
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+            stop:0 #e1e1e1,
+            stop:1 #f3f3f3);
+}
+
+
+
+
+/* ----------- Navigation Bar ---------------------- */
+
+/* --- NavBar panel: enyhe, témabiztos (RGBA) --- */
+#navBar {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-radius: 8px;
+}
+
+/* --- Nav gombok: Office-szerű "pill" --- */
+#navBar QPushButton#navButton {
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 6px 12px;
+    margin: 2px 2px;
+    border-radius: 8px;
+    min-height: 28px;
+}
+
+/* Hover: finom */
+#navBar QPushButton#navButton:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Pressed: egy fokkal erősebb */
+#navBar QPushButton#navButton:pressed {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.18);
+}
+
+/* Active (checked): Office-szerű kék jelzés */
+#navBar QPushButton#navButton:checked {
+    background: rgba(0, 120, 215, 0.14);
+    border-color: rgba(0, 120, 215, 0.38);
+    font-weight: 600;
+}
+
+/* Disabled: ha valaha kell */
+#navBar QPushButton#navButton:disabled {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+
+
+
+
+
+
+
+
+
+
+/* ================ NavBar - Office jelleg   ========================= */
+
+#navBar {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-radius: 8px;
+}
+
+#navBar QPushButton#navButton {
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 6px 12px;
+    margin: 2px 2px;
+    border-radius: 8px;
+    min-height: 28px;
+}
+
+#navBar QPushButton#navButton:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+#navBar QPushButton#navButton:pressed {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.18);
+}
+
+#navBar QPushButton#navButton:checked {
+    background: rgba(0, 120, 215, 0.14);
+    border-color: rgba(0, 120, 215, 0.38);
+    font-weight: 600;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* ============================= RIBBON (Fő / Adatok / Nézet) ============================= */
+
+#ribbonBar {
+    background: #f3f3f3;
+    border-bottom: 1px solid #cfcfcf;
+}
+
+/* A tab-sor (Fő/Adatok/Nézet) – QTabBar esetén */
+#ribbonBar QTabBar::tab {
+    background: #e9e9e9;
+    border: 1px solid #c9c9c9;
+    border-bottom: none;
+    padding: 6px 14px;
+    margin-right: 4px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+#ribbonBar QTabBar::tab:selected {
+    background: #ffffff;
+    border-color: #bdbdbd;
+    font-weight: 600;
+}
+
+#ribbonBar QTabWidget::pane {
+    background: #ffffff;
+    border: 1px solid #bdbdbd;
+    border-radius: 6px;
+}
+
+/* A “szalag-tartomány” (ahol a gombok vannak) – ha van ribbonPane */
+#ribbonPane {
+    background: #ffffff;
+    border: 1px solid #bdbdbd;
+    border-top: none;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    padding: 6px;
+}
+
+/* Ribbon gombok karaktere */
+#ribbonBar QPushButton {
+    background: #ffffff;
+    border: 1px solid #cfcfcf;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+#ribbonBar QPushButton:hover {
+    background: #f6f6f6;
+    border-color: #bdbdbd;
+}
+
+#ribbonBar QPushButton:pressed {
+    background: #ececec;
+}
+
+
+
+/* ========================== Ribbon kiemelés (Fő/Adatok/Nézet + alatta a szalag) ======================= */
+
+#ribbonBar {
+    background: #f2f2f2;
+    border-bottom: 1px solid #cfcfcf;
+}
+
+/* A tabok sora (Fő/Adatok/Nézet) */
+#ribbonTabs::tab {
+    background: #e6e6e6;
+    border: 1px solid #c9c9c9;
+    border-bottom: none;
+    padding: 6px 14px;
+    margin-right: 4px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+#ribbonTabs::tab:selected {
+    background: #ffffff;
+    border-color: #bdbdbd;
+    font-weight: 600;
+}
+
+/* A "szalag terület" (ahol a gombok vannak) */
+#ribbonStack {
+    background: #ffffff;
+    border: 1px solid #bdbdbd;
+    border-top: none;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+/* A ribbon gombok */
+#ribbonBar QToolButton {
+    background: #ffffff;
+    border: 1px solid #cfcfcf;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+#ribbonBar QToolButton:hover {
+    background: #f7f7f7;
+    border-color: #bdbdbd;
+}
+
+#ribbonBar QToolButton:pressed {
+    background: #ededed;
+}
+
+
+
+
+
+
+/* Adatok/Mindent töröl -gomb */
+
+QToolButton#dangerLiteButton {
+    background-color: rgba(220, 50, 50, 30);
+    border: 1px solid rgba(220, 50, 50, 90);
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+QToolButton#dangerLiteButton:hover {
+    background-color: rgba(220, 50, 50, 45);
+}
+
+QToolButton#dangerLiteButton:pressed {
+    background-color: rgba(220, 50, 50, 65);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ==================== Számlák page kártya stílus ========================== */
+
+#billCard {
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+#billCard:hover {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+#billCardTitle {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+#billCardProvider {
+    opacity: 0.75;
+}
+
+#billCardAmount {
+    font-weight: 700;
+}
+
+#billCard[inactive="true"] {
+    opacity: 0.45;
+}
+
+
+/* Cellák: QLabel-ek property alapján */
+QLabel[cell="true"] {
+    padding: 4px 8px;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    background: rgba(0, 0, 0, 0.015);
+    border-radius: 6px;
+}
+
+QLabel[cellHeader="true"] {
+    font-weight: 650;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+
+/* =========================================================================================== */

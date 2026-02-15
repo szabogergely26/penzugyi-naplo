@@ -1,0 +1,14 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.enablePreviewFromQuickOpen": false,
+  "window.openFoldersInNewWindow": "on",
+  "files.hotExit": "onExitAndWindowClose",
+  "window.restoreWindows": "all",
+
+  "python.analysis.extraPaths": [
+    "."
+  ]
+}
