@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
+venv/
+
+# Database files
+*.db
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# VSCode settings (ha nem akarod verziózni)
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
