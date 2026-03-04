@@ -1,0 +1,240 @@
+/*
+    --------------------------------------------------------------
+        style.qss - Pénzügyi Napló (tiszta alap)
+    --------------------------------------------------------------
+    Elv: minden stílus innen jön (nincs NAV_QSS).
+*/
+
+
+/* ==============================
+   Globális alapok
+   ============================== */
+
+QWidget {
+    font-size: 13px;
+    color: #222;
+}
+
+QLabel#pageTitle {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+QLabel#pageHint,
+QLabel#settingsSubtitle {
+    color: #555;
+}
+
+
+/* ==============================
+   Elválasztó vonalak (HLine)
+   ============================== */
+
+QFrame[frameShape="4"] {
+    /* HLine: világos témán legyen látható */
+    color: rgba(0, 0, 0, 0.12);
+}
+
+
+/* ==============================
+   Settings panel
+   ============================== */
+
+QFrame#settingsPanel {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-radius: 10px;
+}
+
+/* SettingsPage inputok */
+#settingsPage QLineEdit,
+#settingsPage QComboBox,
+#settingsPage QTextEdit,
+#settingsPage QSpinBox,
+#settingsPage QDoubleSpinBox {
+    color: #222;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    border-radius: 6px;
+    padding: 6px;
+}
+
+
+/* ==============================
+   NAVBAR (ui/widgets/nav_bar.py)
+   ObjectName-ek:
+     - #navBar
+     - #navButton
+     - #navSettings
+     - #navSeparator
+   ============================== */
+
+#navBar {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-radius: 8px;
+}
+
+/* gombok alap */
+#navBar QPushButton#navButton,
+#navBar QPushButton#navSettings {
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 6px 12px;
+    margin: 2px 2px;
+    border-radius: 8px;
+    min-height: 28px;
+}
+
+/* hover */
+#navBar QPushButton#navButton:hover,
+#navBar QPushButton#navSettings:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* pressed */
+#navBar QPushButton#navButton:pressed,
+#navBar QPushButton#navSettings:pressed {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.18);
+}
+
+/* checked */
+#navBar QPushButton#navButton:checked,
+#navBar QPushButton#navSettings:checked {
+    background: rgba(0, 120, 215, 0.14);
+    border-color: rgba(0, 120, 215, 0.38);
+    font-weight: 600;
+}
+
+/* separator */
+#navSeparator {
+    min-width: 1px;
+    max-width: 1px;
+    min-height: 18px;
+    max-height: 18px;
+
+    background: rgba(0, 120, 215, 0.55);
+
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+
+/* ==============================
+   RIBBON (Fájl / Fő / Adatok / Nézet)
+   Cél: hófehér “szalag” rész
+   ============================== */
+
+#ribbonBar {
+    background: #ffffff;
+    /* <- hófehér */
+    border-bottom: 1px solid #cfcfcf;
+}
+
+/* Tab-sor */
+#ribbonBar QTabBar::tab {
+    background: #f0f0f0;
+    border: 1px solid #c9c9c9;
+    border-bottom: none;
+    padding: 6px 14px;
+    margin-right: 4px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+#ribbonBar QTabBar::tab:selected {
+    background: #ffffff;
+    border-color: #bdbdbd;
+    font-weight: 600;
+}
+
+/* A tabwidget pane (a tabok alatti “keret”) */
+#ribbonBar QTabWidget::pane {
+    background: #ffffff;
+    border: 1px solid #bdbdbd;
+    border-radius: 6px;
+}
+
+/* Ha van külön ribbonStack / ribbonPane objectName-ed, ezek is legyenek fehérek */
+#ribbonStack,
+#ribbonPane {
+    background: #ffffff;
+    border: 1px solid #bdbdbd;
+    border-top: none;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    padding: 6px;
+}
+
+/* Ribbon gombok */
+#ribbonBar QToolButton,
+#ribbonBar QPushButton {
+    background: #ffffff;
+    border: 1px solid #cfcfcf;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+#ribbonBar QToolButton:hover,
+#ribbonBar QPushButton:hover {
+    background: #f7f7f7;
+    border-color: #bdbdbd;
+}
+
+#ribbonBar QToolButton:pressed,
+#ribbonBar QPushButton:pressed {
+    background: #ededed;
+}
+
+/* “Mindent töröl” jellegű gomb */
+QToolButton#dangerLiteButton {
+    background-color: rgba(220, 50, 50, 0.12);
+    border: 1px solid rgba(220, 50, 50, 0.35);
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+QToolButton#dangerLiteButton:hover {
+    background-color: rgba(220, 50, 50, 0.18);
+}
+
+QToolButton#dangerLiteButton:pressed {
+    background-color: rgba(220, 50, 50, 0.26);
+}
+
+
+
+
+/* --- DEV MODE banner --- */
+#devBanner {
+    background: #b00020;
+    color: white;
+    font-weight: bold;
+    padding: 6px 10px;
+    border-bottom: 1px solid #7a0015;
+}
+
+/* opcionális: ha a banner szövege túl hosszú lenne */
+#devBanner {
+    qproperty-wordWrap: true;
+}
+
+
+
+/* --- Settings Page ---*/
+
+QListWidget {
+    border: none;
+    background: #f6f6f6;
+}
+
+QListWidget::item {
+    padding: 10px;
+}
+
+QListWidget::item:selected {
+    background: #e0e0e0;
+    font-weight: bold;
+}

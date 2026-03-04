@@ -1,0 +1,53 @@
+# about_dialog.py
+# --------------------
+
+
+import platform
+import sqlite3
+
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QDialog,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+)
+
+APP_NAME = "Pénzügyi Napló"
+APP_VERSION = "0.9-dev"
+BUILD_INFO = "Fejlesztői verzió\n2025. november –"
+
+
+class AboutDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Névjegy")
+        self.setMinimumWidth(350)
+
+        layout = QVBoxLayout(self)
+
+        title = QLabel(f"<h2>{APP_NAME}</h2>")
+        title.setAlignment(Qt.AlignCenter)
+
+        version = QLabel(f"Verzió: {APP_VERSION}")
+        version.setAlignment(Qt.AlignCenter)
+
+        build = QLabel(BUILD_INFO)
+        build.setAlignment(Qt.AlignCenter)
+
+        sysinfo = QLabel(
+            f"Python: {platform.python_version()}\nSQLite: {sqlite3.sqlite_version}"
+        )
+        sysinfo.setAlignment(Qt.AlignCenter)
+
+        btn_close = QPushButton("Bezár")
+        btn_close.clicked.connect(self.accept)
+
+        layout.addWidget(title)
+        layout.addWidget(version)
+        layout.addWidget(build)
+        layout.addSpacing(10)
+        layout.addWidget(sysinfo)
+        layout.addSpacing(20)
+        layout.addWidget(btn_close)
