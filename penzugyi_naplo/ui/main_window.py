@@ -65,8 +65,8 @@ from PySide6.QtWidgets import (
 from penzugyi_naplo.core.logging_utils import DebugFlags, Log
 from penzugyi_naplo.ui.about_dialog import AboutDialog
 from penzugyi_naplo.ui.bills.bills_page import BillsPage
-from penzugyi_naplo.ui.pages.coming_soon_page import ComingSoonPage
 from penzugyi_naplo.ui.pages.accounts_page import AccountsPage
+from penzugyi_naplo.ui.pages.coming_soon_page import ComingSoonPage
 from penzugyi_naplo.ui.pages.home_page import HomePage
 from penzugyi_naplo.ui.pages.settings_page import SettingsPage
 from penzugyi_naplo.ui.pages.statistics_page import StatisticsPage

@@ -27,8 +27,18 @@ Topology:
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
+
+from penzugyi_naplo.config import (
+    APP_NAME,
+    ORG_NAME,
+    active_db_path,
+    is_dev_mode,
+)
+
+DEV_MODE = os.getenv("PENZUGYI_DEV", "0") == "1"
 
 # VSCode "Run file" esetére: a projekt gyökerét tegyük sys.path-ra
 PKG_DIR = Path(__file__).resolve().parent
@@ -38,26 +48,26 @@ if str(ROOT_DIR) not in sys.path:
 
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
-from penzugyi_naplo.config import APP_NAME  # noqa: E402
-from penzugyi_naplo.core.paths import db_path, is_dev_mode  # noqa: E402
 from penzugyi_naplo.db.transaction_database import TransactionDatabase  # noqa: E402
 from penzugyi_naplo.ui.main_window import MainWindow  # noqa: E402
-from penzugyi_naplo.ui.stylesheet import NAV_QSS  # noqa: E402
 
 # - Importok vége -
 
 
-def load_styles(app) -> None:
-    qss_path = Path(__file__).parent / "ui" / "style.qss"
-    print("QSS path:", qss_path)
-    print("QSS exists:", qss_path.exists())
+def load_styles(app, debug: bool = False) -> None:
+    qss_path = Path(__file__).resolve().parent / "penzugyi_naplo" / "ui" / "style.qss"
+
+    if debug:
+        print("QSS path:", qss_path)
+        print("QSS exists:", qss_path.exists())
 
     if qss_path.exists():
         qss = qss_path.read_text(encoding="utf-8")
-        qss = qss + "\n" + NAV_QSS
-        print("QSS length (+NAV):", len(qss))
         app.setStyleSheet(qss)
-        print("App stylesheet length after set:", len(app.styleSheet()))
+
+        if debug:
+            print("QSS length:", len(qss))
+            print("App stylesheet length after set:", len(app.styleSheet()))
 
 
 def main() -> int:
@@ -66,17 +76,19 @@ def main() -> int:
     Ide kerül minden olyan inicializáció,
     ami a teljes alkalmazásra vonatkozik.
     """
-
     app = QApplication(sys.argv)
 
-    # fontos: itt, az app létrehozása UTÁN
     app.setApplicationName(APP_NAME)
-    app.setOrganizationName(APP_NAME)
+    app.setOrganizationName(ORG_NAME)
 
-    load_styles(app)
+    # 1) DEV állapot ELŐBB
+    dev = is_dev_mode()
 
-    dev = is_dev_mode(sys.argv)
-    path = db_path(dev)
+    # 2) stílus betöltés már ezzel
+    load_styles(app, debug=dev)
+
+    # 3) aktív DB path
+    path = active_db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
 
     print("DEV mode:", dev)
@@ -84,9 +96,8 @@ def main() -> int:
     print("DB exists:", path.exists())
 
     db = TransactionDatabase(str(path))
-    win = MainWindow(db=db)
-    if dev:
-        win.setWindowTitle(win.windowTitle() + " — FEJLESZTŐI MÓD!!")
+    win = MainWindow(db=db, dev_mode=dev)
+
     win.show()
     return app.exec()
 
