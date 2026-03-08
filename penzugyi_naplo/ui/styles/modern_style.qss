@@ -1,0 +1,254 @@
+/* =======================
+   Pénzügyi Napló – Modern QSS (CLEAN)
+   Cél: Ribbon fehér “szalag”, de a felső sáv (tabok/fejléc) ne legyen hófehér.
+   ======================= */
+
+/* ====== Layout szeparáció: felső sávok ====== */
+
+QWidget#devBanner {
+    background: #FFF7ED;
+    color: #9A3412;
+    border-bottom: 1px solid #FED7AA;
+    padding: 6px 10px;
+}
+
+/* Ribbon keret (a “szalag” alapja) */
+#ribbonBar {
+    background: #FFFFFF;
+    border-bottom: 1px solid #D4D4D4;
+}
+
+/* NavBar (Kezdő / Tranzakciók / Statisztika / Számlák / Beállítások) – maradjon “Qt/Breeze” jellegű */
+#navBar {
+    background: palette(button);
+    /* palette(window) sok témán túl fehér */
+    border-bottom: 1px solid palette(mid);
+}
+
+/* ====== Általános gombok: modern “pill” ====== */
+QPushButton {
+    background: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+
+QPushButton:hover {
+    background: #F9FAFB;
+}
+
+QPushButton:pressed {
+    background: #F3F4F6;
+}
+
+/* Aktív/kiemelt gomb (ha objectName: "primaryButton") */
+QPushButton#primaryButton {
+    background: #111827;
+    color: #FFFFFF;
+    border: 1px solid #111827;
+}
+
+QPushButton#primaryButton:hover {
+    background: #0B1220;
+}
+
+/* Danger gomb (nálad dangerLiteButton már van a resetnél) */
+QPushButton#dangerLiteButton {
+    border: 1px solid #FCA5A5;
+    color: #991B1B;
+    background: #FFF5F5;
+}
+
+QPushButton#dangerLiteButton:hover {
+    background: #FEE2E2;
+}
+
+/* ====== YearTabsBar (2023/2024/...) – ha a gombok sima QPushButton-ek ======
+   Tipp: a YearTabsBar-ben adj a gomboknak objectName-t: yearTabButton
+   és az aktívnak: yearTabButtonActive
+*/
+QPushButton#yearTabButton {
+    border-radius: 10px;
+    padding: 6px 10px;
+    background: #FFFFFF;
+}
+
+QPushButton#yearTabButton:hover {
+    background: #F3F4F6;
+}
+
+QPushButton#yearTabButtonActive {
+    background: #111827;
+    color: #FFFFFF;
+    border: 1px solid #111827;
+}
+
+/* ====== “Kártya” konténerek egységesítése ====== */
+QFrame#homeContent,
+QFrame#bankInfoCard,
+QFrame#card {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+}
+
+/* ====== Táblázat: kicsit “irodásabb” ====== */
+QTableWidget#homeMonthlyTable {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    gridline-color: #EEF2F7;
+    alternate-background-color: #FAFAFB;
+}
+
+QTableWidget#homeMonthlyTable::item {
+    padding: 7px 12px;
+    border: 0px;
+}
+
+QHeaderView::section {
+    background: #F3F4F6;
+    color: #111827;
+    border: 0px;
+    border-bottom: 1px solid #E5E7EB;
+    padding: 9px 12px;
+    font-weight: 600;
+}
+
+/* ====== Tabok (általános) ====== */
+QTabBar::tab {
+    background: transparent;
+    color: #374151;
+    padding: 8px 12px;
+    margin-right: 6px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+}
+
+QTabBar::tab:selected {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    color: #111827;
+    font-weight: 600;
+}
+
+/* ====== QMenuBar: natív jelleg, de ne “window” hófehér ====== */
+QMenuBar {
+    background: palette(button);
+    border: none;
+}
+
+QMenuBar::item {
+    background: transparent;
+    padding: 4px 8px;
+}
+
+QMenuBar::item:selected {
+    background: palette(highlight);
+    color: palette(highlighted-text);
+}
+
+/* =======================
+   Ribbon – Office feeling (CÉLZOTT)
+   Feltételezett objectName-ek:
+   - #ribbonTopRow  : a legfelső sáv (Fájl/Adatok/Nézet/Súgó sor / tab-sor)
+   - #ribbonTabs    : a tabbar konténer
+   - #ribbonStack   : a “szalag” tartalom (pane-ek)
+   - #ribbonLineTop / #ribbonLineBottom : elválasztók
+   ======================= */
+
+/* FELSŐ sor: legyen “Qt-szürke”, ne fehér */
+#ribbonTopRow,
+#ribbonTabs {
+    background: #EFEFEF;
+}
+
+/* A ribbonon belüli tabok: legyenek kevésbé fehérek */
+#ribbonBar QTabBar::tab {
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 6px 14px;
+    margin-right: 4px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+#ribbonBar QTabBar::tab:selected {
+    background: #F8F8F8;
+    border: 1px solid #DADADA;
+    font-weight: 600;
+}
+
+/* Ribbon tartalom: maradjon fehér */
+#ribbonStack {
+    background: #FFFFFF;
+}
+
+/* Elválasztó vonalak */
+#ribbonLineTop,
+#ribbonLineBottom {
+    color: #D4D4D4;
+}
+
+
+
+/* Ribbon alja: 3D perem / dombor hatás */
+#ribbonLineBottom {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+            stop:0 #FFFFFF,
+            stop:0.35 #F3F4F6,
+            stop:1 #C9CDD3);
+}
+
+/* Ha a top elválasztó is legyen finom */
+#ribbonLineTop {
+    background: #E5E7EB;
+    min-height: 1px;
+    max-height: 1px;
+}
+
+
+
+
+/* Ribbon alja: valódi “árnyék” (átlátszó fade a NavBar-ra) */
+#ribbonLineBottom {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+            stop:0 rgba(0, 0, 0, 45),
+            stop:0.35 rgba(0, 0, 0, 18),
+            stop:1 rgba(0, 0, 0, 0));
+}
+
+/* NavBar: ne legyen saját “vonalas” kerete, mert az árnyékkal összeadódik */
+#navBar {
+    border-top: none;
+    border-bottom: none;
+    /* opcionális: így nem “dobozol” */
+}
+
+
+#ribbonPopup {
+    background: #FFFFFF;
+    border: 1px solid #DADADA;
+    border-top: none;
+}
+
+/* Overlay (temporary ribbon) alap */
+#ribbonPopup {
+    background: #FFFFFF;
+    border: 1px solid #DADADA;
+    border-top: none;
+}
+
+/* Alsó “árnyék” – mintha lebegne */
+#ribbonPopup::after {
+    /* Qt QSS nem tud ::after-t, ezért kell egy külön widget (lásd 2) */
+}
+
+
+/* Overlay alja: valódi “drop shadow” (fade) */
+#ribbonPopupShadow {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+            stop:0 rgba(0, 0, 0, 55),
+            stop:0.35 rgba(0, 0, 0, 22),
+            stop:1 rgba(0, 0, 0, 0));
+}

@@ -9,25 +9,25 @@ from typing import Final
 
 from PySide6.QtCore import QStandardPaths
 
-from penzugyi_naplo.config import DEV_MODE
+from penzugyi_naplo.config import is_dev_mode
 
 APP_NAME: Final[str] = "PenzugyiNaplo"
 
 
-def is_dev_mode(argv: list[str] | None = None) -> bool:
+def resolve_dev_mode(argv: list[str] | None = None) -> bool:
     if argv and "--dev" in argv:
         return True
     if argv and "--prod" in argv:
         return False
-    return bool(DEV_MODE)
+    return bool(is_dev_mode)
 
 
 def project_base_dir() -> Path:
     """
-    A penzugyi_naplo csomag gyökere (ahol a main.py van).
+    A projekt gyökérkönyvtára, ahol a main.py van.
     Dev-ben ezt használjuk, mert ott a QSS/forrásfák is itt vannak.
     """
-    return Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parents[2]
 
 
 def app_data_dir(dev: bool) -> Path:
@@ -37,10 +37,12 @@ def app_data_dir(dev: bool) -> Path:
     Release-ben: OS szerinti AppDataLocation alá kerül.
     """
     if dev:
-        return project_base_dir() / "data"
+        path = project_base_dir() / "data"
+    else:
+        path = Path(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
 
-    base = Path(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
-    return base / APP_NAME
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def db_path(dev: bool) -> Path:
@@ -48,8 +50,12 @@ def db_path(dev: bool) -> Path:
 
 
 def backups_dir(dev: bool) -> Path:
-    return app_data_dir(dev) / "backups"
+    path = app_data_dir(dev) / "backups"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def exports_dir(dev: bool) -> Path:
-    return app_data_dir(dev) / "exports"
+    path = app_data_dir(dev) / "exports"
+    path.mkdir(parents=True, exist_ok=True)
+    return path

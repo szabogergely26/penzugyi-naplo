@@ -120,6 +120,17 @@ class SettingsPage(QWidget):
         row_ui.addWidget(self.cmb_toolbar, 1)
         layout.addLayout(row_ui)
 
+        # Style (Classic/Modern)
+        row_style = QHBoxLayout()
+        row_style.addWidget(QLabel("Stílus:"))
+
+        self.cmb_style = QComboBox()
+        self.cmb_style.addItem("Classic", "classic")
+        self.cmb_style.addItem("Modern", "modern")
+
+        row_style.addWidget(self.cmb_style, 1)
+        layout.addLayout(row_style)
+
         # Search
         self.chk_search_all_years = QCheckBox(
             "Keresés minden évben (ne csak az aktív évben)"
@@ -131,6 +142,8 @@ class SettingsPage(QWidget):
         # Signals
         self.cmb_toolbar.currentIndexChanged.connect(self._on_toolbar_changed)
         self.chk_search_all_years.toggled.connect(self._on_search_all_years_changed)
+
+        self.cmb_style.currentIndexChanged.connect(self._on_style_changed)
 
         return page
 
@@ -188,6 +201,15 @@ class SettingsPage(QWidget):
                 self.cmb_toolbar.setCurrentIndex(i)
                 break
         self.cmb_toolbar.blockSignals(False)
+
+        # --- style_mode ---
+        self.cmb_style.blockSignals(True)
+        style = str(self._settings.value("ui/style_mode", "classic"))
+        for i in range(self.cmb_style.count()):
+            if self.cmb_style.itemData(i) == style:
+                self.cmb_style.setCurrentIndex(i)
+                break
+        self.cmb_style.blockSignals(False)
 
         # --- search_all_years ---
         self.chk_search_all_years.blockSignals(True)
@@ -284,3 +306,15 @@ class SettingsPage(QWidget):
                 "Hiba",
                 f"Másolási hiba:\n{e}",
             )
+
+    def _on_style_changed(self) -> None:
+        mode = str(self.cmb_style.currentData())
+        self._settings.setValue("ui/style_mode", mode)
+        self._settings.sync()  # optional, de jó “most rögtön” mentésre
+
+        mw = self.window()
+        if hasattr(mw, "apply_style_mode"):
+            try:
+                mw.apply_style_mode(mode)
+            except Exception:
+                pass

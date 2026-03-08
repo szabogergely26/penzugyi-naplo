@@ -55,7 +55,7 @@ from penzugyi_naplo.ui.bills.bill_models import (
     MonthlyAmount,
     PeriodicAmount,
 )
-from penzugyi_naplo.ui.widgets.flow_layout import FlowLayout
+from penzugyi_naplo.ui.shared.widgets.flow_layout import FlowLayout
 
 
 class BillsPage(QWidget):

@@ -1,5 +1,5 @@
-# - ui/pages/home_page.py
-# ---------------------------
+# # - ui/likviditas/pages/home_page.py
+# -------------------------------------
 
 
 """
@@ -37,7 +37,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from ui.main_window import MainWindow
+    pass
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -53,7 +53,8 @@ from PySide6.QtWidgets import (
 )
 from shiboken6 import isValid
 
-from penzugyi_naplo.ui.widgets.home_summary_panel import HomeSummaryPanel
+from penzugyi_naplo.core.app_context import AppContext
+from penzugyi_naplo.ui.likviditas.widgets.home_summary_panel import HomeSummaryPanel
 
 # - Importok vége - #
 
@@ -107,14 +108,10 @@ class HomePage(QWidget):
     - Aktív év szerint frissül (MainWindow set_year hívja)
     """
 
-    def __init__(
-        self, main_window: MainWindow, parent: Optional[QWidget] = None
-    ) -> None:
+    def __init__(self, ctx: AppContext, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        self.main = main_window
-        self._year = int(
-            getattr(getattr(main_window, "state", None), "active_year", 2026)
-        )
+        self.ctx = ctx
+        self._year = int(self.ctx.state.active_year)
 
         self._updating = False
 
@@ -288,11 +285,11 @@ class HomePage(QWidget):
         self._updating = True
         try:
             # Tények (income, expense_core, bills)
-            actual = self.main.db.get_monthly_income_expense_bills(self._year)
+            actual = self.ctx.db.get_monthly_income_expense_bills(self._year)
 
             # Tervek (month -> (planned_income, planned_expense, planned_fixed_expense))
             # Ha még nincs meg DB-ben, ezt a metódust a TransactionDatabase-be kell felvenni.
-            plans = self.main.db.get_year_plans(self._year)
+            plans = self.ctx.db.get_year_plans(self._year)
 
             for month in range(1, 13):
                 r = month - 1
@@ -325,6 +322,7 @@ class HomePage(QWidget):
 
                 # Oszlopok:
                 # 0 Hónap (már be van töltve initben)
+
                 # 1 Bev terv (edit)
                 # 2 Bev tény
                 # 3 Δ bev
@@ -348,13 +346,13 @@ class HomePage(QWidget):
                 self.table.setItem(r, 9, make_item(a_sav, False))
 
             # ---- Dashboard felső panel frissítése ----
-            bank, sec, metal, total = self.main.db.get_dashboard_balances()
+            cash, bank, sec, metal, total = self.ctx.db.get_dashboard_balances()
 
             self.summary.set_balances(
+                cash_balance=cash,
                 bank_balance=bank,
                 securities_balance=sec,
                 metal_balance=metal,
-                cash_balance=0.0,  # ha nincs külön
             )
 
         finally:
@@ -375,11 +373,11 @@ class HomePage(QWidget):
         value = parse_huf(item.text())
 
         if col == 1:
-            self.main.db.upsert_month_plan(self._year, month, planned_income=value)
+            self.ctx.db.upsert_month_plan(self._year, month, planned_income=value)
         elif col == 4:
-            self.main.db.upsert_month_plan(self._year, month, planned_expense=value)
+            self.ctx.db.upsert_month_plan(self._year, month, planned_expense=value)
         else:  # col == 5
-            self.main.db.upsert_month_plan(
+            self.ctx.db.upsert_month_plan(
                 self._year, month, planned_fixed_expense=value
             )
 

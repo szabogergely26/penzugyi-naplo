@@ -44,7 +44,7 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtGui import QAction, QActionGroup
@@ -61,29 +61,27 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-# - DEV mód:
+from penzugyi_naplo.config import APP_NAME, ORG_NAME
+from penzugyi_naplo.core.app_context import AppContext, AppState
 from penzugyi_naplo.core.logging_utils import DebugFlags, Log
-from penzugyi_naplo.ui.about_dialog import AboutDialog
 from penzugyi_naplo.ui.bills.bills_page import BillsPage
-from penzugyi_naplo.ui.pages.accounts_page import AccountsPage
-from penzugyi_naplo.ui.pages.coming_soon_page import ComingSoonPage
-from penzugyi_naplo.ui.pages.home_page import HomePage
-from penzugyi_naplo.ui.pages.settings_page import SettingsPage
-from penzugyi_naplo.ui.pages.statistics_page import StatisticsPage
-from penzugyi_naplo.ui.pages.transactions_page import TransactionsPage
-from penzugyi_naplo.ui.widgets.nav_bar import NavBar
-from penzugyi_naplo.ui.widgets.ribbon_bar import RibbonBar
-from penzugyi_naplo.ui.widgets.year_tabs_bar import YearTabsBar
-from penzugyi_naplo.ui.wizard_transaction import TransactionWizard
+from penzugyi_naplo.ui.dialogs.about_dialog import AboutDialog
+from penzugyi_naplo.ui.likviditas.dialogs.wizard_transaction import TransactionWizard
+from penzugyi_naplo.ui.likviditas.pages.accounts_page import AccountsPage
+from penzugyi_naplo.ui.likviditas.pages.home_page import HomePage
+from penzugyi_naplo.ui.likviditas.pages.settings_page import SettingsPage
+from penzugyi_naplo.ui.likviditas.pages.statistics_page import StatisticsPage
+from penzugyi_naplo.ui.likviditas.pages.transactions_page import TransactionsPage
+from penzugyi_naplo.ui.shared.nav_bar import NavBar
+from penzugyi_naplo.ui.shared.pages.coming_soon_page import ComingSoonPage
+from penzugyi_naplo.ui.shared.widgets.ribbon_bar import RibbonBar
+from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
 
 # ------- Importok vége -------
 
 
 # Ha nálad máshol van, igazítsd:
 # from pénzügyi_napló.db.transaction_database import TransactionDatabase
-
-if TYPE_CHECKING:
-    from penzugyi_naplo.db.transaction_database import TransactionDatabase
 
 
 @dataclass
@@ -113,6 +111,12 @@ class MainWindow(QMainWindow):
         # --- Core állapot ---
         self.db: "TransactionDatabase" = db
         self.dev_mode = dev_mode
+        self.state = AppState(active_year=2026)
+        self.ctx = AppContext(
+            db=self.db,
+            state=self.state,
+            dev_mode=self.dev_mode,
+        )
 
         # --- Debug/log (csak dev módban aktív) ---
         self.log = Log(
@@ -141,7 +145,7 @@ class MainWindow(QMainWindow):
         self._left_layout = QVBoxLayout(self._left_panel)
         self._left_layout.setContentsMargins(0, 0, 0, 0)
         self._left_layout.setSpacing(10)
-        self._left_layout.setAlignment(Qt.AlignTop)
+        self._left_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self._left_header_spacer = QWidget(self._left_panel)
         self._left_header_spacer.setFixedHeight(0)
@@ -156,7 +160,7 @@ class MainWindow(QMainWindow):
 
         self.dev_banner = QLabel(self._right_panel)
         self.dev_banner.setObjectName("devBanner")
-        self.dev_banner.setAlignment(Qt.AlignCenter)
+        self.dev_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         if self.dev_mode:  # nálad MainWindow(db=db, dev_mode=dev) már át van adva
             self.dev_banner.setText(f"FEJLESZTŐI MÓD AKTÍV — {self.db.db_name}")
@@ -216,6 +220,37 @@ class MainWindow(QMainWindow):
         if self.dev_mode:
             self.log.flags.trace_page_stack = True
 
+        self.load_style_mode()
+
+    def apply_style_mode(self, mode: str) -> None:
+        mode = (mode or "").strip().lower()
+        if mode not in ("classic", "modern"):
+            mode = "classic"
+
+        # 1) fájl kiválasztás
+        base = Path(__file__).resolve().parent  # .../ui
+        qss_path = (
+            base
+            / "styles"
+            / ("classic_style.qss" if mode == "classic" else "modern_style.qss")
+        )
+
+        # 2) betöltés
+        try:
+            qss = qss_path.read_text(encoding="utf-8")
+        except Exception as e:
+            self.log.d("QSS load failed:", str(qss_path), e)
+            qss = ""
+
+        # 3) alkalmazás
+        self.setStyleSheet(qss)
+        self.log.d("Style mode set:", mode, "QSS:", str(qss_path))
+
+    def load_style_mode(self) -> None:
+        s = QSettings(ORG_NAME, APP_NAME)
+        mode = str(s.value("ui/style_mode", "classic"))
+        self.apply_style_mode(mode)
+
     def on_year_selected(self, year: int) -> None:
         self.set_active_year(int(year))  # állapot + oldalak év
         self._filter_all_years = False
@@ -274,7 +309,7 @@ class MainWindow(QMainWindow):
         DEV módban: valódi (félkész) oldalak is elérhetők.
         Normál módban: ezek "Hamarosan" placeholder-rel jelennek meg.
         """
-        self.add_page("home", HomePage(self))
+        self.add_page("home", HomePage(self.ctx))
         self.add_page("transactions", TransactionsPage(self, db=self.db))
 
         # --- Statisztika ---
@@ -353,11 +388,6 @@ class MainWindow(QMainWindow):
         if hasattr(self, "navbar"):
             self.navbar.set_active(key)
 
-        # frissítés csak ott, ahol kell
-        if key in ("transactions", "statistics", "bills", "accounts"):
-            if hasattr(page, "reload"):
-                page.reload()
-
         # debug print csak dev módban
         self.log.d(
             "SET_PAGE:",
@@ -367,6 +397,14 @@ class MainWindow(QMainWindow):
             "widget=",
             type(self.page_stack.currentWidget()).__name__,
         )
+
+        # oldal-aktiválás hook
+        if hasattr(page, "on_activated"):
+            page.on_activated()
+
+        # fallback: ha van reload, hívd
+        elif hasattr(page, "reload"):
+            page.reload()
 
     def set_active_year(self, year: int) -> None:
         self.state.active_year = int(year)
@@ -482,7 +520,7 @@ class MainWindow(QMainWindow):
         self.ribbon.add_separator(tab_data, spacing=18)
 
     def set_toolbar_mode(self, mode: str) -> None:
-        s = QSettings("SzaboG", "PenzugyiNaplo")
+        s = QSettings(ORG_NAME, APP_NAME)
         s.setValue("ui/toolbar_mode", mode)
 
         is_ribbon = mode == "ribbon"
@@ -498,7 +536,7 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(0, self._sync_left_year_offset)
 
     def _load_toolbar_mode(self) -> None:
-        s = QSettings("SzaboG", "PenzugyiNaplo")
+        s = QSettings(ORG_NAME, APP_NAME)
         mode = str(s.value("ui/toolbar_mode", "menubar"))
         if mode not in ("menubar", "ribbon"):
             mode = "menubar"
@@ -587,10 +625,11 @@ class MainWindow(QMainWindow):
             "Biztosan betöltöd ezt a backupot?\n\n"
             "A jelenlegi adatbázis felül lesz írva.\n"
             "A művelet nem visszavonható.",
-            QMessageBox.Yes | QMessageBox.Cancel,
-            QMessageBox.Cancel,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
         )
-        if ret != QMessageBox.Yes:
+
+        if ret != QMessageBox.StandardButton.Yes:
             return
 
         source_path = Path(source)
@@ -657,10 +696,10 @@ class MainWindow(QMainWindow):
             self,
             "Adatbázis törlése",
             "Biztosan törlöd az adatbázist?\n\nA művelet nem visszavonható.",
-            QMessageBox.Yes | QMessageBox.Cancel,
-            QMessageBox.Cancel,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
         )
-        if ret != QMessageBox.Yes:
+        if ret != QMessageBox.StandardButton.Yes:
             return
 
         db_path = Path(self.db.db_name)

@@ -57,10 +57,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from penzugyi_naplo.ui.dialogs.transaction_details_dialog import (
+from penzugyi_naplo.ui.likviditas.dialogs.transaction_details_dialog import (
     TransactionDetailsDialog,
 )
-from penzugyi_naplo.ui.dialogs.transaction_edit_dialog import TransactionEditDialog
+from penzugyi_naplo.ui.likviditas.dialogs.transaction_edit_dialog import (
+    TransactionEditDialog,
+)
 
 # -Importok vége -
 

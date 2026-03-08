@@ -548,7 +548,8 @@ class TransactionDatabase:
             conn.commit()
 
     def set_wallet_balance(self, date_iso: str, wallet_type: str, value: float) -> None:
-        if wallet_type not in ("cash",):
+        valid_wallet_types = ("cash", "current_account")
+        if wallet_type not in valid_wallet_types:
             raise ValueError(f"Invalid wallet_type: {wallet_type}")
 
         self.ensure_wallet_balances()
@@ -560,7 +561,8 @@ class TransactionDatabase:
             conn.commit()
 
     def get_latest_wallet_balance(self, wallet_type: str):
-        if wallet_type not in ("cash",):
+        valid_wallet_types = ("cash", "current_account")
+        if wallet_type not in valid_wallet_types:
             raise ValueError(f"Invalid wallet_type: {wallet_type}")
 
         self.ensure_wallet_balances()
@@ -615,21 +617,35 @@ class TransactionDatabase:
         amount: pozitív szám
         category_id: int
         description: optional
+        payment_source: 'bank' | 'cash' (opcionális, default: 'bank')
         """
         iso = _iso_date(data["date"])
         tx_type = _map_hu_to_type(data["type"])
         amount = float(data["amount"])
         if amount < 0:
             raise ValueError("B modell: amount nem lehet negatív.")
+
         y, m = _year_month_from_iso(iso)
         created_at = data.get("timestamp") or _now_ts()
+        payment_source = (
+            str(data.get("payment_source", "bank") or "bank").strip().lower()
+        )
+
+        if payment_source not in {"bank", "cash"}:
+            payment_source = "bank"
 
         conn = self.get_db_connection()
         cur = conn.cursor()
+
+        self._ensure_payment_source_column(cur)
+
         cur.execute(
             """
-            INSERT INTO transactions (tx_date, tx_type, amount, category_id, name, description, created_at, year, month)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO transactions (
+                tx_date, tx_type, amount, category_id, name, description,
+                created_at, year, month, payment_source
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 iso,
@@ -641,6 +657,7 @@ class TransactionDatabase:
                 created_at,
                 y,
                 m,
+                payment_source,
             ),
         )
         tx_id = int(cur.lastrowid)
@@ -1659,25 +1676,37 @@ class TransactionDatabase:
         # fő összeg szinkron
         self._sync_transaction_amount_from_items(txn_id)
 
-    def get_dashboard_balances(self) -> tuple[float, float, float, float]:
+    def get_dashboard_balances(self) -> tuple[float, float, float, float, float]:
         """
         Visszaadja:
-        bank_balance, securities_value, metal_value, total_balance
+        cash_balance, bank_balance, securities_value, metal_value, total_balance
         """
         with self.get_db_connection() as conn:
             cur = conn.cursor()
             self._ensure_account_valuations(cur)
+            self._ensure_payment_source_column(cur)
 
-            # 1) Folyószámla egyenleg (bevétel - kiadás)
+            # 1) Kézpénz egyenleg
             cur.execute("""
                 SELECT
                     COALESCE(SUM(CASE WHEN tx_type='income' THEN amount ELSE 0 END), 0) -
                     COALESCE(SUM(CASE WHEN tx_type='expense' THEN amount ELSE 0 END), 0)
                 FROM transactions
+                WHERE payment_source = 'cash'
+            """)
+            cash_balance = float(cur.fetchone()[0] or 0.0)
+
+            # 2) Folyószámla egyenleg
+            cur.execute("""
+                SELECT
+                    COALESCE(SUM(CASE WHEN tx_type='income' THEN amount ELSE 0 END), 0) -
+                    COALESCE(SUM(CASE WHEN tx_type='expense' THEN amount ELSE 0 END), 0)
+                FROM transactions
+                WHERE payment_source = 'bank'
             """)
             bank_balance = float(cur.fetchone()[0] or 0.0)
 
-            # 2) Értékpapírszámla összérték (legutolsó érték)
+            # 3) Értékpapírszámla összérték (legutolsó érték)
             cur.execute("""
                 SELECT value
                 FROM account_valuations
@@ -1688,7 +1717,7 @@ class TransactionDatabase:
             row = cur.fetchone()
             securities = float(row["value"]) if row else 0.0
 
-            # 3) Nemesfém egyenleg (legutolsó érték)
+            # 4) Nemesfém egyenleg (legutolsó érték)
             cur.execute("""
                 SELECT value
                 FROM account_valuations
@@ -1699,9 +1728,9 @@ class TransactionDatabase:
             row = cur.fetchone()
             metals = float(row["value"]) if row else 0.0
 
-            total = bank_balance + securities + metals
+            total = cash_balance + bank_balance + securities + metals
 
-            return bank_balance, securities, metals, total
+            return cash_balance, bank_balance, securities, metals, total
 
     def ensure_account_valuations(self) -> None:
         with self.get_db_connection() as conn:
@@ -1823,3 +1852,54 @@ class TransactionDatabase:
             CREATE INDEX IF NOT EXISTS idx_account_valuations_type_date
             ON account_valuations(account_type, date)
         """)
+
+    def list_accounts_history(self, limit: int = 30):
+        """
+        Közös előzménylista:
+            - cash a wallet_balances táblából
+            - securities / metals az account_valuations táblából
+
+        Visszatér:
+            [{"date": "...", "account_type": "cash|securities|metals", "value": ...}, ...]
+        """
+
+        self.ensure_wallet_balances()
+        self.ensure_account_valuations()
+
+        with self.get_db_connection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT date, wallet_type AS account_type, value, id
+                FROM wallet_balances
+
+                UNION ALL
+
+                SELECT date, account_type, value, id
+                FROM account_valuations
+
+                ORDER BY date DESC, id DESC
+                LIMIT ?
+                """,
+                (int(limit),),
+            )
+            rows = cur.fetchall()
+
+        return [
+            {
+                "date": r["date"],
+                "account_type": r["account_type"],
+                "value": r["value"],
+                "id": r["id"],
+            }
+            for r in rows
+        ]
+
+    def _ensure_payment_source_column(self, cur) -> None:
+        cur.execute("PRAGMA table_info(transactions)")
+        cols = [row[1] for row in cur.fetchall()]
+        if "payment_source" not in cols:
+            cur.execute("""
+                ALTER TABLE transactions
+                ADD COLUMN payment_source TEXT NOT NULL DEFAULT 'bank'
+            """)

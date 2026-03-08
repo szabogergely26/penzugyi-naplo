@@ -55,7 +55,7 @@ from PySide6.QtWidgets import (
 from penzugyi_naplo.core.utils import is_valid_date, parse_amount
 
 if TYPE_CHECKING:
-    from ui.main_window import MainWindow
+    from penzugyi_naplo.ui.main_window import MainWindow
 
 
 # ---------------------------------------------------------------------------

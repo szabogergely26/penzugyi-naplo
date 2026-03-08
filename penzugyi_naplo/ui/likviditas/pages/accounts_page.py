@@ -27,7 +27,6 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
-    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -38,7 +37,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from penzugyi_naplo.ui.pages.base_page import BasePage
+from penzugyi_naplo.config import is_dev_mode
+from penzugyi_naplo.ui.shared.pages.base_page import BasePage
 
 if TYPE_CHECKING:
     from penzugyi_naplo.db.transaction_database import TransactionDatabase
@@ -47,6 +47,13 @@ if TYPE_CHECKING:
 def _hline(parent: QWidget | None = None) -> QFrame:
     line = QFrame(parent)
     line.setFrameShape(QFrame.HLine)
+    line.setFrameShadow(QFrame.Sunken)
+    return line
+
+
+def _vline(parent: QWidget | None = None) -> QFrame:
+    line = QFrame(parent)
+    line.setFrameShape(QFrame.VLine)
     line.setFrameShadow(QFrame.Sunken)
     return line
 
@@ -63,6 +70,8 @@ class AccountsPage(BasePage):
         super().__init__(parent)
         self._db: Optional["TransactionDatabase"] = db
 
+        self._dev_mode = is_dev_mode()
+
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 16, 16, 16)
         root.setSpacing(12)
@@ -74,22 +83,99 @@ class AccountsPage(BasePage):
 
         root.addWidget(_hline(self))
 
-        # --- Összesítő kártyák (4 mező) ---
-        self._cards = QWidget(self)
-        cards_lay = QGridLayout(self._cards)
-        cards_lay.setContentsMargins(0, 0, 0, 0)
-        cards_lay.setHorizontalSpacing(12)
-        cards_lay.setVerticalSpacing(12)
+        self.lbl_cash = self._make_kpi("Kézpénz")
+        self.lbl_current_account = self._make_kpi("Folyószámla")
+        self.lbl_securities = self._make_kpi("Értékpapírok")
+        self.lbl_metals = self._make_kpi("Nemesfémek")
+        self.lbl_total = self._make_kpi("Összesen", emphasized=True)
 
-        self.lbl_cash = self._make_kpi("Készpénz (utolsó)")
-        self.lbl_securities = self._make_kpi("Értékpapírok (utolsó)")
-        self.lbl_metals = self._make_kpi("Nemesfém (utolsó)")
-        self.lbl_total = self._make_kpi("Összesen")
+        # --- teljes KPI wrapper ---
+        kpi_wrap = QWidget(self)
+        kpi_wrap_lay = QHBoxLayout(kpi_wrap)
+        kpi_wrap_lay.setContentsMargins(0, 0, 0, 0)
+        kpi_wrap_lay.setSpacing(10)
 
-        cards_lay.addWidget(self.lbl_cash[0], 0, 0)
-        cards_lay.addWidget(self.lbl_securities[0], 0, 1)
-        cards_lay.addWidget(self.lbl_metals[0], 1, 0)
-        cards_lay.addWidget(self.lbl_total[0], 1, 1)
+        # --- 1) Kézpénz blokk ---
+        cash_block = QWidget(kpi_wrap)
+        cash_block_lay = QVBoxLayout(cash_block)
+        cash_block_lay.setContentsMargins(0, 0, 0, 0)
+        cash_block_lay.setSpacing(4)
+
+        cash_block_lay.addSpacing(
+            22
+        )  # hogy függőlegesen kb. a többi KPI sorához igazodjon
+        cash_block_lay.addWidget(self.lbl_cash[0])
+
+        # --- 2) Bank blokk ---
+        bank_block = QWidget(kpi_wrap)
+        bank_block_lay = QVBoxLayout(bank_block)
+        bank_block_lay.setContentsMargins(0, 0, 0, 0)
+        bank_block_lay.setSpacing(4)
+
+        lbl_bank = QLabel("Bank:", bank_block)
+        lbl_bank.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        lbl_bank.setStyleSheet("font-weight: 600;")
+        bank_block_lay.addWidget(lbl_bank)
+
+        bank_row = QWidget(bank_block)
+        bank_row_lay = QHBoxLayout(bank_row)
+        bank_row_lay.setContentsMargins(0, 0, 0, 0)
+        bank_row_lay.setSpacing(8)
+
+        bank_row_lay.addWidget(self.lbl_current_account[0])
+        bank_row_lay.addWidget(self.lbl_securities[0])
+
+        bank_block_lay.addWidget(bank_row)
+
+        # --- 3) Nemesfémek blokk ---
+        metals_block = QWidget(kpi_wrap)
+        metals_block_lay = QVBoxLayout(metals_block)
+        metals_block_lay.setContentsMargins(0, 0, 0, 0)
+        metals_block_lay.setSpacing(4)
+
+        metals_block_lay.addSpacing(22)
+        metals_block_lay.addWidget(self.lbl_metals[0])
+
+        # --- 4) Összesen blokk ---
+        total_block = QWidget(kpi_wrap)
+        total_block_lay = QVBoxLayout(total_block)
+        total_block_lay.setContentsMargins(0, 0, 0, 0)
+        total_block_lay.setSpacing(4)
+
+        total_block_lay.addSpacing(22)
+        total_block_lay.addWidget(self.lbl_total[0])
+
+        # --- összeállítás ---
+
+        kpi_wrap_lay.addWidget(cash_block)
+        kpi_wrap_lay.addSpacing(8)
+
+        kpi_wrap_lay.addWidget(_vline(kpi_wrap))
+        kpi_wrap_lay.addSpacing(8)
+
+        kpi_wrap_lay.addWidget(bank_block)
+        kpi_wrap_lay.addSpacing(10)
+
+        kpi_wrap_lay.addWidget(_vline(kpi_wrap))
+        kpi_wrap_lay.addSpacing(10)
+
+        kpi_wrap_lay.addWidget(metals_block)
+        kpi_wrap_lay.addSpacing(10)
+
+        kpi_wrap_lay.addWidget(_vline(kpi_wrap))
+        kpi_wrap_lay.addSpacing(10)
+
+        kpi_wrap_lay.addWidget(total_block)
+        kpi_wrap_lay.addStretch(1)
+
+        root.addWidget(kpi_wrap)
+
+        # a KPI dobozok ne nyúljanak túl szélesre
+        self.lbl_cash[0].setMaximumWidth(110)
+        self.lbl_current_account[0].setMaximumWidth(120)
+        self.lbl_metals[0].setMaximumWidth(120)
+        self.lbl_securities[0].setMaximumWidth(120)
+        self.lbl_total[0].setMaximumWidth(120)
 
         # --- Kézi értékfelvitel (securities/metals) ---
         box = QGroupBox("Kézi érték rögzítése", self)
@@ -97,9 +183,10 @@ class AccountsPage(BasePage):
         form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         self.cmb_type = QComboBox(box)
-        self.cmb_type.addItem("Készpénz", "cash")
+        self.cmb_type.addItem("Kézpénz", "cash")
+        self.cmb_type.addItem("Folyószámla", "current_account")
         self.cmb_type.addItem("Értékpapírok", "securities")
-        self.cmb_type.addItem("Nemesfém", "metals")
+        self.cmb_type.addItem("Nemesfémek", "metals")
 
         self.dt_date = QDateEdit(box)
         self.dt_date.setCalendarPopup(True)
@@ -115,11 +202,18 @@ class AccountsPage(BasePage):
         self.btn_save = QPushButton("Mentés", box)
         self.btn_save.clicked.connect(self._on_save)
 
+        # - méret beállítások:
+        self.cmb_type.setMaximumWidth(220)
+        self.dt_date.setMaximumWidth(160)
+        self.sp_value.setMaximumWidth(180)
+        self.btn_save.setMaximumWidth(120)
+
         row_btn = QWidget(box)
         row_btn_lay = QHBoxLayout(row_btn)
         row_btn_lay.setContentsMargins(0, 0, 0, 0)
-        row_btn_lay.addStretch(1)
+
         row_btn_lay.addWidget(self.btn_save)
+        row_btn_lay.addStretch(1)
 
         form.addRow("Típus:", self.cmb_type)
         form.addRow("Dátum:", self.dt_date)
@@ -145,13 +239,33 @@ class AccountsPage(BasePage):
 
         self.reload()
 
-    def _make_kpi(self, title: str) -> tuple[QGroupBox, QLabel]:
+    def _make_kpi(
+        self,
+        title: str,
+        *,
+        emphasized: bool = False,
+    ) -> tuple[QGroupBox, QLabel]:
         box = QGroupBox(title, self)
         lay = QVBoxLayout(box)
-        lay.setContentsMargins(12, 10, 12, 10)
+        lay.setContentsMargins(10, 8, 10, 8)
+
+        if emphasized:
+            box.setStyleSheet("""
+                QGroupBox {
+                    font-weight: 700;
+                }
+             """)
+
         value = QLabel("—", box)
         value.setObjectName("kpiValue")
         value.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+        font = value.font()
+        if emphasized:
+            font.setBold(True)
+            font.setPointSize(font.pointSize() + 1)
+        value.setFont(font)
+
         lay.addWidget(value)
         return box, value
 
@@ -161,13 +275,18 @@ class AccountsPage(BasePage):
     def reload(self) -> None:
         """MainWindow hívhatja set_page-nél vagy DB csere után."""
         if not self._db:
-            self._set_kpis(None, None, None, None)
+            self._set_kpis(None, None, None, None, None)
             self.tbl.setRowCount(0)
             return
 
         # Készpénz (utolsó)
         cash_row = self._db.get_latest_wallet_balance("cash")
+        current_account_row = self._db.get_latest_wallet_balance("current_account")
+
         cash = float(cash_row["value"]) if cash_row else None
+        current_account = (
+            float(current_account_row["value"]) if current_account_row else None
+        )
 
         # Értékpapírok / Nemesfém (utolsó)
         sec_row = self._db.get_latest_account_valuation("securities")
@@ -175,27 +294,28 @@ class AccountsPage(BasePage):
         sec = float(sec_row["value"]) if sec_row else None
         met = float(met_row["value"]) if met_row else None
 
-        total = None
-        if cash is not None or sec is not None or met is not None:
-            total = float(cash or 0.0) + float(sec or 0.0) + float(met or 0.0)
-
-        self._set_kpis(cash, sec, met, total)
+        total = sum(v for v in (cash, current_account, sec, met) if v is not None)
+        self._set_kpis(cash, current_account, sec, met, total)
         self._load_history()
 
     def _set_kpis(
         self,
         cash: float | None,
+        current_account: float | None,
         securities: float | None,
         metals: float | None,
         total: float | None,
     ) -> None:
+
         def fmt(v: float | None) -> str:
             if v is None:
                 return "—"
             return f"{v:,.0f} Ft".replace(",", " ")
 
-        # FIGYELEM: itt már lbl_cash kell, nem lbl_bank
         self.lbl_cash[1].setText(fmt(cash))
+
+        self.lbl_current_account[1].setText(fmt(current_account))
+
         self.lbl_securities[1].setText(fmt(securities))
         self.lbl_metals[1].setText(fmt(metals))
         self.lbl_total[1].setText(fmt(total))
@@ -204,26 +324,30 @@ class AccountsPage(BasePage):
         if not self._db:
             return
 
-        rows = self._db.list_account_valuations(limit=30)
+        rows = self._db.list_accounts_history(limit=30)
         self.tbl.setRowCount(len(rows))
 
         def type_label(t: str) -> str:
-            return (
-                "Értékpapírok"
-                if t == "securities"
-                else "Nemesfém"
-                if t == "metals"
-                else t
-            )
+            if t == "cash":
+                return "Készpénz"
+            if t == "current_account":
+                return "Folyószámla"
+            if t == "securities":
+                return "Értékpapírok"
+            if t == "metals":
+                return "Nemesfémek"
+            return t
 
         for r, rec in enumerate(rows):
             self.tbl.setItem(r, 0, QTableWidgetItem(str(rec["date"])))
             self.tbl.setItem(
                 r, 1, QTableWidgetItem(type_label(str(rec["account_type"])))
             )
+
             val = float(rec["value"] or 0.0)
             it = QTableWidgetItem(f"{val:,.0f} Ft".replace(",", " "))
             it.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
             self.tbl.setItem(r, 2, it)
 
         self.tbl.resizeColumnsToContents()
@@ -240,9 +364,9 @@ class AccountsPage(BasePage):
 
         # 0 érték mentése is lehet valid (lenullázás), ezért nem tiltjuk
 
-        if t == "cash":
+        if t in ("cash", "current_account"):
             # készpénz külön táblába
-            self._db.set_wallet_balance(date_iso, "cash", value)
+            self._db.set_wallet_balance(date_iso, t, value)
         else:
             # securities / metals
             self._db.add_account_valuation(date_iso, t, value)
