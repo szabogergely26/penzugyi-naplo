@@ -94,7 +94,14 @@ class BillsPage(QWidget):
 
     def reload(self) -> None:
         year = self._year or date.today().year
-        models = self._load_demo_data_for_year(year)
+        
+        use_demo_data = False
+        if use_demo_data:
+            models = self._load_demo_data_for_year(year)
+
+        else:            
+            models = self._load_models_from_db(year)
+
         self._render(models)
 
     # --- UI ---
@@ -163,3 +170,8 @@ class BillsPage(QWidget):
         )
 
         return [telekom, kalasznet, mvm_villany, mvm_gaz]
+
+
+    def _load_models_from_db(self, year: int) -> list[BillCardModel]:
+        # TODO: később adatbázisból betöltés
+        return []

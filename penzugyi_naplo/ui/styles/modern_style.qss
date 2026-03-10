@@ -252,3 +252,29 @@ QMenuBar::item:selected {
             stop:0.35 rgba(0, 0, 0, 22),
             stop:1 rgba(0, 0, 0, 0));
 }
+
+
+
+
+
+/* ---- Számított értékek -------- */
+
+QLabel#cardTitle {
+    font-weight: 600;
+}
+
+QLabel#cardTitleStrong {
+    font-weight: 700;
+    padding-bottom: 2px;
+    /* ha akarod, ez is lehet:
+    text-decoration: underline;
+    */
+}
+
+QLabel#sumValue {
+    font-weight: 700;
+}
+
+QLabel#sumValueBig {
+    font-weight: 800;
+}

@@ -50,8 +50,18 @@ class _Card(QFrame):
         lay.setSpacing(8)
 
         self.title_lbl = QLabel(title)
-        self.title_lbl.setObjectName("cardTitle")
+
+        if title == "Számított értékek":
+            self.title_lbl.setObjectName("cardTitleStrong")
+        else:
+            self.title_lbl.setObjectName("cardTitle")
+
         lay.addWidget(self.title_lbl)
+
+
+        # hely a cím és az alatta lévő tartalom között
+        lay.addSpacing(8)
+
 
         self.body = QWidget(self)
         self.body_lay = QVBoxLayout(self.body)
@@ -139,12 +149,13 @@ class HomeSummaryPanel(QWidget):
         grid.setContentsMargins(0, 0, 0, 0)
 
         # sorok
-        self.lbl_bank = self._make_value_row(
-            grid, 0, "Aktuális egyenleg (folyószámla):"
-        )
-        self.lbl_total = self._make_value_row(grid, 1, "Teljes egyenleg:", big=True)
+        self.lbl_cash = self._make_value_row(grid, 0, "Kézpénz:")
+        grid.setRowMinimumHeight(3, 12)
+        self.lbl_bank = self._make_value_row(grid, 1, "Aktuális egyenleg:")
         self.lbl_sec = self._make_value_row(grid, 2, "Értékpapírszámla:")
-        self.lbl_metal = self._make_value_row(grid, 3, "Nemesfém egyenleg:")
+        self.lbl_total = self._make_value_row(grid, 4, "Teljes egyenleg:", big=True)
+        grid.setRowMinimumHeight(5, 12)
+        self.lbl_metal = self._make_value_row(grid, 6, "Nemesfém egyenleg:")
 
         w_grid = QWidget()
         w_grid.setLayout(grid)
@@ -241,6 +252,7 @@ class HomeSummaryPanel(QWidget):
         self.lbl_bank.setText(_money_fmt(bank_balance))
         self.lbl_sec.setText(_money_fmt(securities_balance))
         self.lbl_metal.setText(_money_fmt(metal_balance))
+        self.lbl_cash.setText(_money_fmt(cash_balance))
 
         total = None
         if (

@@ -137,6 +137,11 @@ class HomePage(QWidget):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(10)
 
+
+
+
+
+
         # --- Dashboard tábla ---
         # Oszlopok: (átnevezhető, de sorrend maradjon !!)
 
@@ -153,7 +158,12 @@ class HomePage(QWidget):
             "Tényleges megtakarítás",
         ]
 
-        # Táblázat méretezése:
+       
+
+
+
+
+
 
         # --- Havi dashboard tábla ---
 
@@ -200,9 +210,18 @@ class HomePage(QWidget):
             w = widths[c] if c < len(widths) else 110  # fallback, ha bővül a tábla
             self.table.setColumnWidth(c, w)
 
+
+
+
+
         # --- Belső tabok a Kezdőoldalon ---
         self.tabs = QTabWidget(content)
         self.tabs.setObjectName("homeTabs")
+
+
+
+
+
 
         # 1) Kezdőoldal TAB
         tab_dashboard = QWidget()

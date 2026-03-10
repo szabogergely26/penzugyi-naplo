@@ -1686,50 +1686,23 @@ class TransactionDatabase:
             self._ensure_account_valuations(cur)
             self._ensure_payment_source_column(cur)
 
-            # 1) Kézpénz egyenleg
-            cur.execute("""
-                SELECT
-                    COALESCE(SUM(CASE WHEN tx_type='income' THEN amount ELSE 0 END), 0) -
-                    COALESCE(SUM(CASE WHEN tx_type='expense' THEN amount ELSE 0 END), 0)
-                FROM transactions
-                WHERE payment_source = 'cash'
-            """)
-            cash_balance = float(cur.fetchone()[0] or 0.0)
+            # Kézpénz (utolsó mentett érték)
+            cash_row = self.get_latest_wallet_balance("cash")
+            cash_balance = float(cash_row["value"]) if cash_row else 0.0
 
-            # 2) Folyószámla egyenleg
-            cur.execute("""
-                SELECT
-                    COALESCE(SUM(CASE WHEN tx_type='income' THEN amount ELSE 0 END), 0) -
-                    COALESCE(SUM(CASE WHEN tx_type='expense' THEN amount ELSE 0 END), 0)
-                FROM transactions
-                WHERE payment_source = 'bank'
-            """)
-            bank_balance = float(cur.fetchone()[0] or 0.0)
+            # Folyószámla (utolsó mentett érték)
+            bank_row = self.get_latest_wallet_balance("current_account")
+            bank_balance = float(bank_row["value"]) if bank_row else 0.0
 
-            # 3) Értékpapírszámla összérték (legutolsó érték)
-            cur.execute("""
-                SELECT value
-                FROM account_valuations
-                WHERE account_type='securities'
-                ORDER BY date DESC, id DESC
-                LIMIT 1
-            """)
-            row = cur.fetchone()
-            securities = float(row["value"]) if row else 0.0
+            # Értékpapírok (utolsó mentett érték)
+            sec_row = self.get_latest_account_valuation("securities")
+            securities = float(sec_row["value"]) if sec_row else 0.0
 
-            # 4) Nemesfém egyenleg (legutolsó érték)
-            cur.execute("""
-                SELECT value
-                FROM account_valuations
-                WHERE account_type='metals'
-                ORDER BY date DESC, id DESC
-                LIMIT 1
-            """)
-            row = cur.fetchone()
-            metals = float(row["value"]) if row else 0.0
+            # Nemesfémek (utolsó mentett érték)
+            met_row = self.get_latest_account_valuation("metals")
+            metals = float(met_row["value"]) if met_row else 0.0
 
             total = cash_balance + bank_balance + securities + metals
-
             return cash_balance, bank_balance, securities, metals, total
 
     def ensure_account_valuations(self) -> None:

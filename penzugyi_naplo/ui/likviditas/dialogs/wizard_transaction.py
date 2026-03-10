@@ -39,7 +39,7 @@ import re
 from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import QLocale
+from PySide6.QtCore import SIGNAL, QLocale
 from PySide6.QtWidgets import (
     QComboBox,
     QGridLayout,
@@ -330,21 +330,28 @@ class PageBillProvider(QWizardPage):
         layout = QVBoxLayout(self)
 
         self.combo = QComboBox()
-        self.combo.addItems(
-            [
+        self.combo.addItems([
+                "Válassz szolgáltatót...",
                 "KalászNet (Internet)",
                 "Telekom",
                 "MVMNext",
-            ]
-        )
+            ])
 
         layout.addWidget(QLabel("Célszámla:"))
         layout.addWidget(self.combo)
         layout.addStretch(1)
 
         self.registerField(
-            "bill_provider*", self.combo, "currentText", "currentTextChanged"
+            "bill_provider*",
+            self.combo,
+            "currentText",
+            SIGNAL("currentTextChanged(QString)")
         )
+
+        self.combo.currentIndexChanged.connect(lambda _i: self.completeChanged.emit())
+
+    def isComplete(self):
+        return self.combo.currentIndex() > 0
 
     def nextId(self) -> int:
         return 6 if self.combo.currentText() == "MVMNext" else 3  # Amount
