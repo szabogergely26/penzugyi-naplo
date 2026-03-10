@@ -47,7 +47,7 @@ from __future__ import annotations
 from datetime import date
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QFrame, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLayoutItem, QScrollArea, QVBoxLayout, QWidget
 
 from penzugyi_naplo.ui.bills.bill_card import BillCard
 from penzugyi_naplo.ui.bills.bill_models import (
@@ -72,18 +72,18 @@ class BillsPage(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        self.scroll = QScrollArea(self)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.NoFrame)
+        self.scroll_area: QScrollArea = QScrollArea(self)
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
         self.container = QWidget()
         self.container.setObjectName("billsContainer")
 
-        self.flow = FlowLayout(self.container, margin=14, spacing=12)
+        self.flow:FlowLayout = FlowLayout(self.container, margin=14, spacing=12)
         self.container.setLayout(self.flow)
 
-        self.scroll.setWidget(self.container)
-        root.addWidget(self.scroll)
+        self.scroll_area.setWidget(self.container)
+        root.addWidget(self.scroll_area)
 
         self.reload()
 
@@ -114,9 +114,12 @@ class BillsPage(QWidget):
 
     def _clear_cards(self) -> None:
         while self.flow.count():
-            it = self.flow.takeAt(0)
-            w = it.widget()
-            if w:
+            it: QLayoutItem | None = self.flow.takeAt(0)
+            if it is None:
+                continue
+
+            w: QWidget | None = it.widget()
+            if w is not None:
                 w.deleteLater()
 
     # --- DEMÓ: később DB-ből ---
