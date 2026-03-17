@@ -43,6 +43,7 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -130,9 +131,10 @@ class TransactionsPage(QWidget):
 
         # --- UI: táblázat: Oszlopok láthatósága ---
         self.table = QTableWidget(self)
-        self.table.setColumnCount(9)
+        self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels(
             [
+                "",
                 "Dátum",
                 "Név",
                 "Kategória",
@@ -145,23 +147,28 @@ class TransactionsPage(QWidget):
             ]
         )
 
+        
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setSelectionMode(QTableWidget.SingleSelection)
 
+        self.table.setColumnWidth(0, 20)    # Jelzés (0.oszlop) szélessége
+        
+
         # header ELŐBB
         header = self.table.horizontalHeader()
 
-        # méretezések
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # Dátum
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Név
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Kategória
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Egységár
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # Db
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Összesen
-        header.setSectionResizeMode(6, QHeaderView.Stretch)  # Leírás
-        header.setSectionResizeMode(7, QHeaderView.ResizeToContents)  # Típus
-        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Műveletek
+        # méretezések (autómatikus)
+        header.setSectionResizeMode(0, QHeaderView.Fixed)  # Jelzés - manuális
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Dátum
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Név
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Kategória
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # Egységár
+        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Db
+        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Összesen
+        header.setSectionResizeMode(7, QHeaderView.Stretch)  # Leírás
+        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Típus
+        header.setSectionResizeMode(9, QHeaderView.ResizeToContents)  # Műveletek
 
         # --- Rendezés (fejléc-katt) ---
         header.setSectionsClickable(True)
@@ -173,7 +180,7 @@ class TransactionsPage(QWidget):
         self.table.setSortingEnabled(True)
 
         # alap nyíl (az alap rendezést a reload() végén állítod be)
-        header.setSortIndicator(0, Qt.SortOrder.DescendingOrder)
+        header.setSortIndicator(1, Qt.SortOrder.DescendingOrder)
 
         # --- Layout (csak 1!) ---
         root = QVBoxLayout(self)
@@ -212,16 +219,22 @@ class TransactionsPage(QWidget):
         self._filter_all_years = all_years
 
     def _on_table_double_clicked(self, row: int, col: int) -> None:
-        # ugyanazt csináljuk, mint a Részletek gomb
-        w = self.table.cellWidget(row, 8)  # Műveletek oszlop
-        if not w:
+        if col == 9:
+            return
+        
+        item = self.table.item(row,0)
+        if item is None:
+            return
+        
+        has_details = bool(item.data(Qt.ItemDataRole.UserRole + 1))
+        if not has_details:
             return
 
-        for i in range(w.layout().count()):
-            btn = w.layout().itemAt(i).widget()
-            if isinstance(btn, QPushButton) and btn.text() == "Részletek":
-                btn.click()
-                return
+        tx_id = item.data(Qt.ItemDataRole.UserRole)
+        if tx_id is None:
+            return
+
+        self.on_details_tx(int(tx_id))
 
     def bind_db(self, db: Any) -> None:
         """Ha MainWindow később adja át a DB-t."""
@@ -312,35 +325,69 @@ class TransactionsPage(QWidget):
             shown_total = total if tx_type == "income" else -total  # kiadás mínuszban
 
             # Oszlopok:
-            # 0 Dátum | 1 Név | 2 Kategória | 3 Egységár | 4 Db | 5 Összesen | 6 Leírás | 7 Típus | 8 Műveletek
+            # Oszlopok:
+            # 0 Jelzés | 1 Dátum | 2 Név | 3 Kategória | 4 Egységár | 5 Db | 6 Összesen | 7 Leírás | 8 Típus | 9 Műveletek
 
-            self.table.setItem(r, 0, SortKeyItem(tx_date, tx_date))  # Dátum
-            self.table.setItem(r, 1, QTableWidgetItem(name))  # Név (maradhat)
+            detail_text = "⊞" if has_details else ""
+            detail_item = QTableWidgetItem(detail_text)
+            detail_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            detail_item.setData(Qt.ItemDataRole.UserRole, tx_id)
+            detail_item.setData(Qt.ItemDataRole.UserRole + 1, bool(has_details))
+
+            font = detail_item.font()
+            font.setBold(False)
+            font.setPointSize(font.pointSize() + 4)   # +3 vagy +4 általában jó
+            detail_item.setFont(font)
+
+            if has_details:
+                detail_item.setToolTip("Tételrészletek elérhetők")
+                
+
+            self.table.setItem(r, 0, detail_item)
+
+            self.table.setItem(r, 1, SortKeyItem(tx_date, tx_date))  # Dátum
+            self.table.setItem(r, 2, QTableWidgetItem(name))         # Név
             self.table.setItem(
-                r, 2, SortKeyItem(category, category.casefold())
+                r, 3, SortKeyItem(category, category.casefold())
             )  # Kategória
 
+
             unit_text = f"{unit_price:,.0f}".replace(",", " ")
-            self.table.setItem(r, 3, SortKeyItem(unit_text, float(unit_price)))
+            self.table.setItem(r, 4, SortKeyItem(unit_text, float(unit_price)))
 
             qty_text = str(quantity)
-            self.table.setItem(r, 4, SortKeyItem(qty_text, float(quantity)))
+            self.table.setItem(r, 5, SortKeyItem(qty_text, float(quantity)))
 
             total_text = f"{shown_total:,.0f}".replace(",", " ")
-            self.table.setItem(r, 5, SortKeyItem(total_text, float(shown_total)))
+            self.table.setItem(r, 6, SortKeyItem(total_text, float(shown_total)))
 
-            self.table.setItem(r, 6, QTableWidgetItem(desc))
+            self.table.setItem(r, 7, QTableWidgetItem(desc))
             type_text = "Bevétel" if tx_type == "income" else "Kiadás"
-            type_key = 0 if tx_type == "income" else 1  # Bevétel előre
-            self.table.setItem(r, 7, SortKeyItem(type_text, type_key))
+            type_key = 0 if tx_type == "income" else 1
+           
+            type_item = SortKeyItem(type_text, type_key)
 
-            self.table.setCellWidget(r, 8, self._make_action_cell(tx_id, has_details))
+            if tx_type == "income":
+                type_item.setForeground(QColor(40, 140, 70))   # zöldes
+            else:
+                type_item.setForeground(QColor(170, 60, 60))   # pirosas
+
+            self.table.setItem(r, 8, type_item)
+
+            if has_details:
+                for col in range(0, 9):  # csak az item-es oszlopok
+                    item = self.table.item(r, col)
+                    if item is not None:
+                        item.setBackground(QColor(100, 160, 220, 35))
+
+            self.table.setCellWidget(r, 9, self._make_action_cell(tx_id))
 
         self.table.setSortingEnabled(True)
 
         # Alap rendezés: Dátum ↓ (0. oszlop)
-        self.table.sortItems(0, Qt.SortOrder.DescendingOrder)
-        self.table.horizontalHeader().setSortIndicator(0, Qt.SortOrder.DescendingOrder)
+        self.table.sortItems(1, Qt.SortOrder.DescendingOrder)
+        self.table.horizontalHeader().setSortIndicator(1, Qt.SortOrder.DescendingOrder)
 
     def set_year(self, year: int) -> None:
         self._year = int(year)
@@ -350,7 +397,7 @@ class TransactionsPage(QWidget):
     def _schedule_search(self, _text: str) -> None:
         self._search_timer.start()
 
-    def _make_action_cell(self, tx_id: int, has_details: int = 0) -> QWidget:
+    def _make_action_cell(self, tx_id: int) -> QWidget:
         w = QWidget(self.table)
         lay = QHBoxLayout(w)
         lay.setContentsMargins(0, 0, 0, 0)
@@ -366,15 +413,9 @@ class TransactionsPage(QWidget):
         btn_del.clicked.connect(self._on_delete_clicked)
 
         lay.addWidget(btn_edit)
-
-        if has_details:
-            btn_det = QPushButton("Részletek", w)
-            btn_det.setProperty("tx_id", tx_id)
-            btn_det.clicked.connect(self._on_details_clicked)
-            lay.addWidget(btn_det)
-
         lay.addWidget(btn_del)
         return w
+
 
     def _on_edit_clicked(self) -> None:
         btn = self.sender()
@@ -460,19 +501,4 @@ class TransactionsPage(QWidget):
         if ok:
             self.reload()
 
-    def _on_details_clicked(self) -> None:
-        btn = self.sender()
-        if btn is None:
-            return
-
-        tx_id = int(btn.property("tx_id"))
-
-        if not self.db:
-            return
-
-        dlg = TransactionDetailsDialog(
-            parent=self,
-            db=self.db,
-            txn_id=tx_id,
-        )
-        dlg.exec()
+    

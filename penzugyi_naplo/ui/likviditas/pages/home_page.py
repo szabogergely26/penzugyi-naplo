@@ -39,6 +39,8 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     pass
 
+from dataclasses import dataclass
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
@@ -57,6 +59,26 @@ from penzugyi_naplo.core.app_context import AppContext
 from penzugyi_naplo.ui.likviditas.widgets.home_summary_panel import HomeSummaryPanel
 
 # - Importok vége - #
+
+
+
+@dataclass
+class HomeSummaryRow:
+    month_label: str
+    planned_income: float
+    actual_income: float
+    income_diff: float
+    planned_expense: float
+    planned_fixed_expense: float
+    actual_expense: float
+    expense_diff: float
+    planned_savings: float
+    actual_savings: float
+
+
+
+
+
 
 
 # - Konstansok, segédfüggvények - #
@@ -98,6 +120,17 @@ def parse_huf(text: str) -> float:
         return 0.0
 
 
+
+
+
+
+
+
+
+
+
+
+
 # - HomePage osztály -
 
 
@@ -111,6 +144,7 @@ class HomePage(QWidget):
     def __init__(self, ctx: AppContext, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.ctx = ctx
+        self.dev_mode = self.ctx.dev_mode
         self._year = int(self.ctx.state.active_year)
 
         self._updating = False
@@ -122,7 +156,7 @@ class HomePage(QWidget):
 
         title = QLabel("Kezdőoldal")
         title.setObjectName("pageTitle")
-        title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         title.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         subtitle = QLabel("Havi összesítők az aktív év tranzakcióiból.")
@@ -138,37 +172,14 @@ class HomePage(QWidget):
         content_layout.setSpacing(10)
 
 
-
-
-
-
-        # --- Dashboard tábla ---
-        # Oszlopok: (átnevezhető, de sorrend maradjon !!)
-
-        headers = [
-            "Hónap",
-            "Tervezett bevétel",
-            "Tényleges bevétel",
-            "Bevétel eltérések",
-            "Tervezett kiadás",
-            "Fix terv",
-            "Tényleges kiadás",
-            "Kiadás eltérések",
-            "Tervezett megtakarítás",
-            "Tényleges megtakarítás",
-        ]
-
-       
-
-
-
+        headers = self._get_headers()
 
 
 
         # --- Havi dashboard tábla ---
 
         self.table = QTableWidget(12, len(headers), content)
-        self.table.setObjectName("homeMonthlyTable")
+        self.table.setObjectName("homeTable")
 
         # fejlécek
         self.table.setHorizontalHeaderLabels(headers)
@@ -201,13 +212,18 @@ class HomePage(QWidget):
         hdr = self.table.horizontalHeader()
         hdr.setStretchLastSection(False)
 
+        
+
+
         for c in range(self.table.columnCount()):
             hdr.setSectionResizeMode(c, QHeaderView.Fixed)
 
         # Oszlopszélességek beállítása
-        widths = [120, 150, 150, 130, 150, 110, 150, 130, 160, 160]
+
+        widths = self._get_column_widths()
+
         for c in range(self.table.columnCount()):
-            w = widths[c] if c < len(widths) else 110  # fallback, ha bővül a tábla
+            w = widths[c] if c < len(widths) else 110
             self.table.setColumnWidth(c, w)
 
 
@@ -218,6 +234,8 @@ class HomePage(QWidget):
         self.tabs = QTabWidget(content)
         self.tabs.setObjectName("homeTabs")
 
+
+       
 
 
 
@@ -233,11 +251,43 @@ class HomePage(QWidget):
         self.summary = HomeSummaryPanel(self)
         dash_layout.addWidget(self.summary)
 
+        
         # kis térköz
         dash_layout.addSpacing(8)
 
-        # Havi tábla
-        dash_layout.addWidget(self.table, 1)
+        # --- Havi dashboard card ---
+        table_card = QFrame()
+        table_card.setObjectName("homeTableCard")
+        table_card_layout = QVBoxLayout(table_card)
+        table_card_layout.setContentsMargins(12, 12, 12, 12)
+        table_card_layout.setSpacing(8)
+
+        table_title = QLabel("Havi összesítő")
+        table_title.setObjectName("sectionTitle")
+        table_card_layout.addWidget(table_title)
+
+        # tábla viselkedés
+        self.table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.table.setMinimumHeight(0)
+
+        table_card_layout.addWidget(self.table)
+
+        dash_layout.addWidget(table_card, 0)
+        dash_layout.addStretch(1)
+
+
+
+
+       
+
+
+
+
+
+
+
 
         # 2) Számlák TAB
         tab_bills = QWidget()
@@ -284,87 +334,180 @@ class HomePage(QWidget):
         root.addWidget(content, 1)
 
         self.reload()
+
+        self.table.resizeRowsToContents()
+        self._update_table_height()
+
+
+
+
+
         self._updating = False
+
+
+
+    def _get_headers(self) -> list[str]:
+
+     # --- Dashboard tábla ---
+        # Oszlopok: (átnevezhető, de sorrend maradjon !!)
+
+        if not self.dev_mode:          # normál mód
+            return [
+                "Hónap",
+                "Tervezett Bevétel",
+                "Valós Bevétel",
+                "Eltérések",
+                "Tervezett Kiadások",
+                "Fix Ter. Kiad.",
+                "Valós Kiadások",
+                "Eltérések",
+                "Terv. Megtakarítás",
+                "Valós Megtakarítás",
+            ]
+
+            
+
+        return [                        # dev_mode
+            "Hónap",
+            "Terv Bev",
+            "Valós Bev",
+            "Δ Bev",
+            "Terv Kiad",
+            "Valós Kiad",
+            "Δ Kiad",
+            "Megtakarítás",
+        ]
+
+            
+    def _get_column_widths(self) -> list[int]:
+        if not self.dev_mode:           # normál mód
+            return [120, 150, 150, 130, 150, 110, 150, 130, 160, 160]
+
+                                        # dev_mode
+        return [120, 130, 130, 110, 130, 130, 110, 150]
+
+
+
+
+
+
+
+    def _make_item(self, val: float, editable: bool) -> QTableWidgetItem:
+        it = QTableWidgetItem(fmt_huf(val))
+        it.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+        flags = it.flags()
+        if editable:
+            it.setFlags(flags | Qt.ItemIsEditable)
+        else:
+            it.setFlags(flags & ~Qt.ItemIsEditable)
+
+        return it
+            
+
+
+
+    def _build_summary_rows(self) -> list[HomeSummaryRow]:
+        rows: list[HomeSummaryRow] = []
+
+        actual = self.ctx.db.get_monthly_income_expense_bills(self._year)
+        plans = self.ctx.db.get_year_plans(self._year)
+
+        for month in range(1, 13):
+            p_income, p_expense, p_fixed = plans.get(month, (0.0, 0.0, 0.0))
+            income, expense_core, bills = actual.get(month, (0.0, 0.0, 0.0))
+
+            actual_expense = float(expense_core) + float(bills)
+
+            income_diff = float(income) - float(p_income)
+            planned_total_expense = float(p_expense) + float(p_fixed)
+            expense_diff = float(actual_expense) - float(planned_total_expense)
+
+            planned_savings = float(p_income) - float(planned_total_expense)
+            actual_savings = float(income) - float(actual_expense)
+
+            rows.append(
+                HomeSummaryRow(
+                    month_label=MONTHS_HU[month - 1],
+                    planned_income=float(p_income),
+                    actual_income=float(income),
+                    income_diff=float(income_diff),
+                    planned_expense=float(p_expense),
+                    planned_fixed_expense=float(p_fixed),
+                    actual_expense=float(actual_expense),
+                    expense_diff=float(expense_diff),
+                    planned_savings=float(planned_savings),
+                    actual_savings=float(actual_savings),
+                )
+            )
+
+        return rows
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def _update_table_height(self) -> None:
+        header_h = self.table.horizontalHeader().height()
+        rows_h = sum(self.table.rowHeight(r) for r in range(self.table.rowCount()))
+        frame_h = self.table.frameWidth() * 2
+        extra = 8
+        self.table.setFixedHeight(header_h + rows_h + frame_h + extra)
+
 
     def set_year(self, year: int) -> None:
         self._year = int(year)
         self.reload()
 
+    
+    
+    
+    
+    
     def reload(self) -> None:
-        """
-        Terv–Tény dashboard:
-        - Tény: transactions-ből (get_monthly_income_expense_bills)
-        - Terv: plans-ből (get_year_plans)
-        - Számolt: Δ + megtakarítás
-        """
-
         if not isValid(self.table):
             return
 
         self._updating = True
         try:
-            # Tények (income, expense_core, bills)
-            actual = self.ctx.db.get_monthly_income_expense_bills(self._year)
+            rows = self._build_summary_rows()
 
-            # Tervek (month -> (planned_income, planned_expense, planned_fixed_expense))
-            # Ha még nincs meg DB-ben, ezt a metódust a TransactionDatabase-be kell felvenni.
-            plans = self.ctx.db.get_year_plans(self._year)
+            if not self.dev_mode:
+                self._render_normal_rows(rows)
+            else:
+                self._render_dev_rows(rows)
 
-            for month in range(1, 13):
-                r = month - 1
-
-                # --- tervek ---
-                p_income, p_expense, p_fixed = plans.get(month, (0.0, 0.0, 0.0))
-
-                # --- tények ---
-                income, expense_core, bills = actual.get(month, (0.0, 0.0, 0.0))
-                a_expense = float(expense_core) + float(bills)
-
-                # --- számolt ---
-                d_income = float(income) - float(p_income)
-
-                p_total_exp = float(p_expense) + float(p_fixed)
-                d_expense = float(a_expense) - float(p_total_exp)
-
-                p_sav = float(p_income) - float(p_total_exp)
-                a_sav = float(income) - float(a_expense)
-
-                def make_item(val: float, editable: bool) -> QTableWidgetItem:
-                    it = QTableWidgetItem(fmt_huf(val))
-                    it.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                    flags = it.flags()
-                    if editable:
-                        it.setFlags(flags | Qt.ItemIsEditable)
-                    else:
-                        it.setFlags(flags & ~Qt.ItemIsEditable)
-                    return it
-
-                # Oszlopok:
-                # 0 Hónap (már be van töltve initben)
-
-                # 1 Bev terv (edit)
-                # 2 Bev tény
-                # 3 Δ bev
-                # 4 Kiad terv (edit)
-                # 5 Fix terv (edit)
-                # 6 Kiad tény
-                # 7 Δ kiad
-                # 8 Megt terv
-                # 9 Megt tény
-
-                self.table.setItem(r, 1, make_item(p_income, True))
-                self.table.setItem(r, 2, make_item(income, False))
-                self.table.setItem(r, 3, make_item(d_income, False))
-
-                self.table.setItem(r, 4, make_item(p_expense, True))
-                self.table.setItem(r, 5, make_item(p_fixed, True))
-                self.table.setItem(r, 6, make_item(a_expense, False))
-                self.table.setItem(r, 7, make_item(d_expense, False))
-
-                self.table.setItem(r, 8, make_item(p_sav, False))
-                self.table.setItem(r, 9, make_item(a_sav, False))
-
-            # ---- Dashboard felső panel frissítése ----
             cash, bank, sec, metal, total = self.ctx.db.get_dashboard_balances()
 
             self.summary.set_balances(
@@ -377,6 +520,64 @@ class HomePage(QWidget):
         finally:
             self._updating = False
 
+
+
+
+    # Normál mód:
+    def _render_normal_rows(self, rows: list[HomeSummaryRow]) -> None:
+        for r, row in enumerate(rows):
+            self.table.setItem(r, 1, self._make_item(row.planned_income, True))
+            self.table.setItem(r, 2, self._make_item(row.actual_income, False))
+            self.table.setItem(r, 3, self._make_item(row.income_diff, False))
+
+            self.table.setItem(r, 4, self._make_item(row.planned_expense, True))
+            self.table.setItem(r, 5, self._make_item(row.planned_fixed_expense, True))
+            self.table.setItem(r, 6, self._make_item(row.actual_expense, False))
+            self.table.setItem(r, 7, self._make_item(row.expense_diff, False))
+
+            self.table.setItem(r, 8, self._make_item(row.planned_savings, False))
+            self.table.setItem(r, 9, self._make_item(row.actual_savings, False))
+
+
+    # DEV mód:
+    def _render_dev_rows(self, rows: list[HomeSummaryRow]) -> None:
+        for r, row in enumerate(rows):
+            self.table.setItem(r, 1, self._make_item(row.planned_income, True))
+            self.table.setItem(r, 2, self._make_item(row.actual_income, False))
+            self.table.setItem(r, 3, self._make_item(row.income_diff, False))
+
+            self.table.setItem(r, 4, self._make_item(row.planned_expense, True))
+            self.table.setItem(r, 5, self._make_item(row.actual_expense, False))
+            self.table.setItem(r, 6, self._make_item(row.expense_diff, False))
+            self.table.setItem(r, 7, self._make_item(row.actual_savings, False))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
         if self._updating:
             return
@@ -384,21 +585,29 @@ class HomePage(QWidget):
         row = item.row()
         col = item.column()
         month = row + 1
-
-        # csak terv oszlopok: 1=bev terv, 4=kiad terv, 5=fix terv
-        if col not in (1, 4, 5):
-            return
-
         value = parse_huf(item.text())
 
-        if col == 1:
-            self.ctx.db.upsert_month_plan(self._year, month, planned_income=value)
-        elif col == 4:
-            self.ctx.db.upsert_month_plan(self._year, month, planned_expense=value)
-        else:  # col == 5
-            self.ctx.db.upsert_month_plan(
-                self._year, month, planned_fixed_expense=value
-            )
+        if not self.dev_mode:
+            if col not in (1, 4, 5):
+                return
 
-        # frissítés: Δ és megtakarítás újraszámolása
+            if col == 1:
+                self.ctx.db.upsert_month_plan(self._year, month, planned_income=value)
+            elif col == 4:
+                self.ctx.db.upsert_month_plan(self._year, month, planned_expense=value)
+            else:
+                self.ctx.db.upsert_month_plan(
+                    self._year,
+                    month,
+                    planned_fixed_expense=value,
+                )
+        else:
+            if col not in (1, 4):
+                return
+
+            if col == 1:
+                self.ctx.db.upsert_month_plan(self._year, month, planned_income=value)
+            else:
+                self.ctx.db.upsert_month_plan(self._year, month, planned_expense=value)
+
         self.reload()

@@ -34,7 +34,14 @@ Nem felelőssége:
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from PySide6.QtGui import QColor, QMouseEvent
+from PySide6.QtWidgets import (
+    QFrame,
+    QGraphicsDropShadowEffect,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
 
 from penzugyi_naplo.ui.bills.bill_models import BillCardModel
 from penzugyi_naplo.ui.bills.monthly_grid_widget import MonthlyGridWidget
@@ -51,12 +58,12 @@ class BillCard(QFrame):
         self.model = model
 
         self.setObjectName("billCard")
-        self.setFrameShape(QFrame.StyledPanel)
-        self.setCursor(Qt.PointingHandCursor)
+        self.setFrameShape(QFrame.Shape.StyledPanel)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(14, 12, 14, 12)
-        root.setSpacing(0)
+        root.setSpacing(10)
 
         self.lbl_title = QLabel(model.name)
         self.lbl_title.setObjectName("billCardTitle")
@@ -81,7 +88,31 @@ class BillCard(QFrame):
             self.style().unpolish(self)
             self.style().polish(self)
 
-    def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.LeftButton:
+
+        # --- Grafics Style ---
+        
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(18)
+        shadow.setOffset(0, 3)
+        shadow.setColor(QColor(0, 0, 0, 30))
+        self.setGraphicsEffect(shadow)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.model.id)
         super().mousePressEvent(event)

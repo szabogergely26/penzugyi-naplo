@@ -25,6 +25,8 @@ Topology (UI):
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QLabel, QWidget
 
@@ -46,23 +48,23 @@ class PeriodicListWidget(QWidget):
         lay.setVerticalSpacing(6)
 
         lay.addWidget(self._cell("Időszak", header=True), 0, 0)
-        lay.addWidget(self._cell("Összeg", header=True, align=Qt.AlignRight), 0, 1)
+        lay.addWidget(self._cell("Összeg", header=True, align=Qt.AlignmentFlag.AlignRight), 0, 1)
 
         for idx, it in enumerate(items, start=1):
-            period = f"{it.start} – {it.end}"
+            period = f"{self._fmt_date(it.start)} – {self._fmt_date(it.end)}"
             lay.addWidget(self._cell(period), idx, 0)
             lay.addWidget(
-                self._cell(self._fmt_huf(it.amount), align=Qt.AlignRight), idx, 1
+                self._cell(self._fmt_huf(it.amount), align=Qt.AlignmentFlag.AlignRight), idx, 1
             )
 
     def _cell(
-        self, text: str, *, header: bool = False, align: Qt.AlignmentFlag = Qt.AlignLeft
+        self, text: str, *, header: bool = False, align: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft
     ) -> QLabel:
         lab = QLabel(text)
         lab.setProperty("cell", True)
         if header:
             lab.setProperty("cellHeader", True)
-        lab.setAlignment(align | Qt.AlignVCenter)
+        lab.setAlignment(align | Qt.AlignmentFlag.AlignVCenter)
         lab.setWordWrap(False)
         return lab
 
@@ -70,3 +72,12 @@ class PeriodicListWidget(QWidget):
     def _fmt_huf(amount: float) -> str:
         s = f"{amount:,.0f}".replace(",", " ")
         return f"{s} Ft"
+
+
+
+    def _fmt_date(self, value: str) -> str:
+        try:
+            d = datetime.strptime(value, "%Y-%m-%d")
+            return d.strftime("%Y.%m.%d")
+        except Exception:
+            return value

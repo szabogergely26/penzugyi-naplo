@@ -61,9 +61,16 @@ from __future__ import annotations
 
 import os
 import sqlite3
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
+
+from penzugyi_naplo.ui.bills.bill_models import (
+    BillCardModel,
+    MonthlyAmount,
+    PeriodicAmount,
+)
 
 # ----------------------------
 # B modell:
@@ -179,7 +186,7 @@ class TransactionDatabase:
     def __init__(self, db_name: str = "finance_data.db") -> None:
         self.db_name = os.path.abspath(db_name)
         self.initialize_db()
-        self.ensure_account_valuations()
+        self.ensure_account_valuations_table()
 
     def get_db_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_name)
@@ -210,7 +217,7 @@ class TransactionDatabase:
             raise ValueError(f"Invalid account_type: {account_type}")
 
         # Biztos ami biztos: legyen tábla (főleg régi DB-nél / dev DB-nél)
-        self.ensure_account_valuations()
+        self.ensure_account_valuations_table()
 
         with self.get_db_connection() as conn:
             conn.execute(
@@ -228,7 +235,7 @@ class TransactionDatabase:
         Visszatér: list[dict] formában: {date, account_type, value}
         """
         # Biztos ami biztos
-        self.ensure_account_valuations()
+        self.ensure_account_valuations_table()
 
         with self.get_db_connection() as conn:
             cur = conn.cursor()
@@ -334,7 +341,7 @@ class TransactionDatabase:
             self._ensure_category_columns(cur)
             self._seed_bill_categories(cur)
 
-            self._ensure_account_valuations(cur)
+            self._ensure_account_valuations_table(cur)
 
             self._ensure_indexes(cur)
 
@@ -376,7 +383,7 @@ class TransactionDatabase:
         # (ha kell a bills logika)
         self._ensure_category_columns(cur)  # is_bill
 
-        self._ensure_account_valuations(cur)
+        self._ensure_account_valuations_table(cur)
 
         # ensure indexes exist
         self._ensure_indexes(cur)
@@ -605,6 +612,150 @@ class TransactionDatabase:
             ).fetchone()
             return int(row["id"]) if row else None
 
+
+
+
+    def get_bill_card_models(self, year: int) -> list[BillCardModel]:
+        """
+        A Számlák oldalhoz szükséges UI-modelleket állítja elő
+        az adott év tranzakcióiból.
+
+        Első körös logika:
+        - a transactions + categories táblából dolgozik
+        - csak is_bill = 1 és expense típusú tételeket néz
+        - havi számlák: Telekom, Internet (KalászNet)
+        - időszakos számlák: MVMNext – Villany, MVMNext – Gáz
+
+        Megjegyzés:
+        Az időszakos számláknál egyelőre fallback megoldás van:
+        start = tx_date, end = tx_date
+        Később a wizardból jöhet valódi időszak mező.
+        """
+    
+        MONTHLY_BILLS = {
+            "Telekom",
+            "Internet (KalászNet)",
+        }
+
+        PERIODIC_BILLS = {
+            "MVMNext - Villany",
+            "MVMNext - Gáz",
+            "MVMNext – Villany",
+            "MVMNext – Gáz",
+        }
+
+        conn = self.get_db_connection()
+        try:
+            cur = conn.cursor()
+            rows = cur.execute(
+                """
+                SELECT
+                    t.id,
+                    t.tx_date,
+                    t.period_start,
+                    t.period_end,
+                    t.amount,
+                    t.description,
+                    t.name,
+                    t.tx_type,
+                    t.year,
+                    t.month,
+                    c.name AS category_name
+                FROM transactions t
+                JOIN categories c ON t.category_id = c.id
+                WHERE
+                    t.year = ?
+                    AND t.tx_type = 'expense'
+                    AND c.is_bill = 1
+                ORDER BY c.name ASC, t.tx_date DESC, t.id DESC
+                """,
+                (int(year),),
+            ).fetchall()
+        finally:
+            conn.close()
+
+        monthly_map: dict[str, dict[int, float]] = defaultdict(dict)
+        periodic_map: dict[str, list[PeriodicAmount]] = defaultdict(list)
+
+        for row in rows:
+            category_name = str(row["category_name"] or "").strip()
+            tx_date = str(row["tx_date"] or "").strip()
+            period_start = str(row["period_start"] or "").strip()
+            period_end = str(row["period_end"] or "").strip()
+            amount = int(round(float(row["amount"] or 0)))
+            month = int(row["month"] or 0)
+
+            if category_name in MONTHLY_BILLS:
+                if 1 <= month <= 12:
+                    monthly_map[category_name][month] = amount
+
+            elif category_name in PERIODIC_BILLS:
+                periodic_map[category_name].append(
+                    PeriodicAmount(
+                        start=period_start or tx_date,
+                        end=period_end or tx_date,
+                        amount=amount,
+                    )
+                )
+        models: list[BillCardModel] = []
+
+            # haviak
+        for category_name in sorted(monthly_map.keys()):
+            month_dict = monthly_map[category_name]
+            amounts = [
+                MonthlyAmount(month=m, amount=month_dict[m])
+                for m in sorted(month_dict.keys())
+            ]
+
+        if amounts:
+            models.append(
+                BillCardModel(
+                    id=0,
+                    name=category_name,
+                    kind="monthly",
+                    monthly=amounts,
+                    periodic = None,
+                )
+            )
+
+        # időszakosak
+        for category_name in sorted(periodic_map.keys()):
+            amounts = periodic_map[category_name]
+
+            if amounts:
+                models.append(
+                    BillCardModel(
+                        id=0,
+                        name=category_name,
+                        kind="periodic",
+                        monthly = None,
+                        periodic=amounts,
+                    )
+                )
+
+        return models
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     # ----------------------------
     # Transactions
     # ----------------------------
@@ -617,7 +768,9 @@ class TransactionDatabase:
         amount: pozitív szám
         category_id: int
         description: optional
-        payment_source: 'bank' | 'cash' (opcionális, default: 'bank')
+        period_start: optional, 'YYYY-MM-DD'
+        period_end: optional, 'YYYY-MM-DD'
+        payment_source: későbbre, default: 'bank'
         """
         iso = _iso_date(data["date"])
         tx_type = _map_hu_to_type(data["type"])
@@ -627,12 +780,25 @@ class TransactionDatabase:
 
         y, m = _year_month_from_iso(iso)
         created_at = data.get("timestamp") or _now_ts()
+
         payment_source = (
             str(data.get("payment_source", "bank") or "bank").strip().lower()
         )
-
         if payment_source not in {"bank", "cash"}:
             payment_source = "bank"
+
+        # --- új: számlázási időszak ---
+        raw_period_start = (data.get("period_start") or "").strip()
+        raw_period_end = (data.get("period_end") or "").strip()
+
+        period_start = _iso_date(raw_period_start) if raw_period_start else None
+        period_end = _iso_date(raw_period_end) if raw_period_end else None
+
+        if (period_start and not period_end) or (period_end and not period_start):
+            raise ValueError("Az időszak kezdete és vége együtt adandó meg.")
+
+        if period_start and period_end and period_start > period_end:
+            raise ValueError("Az időszak kezdete nem lehet későbbi, mint a vége.")
 
         conn = self.get_db_connection()
         cur = conn.cursor()
@@ -643,9 +809,9 @@ class TransactionDatabase:
             """
             INSERT INTO transactions (
                 tx_date, tx_type, amount, category_id, name, description,
-                created_at, year, month, payment_source
+                created_at, year, month, payment_source, period_start, period_end
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 iso,
@@ -658,12 +824,22 @@ class TransactionDatabase:
                 y,
                 m,
                 payment_source,
+                period_start,
+                period_end,
             ),
         )
-        tx_id = int(cur.lastrowid)
+
         conn.commit()
+
+        lastrowid = cur.lastrowid
+        if lastrowid is None:
+            conn.close()
+            raise RuntimeError("Nem sikerült lekérni az új tranzakció azonosítóját.")
+
+        tx_id = int(lastrowid)
         conn.close()
         return tx_id
+
 
     def get_transactions(self):
         conn = self.get_db_connection()
@@ -1676,6 +1852,9 @@ class TransactionDatabase:
         # fő összeg szinkron
         self._sync_transaction_amount_from_items(txn_id)
 
+
+
+
     def get_dashboard_balances(self) -> tuple[float, float, float, float, float]:
         """
         Visszaadja:
@@ -1683,7 +1862,7 @@ class TransactionDatabase:
         """
         with self.get_db_connection() as conn:
             cur = conn.cursor()
-            self._ensure_account_valuations(cur)
+            self._ensure_account_valuations_table(cur)
             self._ensure_payment_source_column(cur)
 
             # Kézpénz (utolsó mentett érték)
@@ -1705,30 +1884,21 @@ class TransactionDatabase:
             total = cash_balance + bank_balance + securities + metals
             return cash_balance, bank_balance, securities, metals, total
 
-    def ensure_account_valuations(self) -> None:
-        with self.get_db_connection() as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS account_valuations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    date TEXT NOT NULL,          -- YYYY-MM-DD
-                    account_type TEXT NOT NULL,  -- 'securities' | 'metals'
-                    value REAL NOT NULL
-                );
-            """)
-            conn.execute("""
-                CREATE INDEX IF NOT EXISTS idx_av_type_date
-                ON account_valuations(account_type, date);
-            """)
 
-    def _ensure_account_valuations(self, cur) -> None:
+    def ensure_account_valuations_table(self) -> None:
+        with self.get_db_connection() as conn:
+            self._ensure_account_valuations_table(conn.cursor())
+
+
+    def _ensure_account_valuations_table(self, cur: sqlite3.Cursor) -> None:
         """
-        initialize_db() cursorral dolgozik, ezért kell egy cursoros verzió is.
+        Cursoros sémaellenőrző / létrehozó helper.
         """
         cur.execute("""
             CREATE TABLE IF NOT EXISTS account_valuations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,          -- YYYY-MM-DD
-                account_type TEXT NOT NULL,  -- 'securities' | 'metals'
+                date TEXT NOT NULL,
+                account_type TEXT NOT NULL,
                 value REAL NOT NULL
             );
         """)
@@ -1736,6 +1906,21 @@ class TransactionDatabase:
             CREATE INDEX IF NOT EXISTS idx_av_type_date
             ON account_valuations(account_type, date);
         """)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def _ensure_bills_schema(self, cur) -> None:
         cur.execute("""
@@ -1792,7 +1977,7 @@ class TransactionDatabase:
             raise ValueError(f"Invalid account_type: {account_type}")
 
         # biztosítsuk a táblát/indexet
-        self.ensure_account_valuations()
+        self.ensure_account_valuations_table()
 
         with self.get_db_connection() as conn:
             cur = conn.cursor()
@@ -1837,7 +2022,7 @@ class TransactionDatabase:
         """
 
         self.ensure_wallet_balances()
-        self.ensure_account_valuations()
+        self.ensure_account_valuations_table()
 
         with self.get_db_connection() as conn:
             cur = conn.cursor()

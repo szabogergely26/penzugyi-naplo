@@ -69,7 +69,7 @@ class MonthlyGridWidget(QWidget):
 
         # fejléc
         lay.addWidget(self._cell("Hónap", header=True), 0, 0)
-        lay.addWidget(self._cell("Fizetett", header=True, align=Qt.AlignRight), 0, 1)
+        lay.addWidget(self._cell("Fizetett", header=True, align=Qt.AlignmentFlag.AlignRight), 0, 1)
 
         # 12 hónap
         for idx, month_name in enumerate(HU_MONTHS, start=1):
@@ -78,16 +78,16 @@ class MonthlyGridWidget(QWidget):
 
             amt = self._amount_by_month.get(idx, 0.0)
             txt = "—" if amt <= 0 else self._fmt_huf(amt)
-            lay.addWidget(self._cell(txt, align=Qt.AlignRight), r, 1)
+            lay.addWidget(self._cell(txt, align=Qt.AlignmentFlag.AlignRight), r, 1)
 
     def _cell(
-        self, text: str, *, header: bool = False, align: Qt.AlignmentFlag = Qt.AlignLeft
+        self, text: str, *, header: bool = False, align: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft
     ) -> QLabel:
         lab = QLabel(text)
         lab.setProperty("cell", True)
         if header:
             lab.setProperty("cellHeader", True)
-        lab.setAlignment(align | Qt.AlignVCenter)
+        lab.setAlignment(align | Qt.AlignmentFlag.AlignVCenter)
         lab.setWordWrap(False)
         return lab
 

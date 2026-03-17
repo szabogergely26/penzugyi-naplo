@@ -41,11 +41,13 @@ from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import SIGNAL, QLocale
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QComboBox,
     QGridLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
+    QRadioButton,
     QTextEdit,
     QVBoxLayout,
     QWizard,
@@ -272,7 +274,7 @@ class PageCategorySelection(QWizardPage):
         return 2
 
 
-from PySide6.QtWidgets import QButtonGroup, QRadioButton
+
 
 
 class PageSplitDecision(QWizardPage):
@@ -397,26 +399,47 @@ class PageAmount(QWizardPage):
 
         layout = QVBoxLayout(self)
 
-        # Bill módhoz dátum (alapesetben rejtve)
-        self.lbl_date = QLabel("Dátum (YYYY-MM-DD):")
+        # ---- Bill mód mezők (alapesetben rejtve) ----
+
+        self.lbl_date = QLabel("Fizetés dátuma (YYYY-MM-DD):")
         self.input_date = QLineEdit()
         self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
 
+        self.lbl_period_start = QLabel("Időszak kezdete (YYYY-MM-DD):")
+        self.input_period_start = QLineEdit()
+        self.input_period_start.setPlaceholderText("Pl.: 2025-03-15")
+
+        self.lbl_period_end = QLabel("Időszak vége (YYYY-MM-DD):")
+        self.input_period_end = QLineEdit()
+        self.input_period_end.setPlaceholderText("Pl.: 2025-04-15")
+
         layout.addWidget(self.lbl_date)
         layout.addWidget(self.input_date)
+        layout.addWidget(self.lbl_period_start)
+        layout.addWidget(self.input_period_start)
+        layout.addWidget(self.lbl_period_end)
+        layout.addWidget(self.input_period_end)
+
+        # ---- közös mező ----
 
         self.input_amount = QLineEdit()
-        self.input_amount.setPlaceholderText("Csak pozitív szám (pl. 500000)")
+        self.input_amount.setPlaceholderText("Csak pozitív szám (pl. 20000)")
 
         layout.addWidget(QLabel("Összeg (HUF):"))
         layout.addWidget(self.input_amount)
         layout.addStretch()
 
+   
     def initializePage(self) -> None:
         super().initializePage()
 
+      
+
         wiz = self.wizard()
         mode = None
+
+        print("PageAmount.initializePage called, mode =", mode)
+        
         if (
             wiz is not None
             and wiz.page(0) is not None
@@ -425,11 +448,35 @@ class PageAmount(QWizardPage):
             mode = wiz.page(0).get_type()
 
         is_bill = mode == "bill"
+
         self.lbl_date.setVisible(is_bill)
         self.input_date.setVisible(is_bill)
+        self.lbl_period_start.setVisible(is_bill)
+        self.input_period_start.setVisible(is_bill)
+        self.lbl_period_end.setVisible(is_bill)
+        self.input_period_end.setVisible(is_bill)
+
+        if is_bill:
+            self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
+            self.input_period_start.clear()
+            self.input_period_end.clear()
+            self.input_amount.clear()
+
+
+
+
+    def reset_bill_fields(self) -> None:
+        self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
+        self.input_period_start.clear()
+        self.input_period_end.clear()
+        self.input_amount.clear()
+
+
+
+
+
 
     def validatePage(self) -> bool:
-        # Bill módban dátum validálás
         wiz = self.wizard()
         mode = None
         if (
@@ -440,16 +487,41 @@ class PageAmount(QWizardPage):
             mode = wiz.page(0).get_type()
 
         if mode == "bill":
-            d = is_valid_date(self.input_date.text().strip())
-            if not d:
+            payment_date = is_valid_date(self.input_date.text().strip())
+            if not payment_date:
                 QMessageBox.warning(
                     self,
                     "Hiba",
-                    "Érvénytelen dátum! Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
+                    "Érvénytelen fizetési dátum! Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
                 )
                 return False
 
-        # Összeg validálás (régi logika)
+            period_start = is_valid_date(self.input_period_start.text().strip())
+            if not period_start:
+                QMessageBox.warning(
+                    self,
+                    "Hiba",
+                    "Érvénytelen időszak kezdete! Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
+                )
+                return False
+
+            period_end = is_valid_date(self.input_period_end.text().strip())
+            if not period_end:
+                QMessageBox.warning(
+                    self,
+                    "Hiba",
+                    "Érvénytelen időszak vége! Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
+                )
+                return False
+
+            if period_start > period_end:
+                QMessageBox.warning(
+                    self,
+                    "Hiba",
+                    "Az időszak kezdete nem lehet későbbi, mint az időszak vége.",
+                )
+                return False
+
         amount_str = self.input_amount.text().strip()
         try:
             loc = QLocale.system()
@@ -478,9 +550,14 @@ class PageAmount(QWizardPage):
     def get_bill_date_raw(self) -> str:
         return self.input_date.text().strip()
 
+    def get_period_start_raw(self) -> str:
+        return self.input_period_start.text().strip()
+
+    def get_period_end_raw(self) -> str:
+        return self.input_period_end.text().strip()
+
     def nextId(self) -> int:
         return -1
-
 
 # Itt már a core.utils.is_valid_date-et használjuk.
 # Fontos: ez az osztály feltételezi, hogy ugyanabban a fájlban már létezik:
@@ -510,21 +587,42 @@ class TransactionWizard(QWizard):
         self.setPage(5, PageBillProvider())
         self.setPage(6, PageBillMvmType())
 
+   
     def accept(self) -> None:
-
         print("PAGE 6:", type(self.page(6)))
 
-        # 0) Mode
-        mode = self.page(0).get_type()  # 'income' / 'expense' / 'bill'
+        raw_mode = self.page(0).get_type()  # 'income' / 'expense' / 'bill'
+        provider = (self.field("bill_provider") or "").strip()
+
+        # Stabil fallback:
+        # ha a bill_provider ki van töltve, akkor ez biztosan bill ág
+        if provider and provider != "Válassz szolgáltatót...":
+            mode = "bill"
+        else:
+            mode = raw_mode
+
+        print(f"ACCEPT raw_mode={raw_mode!r} provider={provider!r} final_mode={mode!r}")
 
         has_details = bool(self.field("has_details"))
 
-        # Bill ág: category/name/desc/date másképp
+        # Alapértékek
+        category_id = None
+        target_name = None
+        name = ""
+        description = ""
+        date_raw = ""
+        amount = 0.0
+        period_start = None
+        period_end = None
+
+        # -------------------------------------------------
+        # BILL ÁG
+        # -------------------------------------------------
         if mode == "bill":
-            # Számlabefizetés mindig expense
             t_type = "expense"
 
-            provider = (self.field("bill_provider") or "").strip()
+            print(f"BILL ACCEPT provider={provider!r}")
+
             if provider == "MVMNext":
                 is_gaz = self.page(6).is_gas()
                 target_name = "MVMNext – Gáz" if is_gaz else "MVMNext – Villany"
@@ -536,7 +634,6 @@ class TransactionWizard(QWizard):
                 target_name = "Telekom"
 
             # category_id lookup DB-ből
-            category_id = None
             if hasattr(self.db, "get_category_id_by_name"):
                 category_id = self.db.get_category_id_by_name(target_name)
 
@@ -549,17 +646,48 @@ class TransactionWizard(QWizard):
                 )
                 return
 
-            # Dátum az Amount oldalról (bill módban ott van mező)
-            date_raw = self.page(3).get_bill_date_raw()
+            amount_page = self.page(3)
+
+            date_raw = amount_page.get_bill_date_raw()
+            period_start_raw = amount_page.get_period_start_raw()
+            period_end_raw = amount_page.get_period_end_raw()
+
             name = target_name
             description = "Számlabefizetés"
-
-            # Számláknál alapból nincs részletezés (biztos ami biztos)
             has_details = False
-            amount = self.page(3).get_amount()
+            amount = amount_page.get_amount()
 
+            period_start = is_valid_date(period_start_raw)
+            period_end = is_valid_date(period_end_raw)
+
+            if not period_start or not period_end:
+                QMessageBox.critical(
+                    self,
+                    "Hiba",
+                    "Az időszak kezdete vagy vége érvénytelen.",
+                )
+                return
+
+            if period_start > period_end:
+                QMessageBox.critical(
+                    self,
+                    "Hiba",
+                    "Az időszak kezdete nem lehet későbbi, mint az időszak vége.",
+                )
+                return
+
+
+            print(
+                "RAW FIELDS:",
+                repr(amount_page.input_date.text()),
+                repr(amount_page.input_period_start.text()),
+                repr(amount_page.input_period_end.text()),
+            )
+
+        # -------------------------------------------------
+        # NORMÁL ÁG (BEVÉTEL / KIADÁS)
+        # -------------------------------------------------
         else:
-            # Régi ág (Bevétel/Kiadás)
             t_type = mode
             category_id, name, description, date_raw = self.page(1).get_data()
 
@@ -568,7 +696,12 @@ class TransactionWizard(QWizard):
             else:
                 amount = self.page(3).get_amount()
 
-        # 1) Dátum validálás (közös)
+            period_start = None
+            period_end = None
+
+        # -------------------------------------------------
+        # KÖZÖS VALIDÁLÁS
+        # -------------------------------------------------
         date = is_valid_date(date_raw)
         if not date:
             QMessageBox.critical(
@@ -578,26 +711,36 @@ class TransactionWizard(QWizard):
             )
             return
 
-        # 2) amount mindig pozitív
         amount = abs(amount)
 
-        # 3) Kötelező mezők
         if category_id is None:
-            QMessageBox.warning(self, "Hiba", "Kérjük, válasszon kategóriát.")
+            if mode == "bill":
+                QMessageBox.critical(
+                    self,
+                    "Hiba",
+                    f"Bill ágban nem sikerült kategóriát találni ehhez: {target_name}",
+                )
+            else:
+                QMessageBox.warning(self, "Hiba", "Kérjük, válasszon kategóriát.")
             return
 
-        # 4) Név/Leírás normalizálás
         name = (name or "").strip()
         description = (description or "").strip()
+
         if not name and description:
             name = description
+
         if not name and not description:
             QMessageBox.warning(
                 self, "Hiba", "Kérjük, adjon meg legalább Nevet vagy Leírást."
             )
             return
 
-        # 5) Mentés (közös)
+        # -------------------------------------------------
+        # MENTÉS
+        # -------------------------------------------------
+        print("SAVE BILL:", date_raw, period_start, period_end)
+
         data = {
             "date": date,
             "type": t_type,
@@ -607,6 +750,8 @@ class TransactionWizard(QWizard):
             "description": description,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "has_details": int(bool(has_details)),
+            "period_start": period_start,
+            "period_end": period_end,
         }
 
         tx_id = self.db.save_transaction(data)
@@ -615,6 +760,7 @@ class TransactionWizard(QWizard):
         if (mode != "bill") and has_details:
             details_text = (self.field("details_text") or "").strip()
             loc = QLocale.system()
+
             for line in details_text.splitlines():
                 line = (line or "").strip()
                 if not line:
@@ -639,6 +785,10 @@ class TransactionWizard(QWizard):
         QMessageBox.information(self, "Siker", "A tranzakció sikeresen rögzítve lett!")
         self.main_window.set_page("transactions")
         super().accept()
+
+
+
+
 
 
 class PageDetails(QWizardPage):

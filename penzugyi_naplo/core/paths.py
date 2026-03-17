@@ -39,7 +39,7 @@ def app_data_dir(dev: bool) -> Path:
     if dev:
         path = project_base_dir() / "data"
     else:
-        path = Path(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
+        path = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation))
 
     path.mkdir(parents=True, exist_ok=True)
     return path

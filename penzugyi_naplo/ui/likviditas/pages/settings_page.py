@@ -259,11 +259,11 @@ class SettingsPage(QWidget):
             "Fejlesztői mód",
             f"Biztosan szeretnéd a fejlesztői módot {action}?\n\n"
             "Az alkalmazás újra fog indulni.",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
         )
 
-        if res != QMessageBox.Yes:
+        if res != QMessageBox.StandardButton.Yes:
             # Nem -> vissza az előző állapotra, és semmit nem mentünk
             self.chk_dev_mode.blockSignals(True)
             self.chk_dev_mode.setChecked(current)

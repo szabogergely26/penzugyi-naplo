@@ -108,6 +108,9 @@ class MainWindow(QMainWindow):
     ) -> None:
         super().__init__(parent)
 
+        
+
+
         # --- Core állapot ---
         self.db: "TransactionDatabase" = db
         self.dev_mode = dev_mode
@@ -203,6 +206,11 @@ class MainWindow(QMainWindow):
         self._load_toolbar_mode()
 
         self.setWindowTitle("Pénzügyi Napló")
+
+        # --  Induló ablakméret:   (szélesség, magasság)
+        self.resize(1650, 1000)
+
+        # - Minimum ablakméret:  (szélesség, magasság)
         self.setMinimumSize(1440, 900)
 
         # Initial state
@@ -219,6 +227,9 @@ class MainWindow(QMainWindow):
 
         if self.dev_mode:
             self.log.flags.trace_page_stack = True
+
+
+        
 
         self.load_style_mode()
 
@@ -328,7 +339,7 @@ class MainWindow(QMainWindow):
 
         # --- Számlák ---
         if self.dev_mode:
-            self.bills_page = BillsPage(self)
+            self.bills_page = BillsPage(self, db=self.db)
             self.bills_page.billRequested.connect(self.on_bill_requested)
             self.add_page("bills", self.bills_page)
         else:

@@ -16,7 +16,7 @@ class DebugFlags:
 
 
 def get_log_dir() -> Path:
-    base = Path(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
+    base = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation))
     log_dir = base / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     return log_dir

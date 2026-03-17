@@ -278,3 +278,86 @@ QLabel#sumValue {
 QLabel#sumValueBig {
     font-weight: 800;
 }
+
+QLabel[cellHeader="true"] {
+    font-weight: 600;
+}
+
+
+
+/* -------- Számított értékek vége -------- */
+
+
+
+
+/* --- Kezdőoldal havi összesítő kártya --- */
+QFrame#homeTableCard {
+    background-color: #ffffff;
+    border: 1px solid #dde3ea;
+    border-radius: 10px;
+}
+
+QTableWidget#homeTable {
+    background-color: #ffffff;
+    alternate-background-color: #fbfcfd;
+    color: #334155;
+    border: none;
+    gridline-color: #edf1f5;
+    outline: none;
+    font-size: 13px;
+}
+
+QTableWidget#homeTable::item {
+    padding: 5px 8px;
+    border: none;
+    background: transparent;
+}
+
+QTableWidget#homeTable QHeaderView::section {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    padding: 7px 8px;
+    border: none;
+    border-bottom: 1px solid #e7edf3;
+    border-right: 1px solid #f1f4f7;
+}
+
+QTableWidget#homeTable QHeaderView::section:last {
+    border-right: none;
+}
+
+QTableWidget#homeTable QTableCornerButton::section {
+    background-color: #f8fafc;
+    border: none;
+    border-bottom: 1px solid #e7edf3;
+    border-right: 1px solid #f1f4f7;
+}
+
+
+
+
+
+/* ---------------- Bill card / Számlák oldal ----------------- */
+
+QFrame#billCard {
+    background-color: #ffffff;
+    border: 1px solid #d9dde3;
+    border-radius: 12px;
+}
+
+QFrame#billCard:hover {
+    background-color: #fcfcfd;
+    border: 1px solid #cbd3df;
+}
+
+QFrame#billCard[inactive="true"] {
+    background-color: #f6f7f9;
+    border: 1px solid #e1e5eb;
+}
+
+
+QLabel#billCardTitle {
+    font-weight: 700;
+    text-decoration: underline;
+}

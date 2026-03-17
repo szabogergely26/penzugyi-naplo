@@ -78,7 +78,7 @@ class AccountsPage(BasePage):
 
         title = QLabel("Pénztárcák / Egyenlegek", self)
         title.setObjectName("pageTitle")
-        title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         root.addWidget(title)
 
         root.addWidget(_hline(self))
@@ -113,7 +113,7 @@ class AccountsPage(BasePage):
         bank_block_lay.setSpacing(4)
 
         lbl_bank = QLabel("Bank:", bank_block)
-        lbl_bank.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        lbl_bank.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         lbl_bank.setStyleSheet("font-weight: 600;")
         bank_block_lay.addWidget(lbl_bank)
 
@@ -180,7 +180,7 @@ class AccountsPage(BasePage):
         # --- Kézi értékfelvitel (securities/metals) ---
         box = QGroupBox("Kézi érték rögzítése", self)
         form = QFormLayout(box)
-        form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
         self.cmb_type = QComboBox(box)
         self.cmb_type.addItem("Kézpénz", "cash")
@@ -258,7 +258,7 @@ class AccountsPage(BasePage):
 
         value = QLabel("—", box)
         value.setObjectName("kpiValue")
-        value.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        value.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
         font = value.font()
         if emphasized:
@@ -346,7 +346,7 @@ class AccountsPage(BasePage):
 
             val = float(rec["value"] or 0.0)
             it = QTableWidgetItem(f"{val:,.0f} Ft".replace(",", " "))
-            it.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            it.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
             self.tbl.setItem(r, 2, it)
 

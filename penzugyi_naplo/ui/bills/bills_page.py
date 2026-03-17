@@ -61,9 +61,10 @@ from penzugyi_naplo.ui.shared.widgets.flow_layout import FlowLayout
 class BillsPage(QWidget):
     billRequested = Signal(int)  # bill_id
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None, db=None) -> None:
         super().__init__(parent)
         self.setObjectName("billsPage")
+        self.db= db
 
         self._year: int | None = None
         self._all_years: bool = False
@@ -76,8 +77,12 @@ class BillsPage(QWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
+    
+
         self.container = QWidget()
         self.container.setObjectName("billsContainer")
+
+        
 
         self.flow:FlowLayout = FlowLayout(self.container, margin=14, spacing=12)
         self.container.setLayout(self.flow)
@@ -91,16 +96,15 @@ class BillsPage(QWidget):
     def set_filter(self, *, year: int | None, all_years: bool) -> None:
         self._year = year
         self._all_years = all_years
+        self.reload()
 
     def reload(self) -> None:
         year = self._year or date.today().year
-        
-        use_demo_data = False
-        if use_demo_data:
-            models = self._load_demo_data_for_year(year)
 
-        else:            
-            models = self._load_models_from_db(year)
+        models = self._load_models_from_db(year)
+        source = "db"
+        
+        print(f"BillsPage.reload source={source} year={year} models={len(models)}")
 
         self._render(models)
 
@@ -122,7 +126,7 @@ class BillsPage(QWidget):
             if w is not None:
                 w.deleteLater()
 
-    # --- DEMÓ: később DB-ből ---
+    # --- DEMÓ: ---
     def _load_demo_data_for_year(self, year: int) -> list[BillCardModel]:
         telekom = BillCardModel(
             id=1,
@@ -176,5 +180,6 @@ class BillsPage(QWidget):
 
 
     def _load_models_from_db(self, year: int) -> list[BillCardModel]:
-        # TODO: később adatbázisból betöltés
-        return []
+        if self.db is None:
+            return []
+        return self.db.get_bill_card_models(year)

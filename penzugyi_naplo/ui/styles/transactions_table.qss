@@ -1,0 +1,214 @@
+/* =========================================================
+   TRANSACTION TABLE
+   styles/transaction_table.qss
+   ---------------------------------------------------------
+   Közös, célzott stílus a tranzakciós táblához.
+   Nem az egész appot, csak a #transactionsTable nézetet célozza.
+   ========================================================= */
+
+
+/* --- Alap tábla -------------------------------------------------- */
+
+QTableWidget#transactionsTable {
+    background-color: #ffffff;
+    alternate-background-color: #f8fafc;
+    gridline-color: #d9e0e7;
+
+    border: 1px solid #d8dee6;
+    border-radius: 8px;
+
+    color: #1f2937;
+    outline: none;
+
+    selection-background-color: #dbeafe;
+    selection-color: #111827;
+}
+
+
+/* --- Cellák ------------------------------------------------------ */
+
+QTableWidget#transactionsTable::item {
+    padding: 5px 8px;
+    border: none;
+}
+
+QTableWidget#transactionsTable::item:hover {
+    background-color: #f3f7fb;
+}
+
+
+/* --- Fejléc ------------------------------------------------------ */
+
+QTableWidget#transactionsTable QHeaderView::section {
+    background-color: #f3f4f6;
+    color: #111827;
+
+    padding: 6px 8px;
+
+    border: none;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #d1d5db;
+
+    font-weight: 600;
+}
+
+QTableWidget#transactionsTable QHeaderView::section:last {
+    border-right: none;
+}
+
+
+/* --- Sarokcella -------------------------------------------------- */
+
+QTableWidget#transactionsTable QTableCornerButton::section {
+    background-color: #f3f4f6;
+    border: none;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #d1d5db;
+}
+
+
+/* --- Scrollbar (finom, visszafogott) ----------------------------- */
+
+QTableWidget#transactionsTable QScrollBar:vertical {
+    background: transparent;
+    width: 12px;
+    margin: 2px;
+}
+
+QTableWidget#transactionsTable QScrollBar::handle:vertical {
+    background: #cfd8e3;
+    min-height: 30px;
+    border-radius: 6px;
+}
+
+QTableWidget#transactionsTable QScrollBar::handle:vertical:hover {
+    background: #b7c4d3;
+}
+
+QTableWidget#transactionsTable QScrollBar::add-line:vertical,
+QTableWidget#transactionsTable QScrollBar::sub-line:vertical {
+    height: 0px;
+    background: transparent;
+}
+
+QTableWidget#transactionsTable QScrollBar::add-page:vertical,
+QTableWidget#transactionsTable QScrollBar::sub-page:vertical {
+    background: transparent;
+}
+
+QTableWidget#transactionsTable QScrollBar:horizontal {
+    background: transparent;
+    height: 12px;
+    margin: 2px;
+}
+
+QTableWidget#transactionsTable QScrollBar::handle:horizontal {
+    background: #cfd8e3;
+    min-width: 30px;
+    border-radius: 6px;
+}
+
+QTableWidget#transactionsTable QScrollBar::handle:horizontal:hover {
+    background: #b7c4d3;
+}
+
+QTableWidget#transactionsTable QScrollBar::add-line:horizontal,
+QTableWidget#transactionsTable QScrollBar::sub-line:horizontal {
+    width: 0px;
+    background: transparent;
+}
+
+QTableWidget#transactionsTable QScrollBar::add-page:horizontal,
+QTableWidget#transactionsTable QScrollBar::sub-page:horizontal {
+    background: transparent;
+}
+
+
+/* --- Műveletek oszlop gombjai ------------------------------------ */
+
+QTableWidget#transactionsTable QPushButton {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 6px;
+    min-height: 24px;
+}
+
+QTableWidget#transactionsTable QPushButton:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+QTableWidget#transactionsTable QPushButton:pressed {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+
+/* Szerkesztés */
+
+QTableWidget#transactionsTable QPushButton[action="edit"] {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+QTableWidget#transactionsTable QPushButton[action="edit"]:hover {
+    color: #1d4ed8;
+}
+
+
+/* Törlés */
+
+QTableWidget#transactionsTable QPushButton[action="delete"] {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+QTableWidget#transactionsTable QPushButton[action="delete"]:hover {
+    color: #b91c1c;
+}
+
+
+/* Részletek - ha még ideiglenesen marad */
+
+QTableWidget#transactionsTable QPushButton[action="details"] {
+    color: #7c3aed;
+    font-weight: 600;
+}
+
+QTableWidget#transactionsTable QPushButton[action="details"]:hover {
+    color: #6d28d9;
+}
+
+
+/* --- Opcionális: cell widget konténerek -------------------------- */
+/* Ha a Műveletek oszlopban saját QWidget + layout van */
+
+QWidget#transactionActionsCell {
+    background: transparent;
+    border: none;
+}
+
+
+/* --- Opcionális: részlet-jelző címke / ikon widget --------------- */
+/* Ha később a Részletek gomb helyett QLabel / QPushButton ikon lesz */
+
+QLabel#detailsIndicator {
+    color: #6b7280;
+    background: transparent;
+    padding: 0px 2px;
+}
+
+QLabel#detailsIndicator[hasDetails="true"] {
+    color: #4b5563;
+    font-weight: 600;
+}
+
+
+/* --- Részleteket tartalmazó sorok kiemelése --- */
+QTableWidget::item[hasDetails="true"] {
+    background-color: rgba(100, 160, 220, 40);
+}
+
+
+QLabel[cellHeader="true"] {
+    font-weight: 600;
+}

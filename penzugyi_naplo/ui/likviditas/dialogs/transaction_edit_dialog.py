@@ -68,7 +68,7 @@ class TransactionEditDialog(QDialog):
         layout.addRow("Leírás", self.ed_desc)
         layout.addRow("Név", self.ed_name)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addRow(buttons)
