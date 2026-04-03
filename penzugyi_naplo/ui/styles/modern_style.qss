@@ -266,9 +266,6 @@ QLabel#cardTitle {
 QLabel#cardTitleStrong {
     font-weight: 700;
     padding-bottom: 2px;
-    /* ha akarod, ez is lehet:
-    text-decoration: underline;
-    */
 }
 
 QLabel#sumValue {
@@ -292,7 +289,7 @@ QLabel[cellHeader="true"] {
 
 /* --- Kezdőoldal havi összesítő kártya --- */
 QFrame#homeTableCard {
-    background-color: #ffffff;
+    background-color: #eceff3;
     border: 1px solid #dde3ea;
     border-radius: 10px;
 }
@@ -360,4 +357,131 @@ QFrame#billCard[inactive="true"] {
 QLabel#billCardTitle {
     font-weight: 700;
     text-decoration: underline;
+}
+
+
+
+/*  Számlák oldal */
+
+QLabel#emptyStateLabel {
+    font-size: 20px;
+    font-weight: 600;
+    color: #4a4a4a;
+    padding: 40px;
+    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    background: #fafafa;
+}
+
+
+
+QLabel#billsEmptyTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2f2f2f;
+}
+
+QLabel#billsEmptySubtitle {
+    font-size: 14px;
+    color: #444444;
+}
+
+QLabel#billsEmptyBulb {
+    font-size: 14px;
+}
+
+QLabel#billsEmptyHint {
+    font-size: 14px;
+    color: #444444;
+}
+
+
+
+
+
+
+/* ===== Havi dashboard kártyák ===== */
+
+QFrame#monthSummaryCard {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 8px;
+}
+
+QFrame#monthSummaryCard:hover {
+    border: 1px solid #3B82F6;
+    background: #F9FBFF;
+}
+
+QLabel#monthCardTitle {
+    font-size: 14px;
+    font-weight: 700;
+    color: #C62828;
+    margin-bottom: 6px;
+}
+
+QLabel#monthInfoLabel {
+    font-size: 12px;
+    color: #6B7280;
+}
+
+QLabel#monthInfoValue {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+}
+
+QFrame#monthSummaryCard QLabel {
+    color: #111827;
+}
+
+
+
+QLabel[positive="true"] {
+    color: #2E7D32;
+}
+
+QLabel[positive="false"] {
+    color: #C62828;
+}
+
+
+/* Dashboard kártyák színe */
+
+QLabel#monthInfoValue[positive="true"] {
+    color: #2E7D32;
+}
+
+QLabel#monthInfoValue[positive="false"] {
+    color: #C62828;
+}
+
+
+
+
+/* MonthsDetailsDialog */
+
+QLabel#monthDetailsTitle {
+    background: transparent;
+    font-size: 20px;
+    font-weight: 700;
+    color: #202020;
+    padding-bottom: 4px;
+}
+
+QLabel#monthDetailsSubtitle {
+    background: transparent;
+    font-size: 14px;
+    color: #666666;
+    padding-bottom: 10px;
+}
+
+QLabel#monthDetailsSectionTitle {
+    background: transparent;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: underline;
+    color: #2a2a2a;
+    padding-bottom: 4px;
 }

@@ -46,8 +46,16 @@ from __future__ import annotations
 
 from datetime import date
 
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QFrame, QLayoutItem, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLayoutItem,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from penzugyi_naplo.ui.bills.bill_card import BillCard
 from penzugyi_naplo.ui.bills.bill_models import (
@@ -64,7 +72,7 @@ class BillsPage(QWidget):
     def __init__(self, parent: QWidget | None = None, db=None) -> None:
         super().__init__(parent)
         self.setObjectName("billsPage")
-        self.db= db
+        self.db = db
 
         self._year: int | None = None
         self._all_years: bool = False
@@ -77,20 +85,66 @@ class BillsPage(QWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
-    
-
         self.container = QWidget()
         self.container.setObjectName("billsContainer")
 
-        
+        self.content_layout = QVBoxLayout(self.container)
+        self.content_layout.setContentsMargins(14, 14, 14, 14)
+        self.content_layout.setSpacing(12)
 
-        self.flow:FlowLayout = FlowLayout(self.container, margin=14, spacing=12)
-        self.container.setLayout(self.flow)
+        # --- Empty state blokk (Statisztika-stílus) ---
+        self.empty_state = QWidget(self.container)
+        self.empty_state.setObjectName("billsEmptyState")
+
+        empty_layout = QVBoxLayout(self.empty_state)
+        empty_layout.setContentsMargins(0, 0, 0, 0)
+        empty_layout.setSpacing(10)
+
+        title = QLabel("Számlák")
+        title.setObjectName("billsEmptyTitle")
+
+        subtitle = QLabel("Ehhez az évhez még nincs rögzített számla.")
+        subtitle.setObjectName("billsEmptySubtitle")
+
+        hint_row = QWidget()
+        hint_layout = QHBoxLayout(hint_row)
+        hint_layout.setContentsMargins(0, 0, 0, 0)
+        hint_layout.setSpacing(6)
+
+        bulb = QLabel("💡")
+        bulb.setObjectName("billsEmptyBulb")
+        bulb.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        hint = QLabel("Tipp: Az első számla felvitele után itt jelennek meg a tételek.")
+        hint.setObjectName("billsEmptyHint")
+        hint.setWordWrap(True)
+
+        hint_layout.addWidget(bulb, 0, Qt.AlignmentFlag.AlignTop)
+        hint_layout.addWidget(hint, 1)
+
+        empty_layout.addWidget(title)
+        empty_layout.addWidget(subtitle)
+        empty_layout.addWidget(hint_row)
+        empty_layout.addStretch()
+
+        # --- Kártyák konténer ---
+        self.cards_widget = QWidget(self.container)
+        self.cards_widget.setObjectName("billsCardsWidget")
+
+        self.flow: FlowLayout = FlowLayout(self.cards_widget, margin=0, spacing=12)
+        self.cards_widget.setLayout(self.flow)
+
+        self.content_layout.addWidget(self.empty_state)
+        self.content_layout.addWidget(self.cards_widget)
 
         self.scroll_area.setWidget(self.container)
         root.addWidget(self.scroll_area)
 
         self.reload()
+
+
+
+
 
     # --- MainWindow hívja ---
     def set_filter(self, *, year: int | None, all_years: bool) -> None:
@@ -111,10 +165,23 @@ class BillsPage(QWidget):
     # --- UI ---
     def _render(self, models: list[BillCardModel]) -> None:
         self._clear_cards()
+
+        has_models = len(models) > 0
+        self.empty_state.setVisible(not has_models)
+        self.cards_widget.setVisible(has_models)
+
+        if not has_models:
+            return
+
         for m in models:
             card = BillCard(m)
             card.clicked.connect(self.billRequested.emit)
             self.flow.addWidget(card)
+
+
+
+
+
 
     def _clear_cards(self) -> None:
         while self.flow.count():

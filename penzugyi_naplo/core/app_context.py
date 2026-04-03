@@ -11,6 +11,7 @@ from penzugyi_naplo.db.transaction_database import TransactionDatabase
 @dataclass
 class AppState:
     active_year: int = 2026
+    active_page_key: str = "home"
 
 
 @dataclass

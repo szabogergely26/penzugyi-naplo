@@ -1,4 +1,4 @@
-# pénzügyi_napló/main.py
+# Fejlesztői -  pénzügyi_napló/main.py
 # ----------------------------
 
 """

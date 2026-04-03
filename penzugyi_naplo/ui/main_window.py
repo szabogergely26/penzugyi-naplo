@@ -42,7 +42,6 @@ Fontos:
 from __future__ import annotations
 
 import shutil
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -64,8 +63,10 @@ from PySide6.QtWidgets import (
 from penzugyi_naplo.config import APP_NAME, ORG_NAME
 from penzugyi_naplo.core.app_context import AppContext, AppState
 from penzugyi_naplo.core.logging_utils import DebugFlags, Log
+from penzugyi_naplo.db.transaction_database import TransactionDatabase
 from penzugyi_naplo.ui.bills.bills_page import BillsPage
 from penzugyi_naplo.ui.dialogs.about_dialog import AboutDialog
+from penzugyi_naplo.ui.dialogs.version_info import VersionInfoDialog
 from penzugyi_naplo.ui.likviditas.dialogs.wizard_transaction import TransactionWizard
 from penzugyi_naplo.ui.likviditas.pages.accounts_page import AccountsPage
 from penzugyi_naplo.ui.likviditas.pages.home_page import HomePage
@@ -84,13 +85,6 @@ from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
 # from pénzügyi_napló.db.transaction_database import TransactionDatabase
 
 
-@dataclass
-class AppState:
-    """Központi, egyszerű állapot a MainWindow-hoz (később bővíthető)."""
-
-    active_year: int = 2026
-    active_page_key: str = "home"
-    # ide jöhetnek később: szűrők, nézetmód, keresés, stb.
 
 
 class MainWindow(QMainWindow):
@@ -102,7 +96,7 @@ class MainWindow(QMainWindow):
 
     def __init__(
         self,
-        db: "TransactionDatabase",
+        db: TransactionDatabase,
         dev_mode: bool = False,
         parent: Optional[QWidget] = None,
     ) -> None:
@@ -112,7 +106,7 @@ class MainWindow(QMainWindow):
 
 
         # --- Core állapot ---
-        self.db: "TransactionDatabase" = db
+        self.db: TransactionDatabase = db
         self.dev_mode = dev_mode
         self.state = AppState(active_year=2026)
         self.ctx = AppContext(
@@ -129,7 +123,7 @@ class MainWindow(QMainWindow):
             )
         )
 
-        self.state: AppState = AppState()
+        
         self.pages: dict[str, QWidget] = {}
 
         # --- UI gyökér ---
@@ -205,13 +199,16 @@ class MainWindow(QMainWindow):
         self._connect_core_signals()
         self._load_toolbar_mode()
 
-        self.setWindowTitle("Pénzügyi Napló")
+        self.setWindowTitle("Pénzügyi Napló : Fejlesztői verzió")
 
         # --  Induló ablakméret:   (szélesség, magasság)
         self.resize(1650, 1000)
 
         # - Minimum ablakméret:  (szélesség, magasság)
         self.setMinimumSize(1440, 900)
+
+
+        self.load_style_mode()
 
         # Initial state
         self.year_tabs.set_active_year(self.state.active_year, emit=False)
@@ -231,7 +228,7 @@ class MainWindow(QMainWindow):
 
         
 
-        self.load_style_mode()
+        
 
     def apply_style_mode(self, mode: str) -> None:
         mode = (mode or "").strip().lower()
@@ -320,7 +317,7 @@ class MainWindow(QMainWindow):
         DEV módban: valódi (félkész) oldalak is elérhetők.
         Normál módban: ezek "Hamarosan" placeholder-rel jelennek meg.
         """
-        self.add_page("home", HomePage(self.ctx))
+        self.add_page("home", HomePage(self))
         self.add_page("transactions", TransactionsPage(self, db=self.db))
 
         # --- Statisztika ---
@@ -338,19 +335,13 @@ class MainWindow(QMainWindow):
         self.add_page("settings", SettingsPage(self))
 
         # --- Számlák ---
-        if self.dev_mode:
-            self.bills_page = BillsPage(self, db=self.db)
-            self.bills_page.billRequested.connect(self.on_bill_requested)
-            self.add_page("bills", self.bills_page)
-        else:
-            self.bills_page = None  # fontos: később ne használd védelem nélkül
-            self.add_page(
-                "bills",
-                ComingSoonPage(
-                    title="Számlák",
-                    msg="Számlák kezelése wizarddal (fejlesztés alatt).",
-                ),
-            )
+       
+        self.bills_page = BillsPage(self, db=self.db)
+        self.bills_page.billRequested.connect(self.on_bill_requested)
+        self.add_page("bills", self.bills_page)
+        
+           
+
 
         # --- Pénztárcák / egyenlegek (Accounts/Wallets) ---
         # Ez NEM a bills (kötelezők) oldal, hanem egyenleg/érték nyilvántartás.
@@ -470,6 +461,16 @@ class MainWindow(QMainWindow):
         self.act_reset_db = QAction("Adatbázis törlése…", self)
         self.act_reset_db.triggered.connect(self.on_reset_database)
 
+        self.act_about = QAction("Névjegy", self)
+        self.act_about.triggered.connect(self._show_about)
+
+        self.act_version_info = QAction("Verzió infók", self)
+        self.act_version_info.triggered.connect(self._show_version_info)
+
+
+
+
+
     def _build_menubar(self) -> None:
         mb = self.menuBar()
         mb.clear()
@@ -494,6 +495,7 @@ class MainWindow(QMainWindow):
 
         m_help = mb.addMenu("Súgó")
         m_help.addAction(self.act_about)
+        m_help.addAction(self.act_version_info)
 
     def _build_ribbon(self) -> None:
         self.ribbon = RibbonBar(self)
@@ -753,4 +755,9 @@ class MainWindow(QMainWindow):
 
     def _show_about(self):
         dlg = AboutDialog(self)
+        dlg.exec()
+
+
+    def _show_version_info(self):
+        dlg = VersionInfoDialog(self)
         dlg.exec()

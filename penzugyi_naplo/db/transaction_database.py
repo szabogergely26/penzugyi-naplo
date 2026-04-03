@@ -87,6 +87,10 @@ TxType = str  # 'income' | 'expense'
 # (pl. db legyen mindig legalább 1)
 
 
+
+print("### LOADED transaction_database FROM FEJLESZTES ###")
+
+
 def _now_ts() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -616,22 +620,6 @@ class TransactionDatabase:
 
 
     def get_bill_card_models(self, year: int) -> list[BillCardModel]:
-        """
-        A Számlák oldalhoz szükséges UI-modelleket állítja elő
-        az adott év tranzakcióiból.
-
-        Első körös logika:
-        - a transactions + categories táblából dolgozik
-        - csak is_bill = 1 és expense típusú tételeket néz
-        - havi számlák: Telekom, Internet (KalászNet)
-        - időszakos számlák: MVMNext – Villany, MVMNext – Gáz
-
-        Megjegyzés:
-        Az időszakos számláknál egyelőre fallback megoldás van:
-        start = tx_date, end = tx_date
-        Később a wizardból jöhet valódi időszak mező.
-        """
-    
         MONTHLY_BILLS = {
             "Telekom",
             "Internet (KalászNet)",
@@ -697,9 +685,10 @@ class TransactionDatabase:
                         amount=amount,
                     )
                 )
+
         models: list[BillCardModel] = []
 
-            # haviak
+        # haviak
         for category_name in sorted(monthly_map.keys()):
             month_dict = monthly_map[category_name]
             amounts = [
@@ -707,16 +696,16 @@ class TransactionDatabase:
                 for m in sorted(month_dict.keys())
             ]
 
-        if amounts:
-            models.append(
-                BillCardModel(
-                    id=0,
-                    name=category_name,
-                    kind="monthly",
-                    monthly=amounts,
-                    periodic = None,
+            if amounts:
+                models.append(
+                    BillCardModel(
+                        id=0,
+                        name=category_name,
+                        kind="monthly",
+                        monthly=amounts,
+                        periodic=None,
+                    )
                 )
-            )
 
         # időszakosak
         for category_name in sorted(periodic_map.keys()):
@@ -728,7 +717,7 @@ class TransactionDatabase:
                         id=0,
                         name=category_name,
                         kind="periodic",
-                        monthly = None,
+                        monthly=None,
                         periodic=amounts,
                     )
                 )
@@ -896,7 +885,8 @@ class TransactionDatabase:
                 t.tx_type      AS tx_type,
                 t.category_id  AS category_id,
                 t.name         AS name,
-                t.has_details AS has_details
+                t.has_details AS has_details,
+                c.is_bill      AS is_bill
 
             FROM transactions t
             JOIN categories c ON t.category_id = c.id
@@ -1671,16 +1661,28 @@ class TransactionDatabase:
         # >>> KRITIKUS: a fő tranzakció mezők szinkronja a tételekből <<<
         self._sync_transaction_amount_from_items(int(txn_id))
 
+   
     def _ensure_transaction_columns(self, cur: sqlite3.Cursor) -> None:
         cols = [
             r["name"] for r in cur.execute("PRAGMA table_info(transactions)").fetchall()
         ]
+
         if "unit_price" not in cols:
             cur.execute("ALTER TABLE transactions ADD COLUMN unit_price REAL")
+
         if "quantity" not in cols:
             cur.execute("ALTER TABLE transactions ADD COLUMN quantity REAL")
 
-    # --- Részletek ablak : ---
+        if "period_start" not in cols:
+            cur.execute("ALTER TABLE transactions ADD COLUMN period_start TEXT")
+
+        if "period_end" not in cols:
+            cur.execute("ALTER TABLE transactions ADD COLUMN period_end TEXT")
+     
+     
+     
+     
+        # --- Részletek ablak : ---
 
     def get_transaction_header(self, txn_id: int):
         """

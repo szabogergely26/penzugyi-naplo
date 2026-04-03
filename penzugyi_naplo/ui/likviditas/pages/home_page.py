@@ -44,18 +44,20 @@ from dataclasses import dataclass
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
-    QHeaderView,
+    QGridLayout,
+    QHBoxLayout,
     QLabel,
+    QPushButton,
+    QScrollArea,
     QSizePolicy,
-    QTableWidget,
-    QTableWidgetItem,
     QTabWidget,
     QVBoxLayout,
     QWidget,
 )
-from shiboken6 import isValid
 
 from penzugyi_naplo.core.app_context import AppContext
+from penzugyi_naplo.ui.likviditas.dialogs.home_table_dialog import HomeTableDialog
+from penzugyi_naplo.ui.likviditas.dialogs.month_details_dialog import MonthDetailsDialog
 from penzugyi_naplo.ui.likviditas.widgets.home_summary_panel import HomeSummaryPanel
 
 # - Importok vége - #
@@ -147,6 +149,7 @@ class HomePage(QWidget):
         self.dev_mode = self.ctx.dev_mode
         self._year = int(self.ctx.state.active_year)
 
+        print("AKTIV HOME_PAGE: ui/likviditas/pages/home_page.py")
         self._updating = False
 
         # --- UI felépítése ---
@@ -172,62 +175,7 @@ class HomePage(QWidget):
         content_layout.setSpacing(10)
 
 
-        headers = self._get_headers()
-
-
-
-        # --- Havi dashboard tábla ---
-
-        self.table = QTableWidget(12, len(headers), content)
-        self.table.setObjectName("homeTable")
-
-        # fejlécek
-        self.table.setHorizontalHeaderLabels(headers)
-        self.table.verticalHeader().setVisible(False)
-
-        # viselkedés / megjelenés
-        self.table.setSelectionMode(QTableWidget.NoSelection)
-        self.table.setAlternatingRowColors(True)
-        self.table.setWordWrap(False)
-
-        # --- NE legyen rendezhető (Jan–Dec fix) ---
-        self.table.setSortingEnabled(False)
-        hdr = self.table.horizontalHeader()
-        hdr.setSectionsClickable(False)
-        hdr.setSortIndicatorShown(False)
-
-        # 0. oszlop: hónapnevek (nem szerkeszthető)
-        for i, month_name in enumerate(MONTHS_HU):
-            it = QTableWidgetItem(month_name)
-            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(i, 0, it)
-
-        # szerkesztés: csak dupla katt / billentyű
-        self.table.setEditTriggers(
-            QTableWidget.DoubleClicked | QTableWidget.EditKeyPressed
-        )
-        self.table.itemChanged.connect(self._on_item_changed)
-
-        # fejléc + fix oszlopszélességek
-        hdr = self.table.horizontalHeader()
-        hdr.setStretchLastSection(False)
-
         
-
-
-        for c in range(self.table.columnCount()):
-            hdr.setSectionResizeMode(c, QHeaderView.Fixed)
-
-        # Oszlopszélességek beállítása
-
-        widths = self._get_column_widths()
-
-        for c in range(self.table.columnCount()):
-            w = widths[c] if c < len(widths) else 110
-            self.table.setColumnWidth(c, w)
-
-
-
 
 
         # --- Belső tabok a Kezdőoldalon ---
@@ -247,35 +195,29 @@ class HomePage(QWidget):
         dash_layout.setContentsMargins(0, 0, 0, 0)
         dash_layout.setSpacing(12)
 
-        # ---- FELSŐ SZÁMÍTOTT PANEL ----
         self.summary = HomeSummaryPanel(self)
         dash_layout.addWidget(self.summary)
+        dash_layout.addSpacing(8)
 
+        btn = QPushButton("Táblázatos nézet")   
+        btn.clicked.connect(self.open_table_dialog)
+        dash_layout.addWidget(btn)
+
+        self.dashboard_body = QFrame()
+        self.dashboard_body.setObjectName("homeDashboardBody")
+
+        self.dashboard_body_layout = QVBoxLayout(self.dashboard_body)
+        self.dashboard_body_layout.setContentsMargins(0, 0, 0, 0)
+        self.dashboard_body_layout.setSpacing(0)
+
+        self.cards_container = self._build_cards_view()
+        self.dashboard_body_layout.addWidget(self.cards_container)
+
+        dash_layout.addWidget(self.dashboard_body, 1)
         
         # kis térköz
         dash_layout.addSpacing(8)
 
-        # --- Havi dashboard card ---
-        table_card = QFrame()
-        table_card.setObjectName("homeTableCard")
-        table_card_layout = QVBoxLayout(table_card)
-        table_card_layout.setContentsMargins(12, 12, 12, 12)
-        table_card_layout.setSpacing(8)
-
-        table_title = QLabel("Havi összesítő")
-        table_title.setObjectName("sectionTitle")
-        table_card_layout.addWidget(table_title)
-
-        # tábla viselkedés
-        self.table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.table.setMinimumHeight(0)
-
-        table_card_layout.addWidget(self.table)
-
-        dash_layout.addWidget(table_card, 0)
-        dash_layout.addStretch(1)
 
 
 
@@ -284,11 +226,7 @@ class HomePage(QWidget):
 
 
 
-
-
-
-
-
+    
         # 2) Számlák TAB
         tab_bills = QWidget()
         bills_layout = QVBoxLayout(tab_bills)
@@ -335,78 +273,12 @@ class HomePage(QWidget):
 
         self.reload()
 
-        self.table.resizeRowsToContents()
-        self._update_table_height()
-
-
-
-
-
+      
         self._updating = False
 
 
 
-    def _get_headers(self) -> list[str]:
-
-     # --- Dashboard tábla ---
-        # Oszlopok: (átnevezhető, de sorrend maradjon !!)
-
-        if not self.dev_mode:          # normál mód
-            return [
-                "Hónap",
-                "Tervezett Bevétel",
-                "Valós Bevétel",
-                "Eltérések",
-                "Tervezett Kiadások",
-                "Fix Ter. Kiad.",
-                "Valós Kiadások",
-                "Eltérések",
-                "Terv. Megtakarítás",
-                "Valós Megtakarítás",
-            ]
-
-            
-
-        return [                        # dev_mode
-            "Hónap",
-            "Terv Bev",
-            "Valós Bev",
-            "Δ Bev",
-            "Terv Kiad",
-            "Valós Kiad",
-            "Δ Kiad",
-            "Megtakarítás",
-        ]
-
-            
-    def _get_column_widths(self) -> list[int]:
-        if not self.dev_mode:           # normál mód
-            return [120, 150, 150, 130, 150, 110, 150, 130, 160, 160]
-
-                                        # dev_mode
-        return [120, 130, 130, 110, 130, 130, 110, 150]
-
-
-
-
-
-
-
-    def _make_item(self, val: float, editable: bool) -> QTableWidgetItem:
-        it = QTableWidgetItem(fmt_huf(val))
-        it.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-
-        flags = it.flags()
-        if editable:
-            it.setFlags(flags | Qt.ItemIsEditable)
-        else:
-            it.setFlags(flags & ~Qt.ItemIsEditable)
-
-        return it
-            
-
-
-
+  
     def _build_summary_rows(self) -> list[HomeSummaryRow]:
         rows: list[HomeSummaryRow] = []
 
@@ -446,6 +318,194 @@ class HomePage(QWidget):
 
         
 
+    def _clear_layout(self, layout) -> None:
+        while layout.count():
+            item = layout.takeAt(0)
+
+            child_widget = item.widget()
+            child_layout = item.layout()
+
+            if child_widget is not None:
+                child_widget.deleteLater()
+            elif child_layout is not None:
+                self._clear_layout(child_layout)
+
+
+    
+
+
+    def _build_cards_view(self) -> QWidget:
+        wrapper = QFrame()
+        wrapper.setObjectName("homeCardsWrapper")
+        wrapper.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        layout = QVBoxLayout(wrapper)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        return wrapper
+
+    def _make_info_pair(
+        self,
+        left_label: str,
+        left_value: float,
+        right_label: str,
+        right_value: float,
+    ) -> QFrame:
+        row = QFrame()
+        row.setObjectName("monthInfoRow")
+
+        grid = QGridLayout(row)
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(24)
+        grid.setVerticalSpacing(4)
+
+        lbl1 = QLabel(left_label)
+        lbl1.setObjectName("monthInfoLabel")
+        
+
+
+        val1 = QLabel(f"{fmt_huf(left_value)} Ft")
+        val1.setObjectName("monthInfoValue")
+        val1.setProperty("positive", left_value >= 0)
+       
+        
+
+        lbl2 = QLabel(right_label)
+        lbl2.setObjectName("monthInfoLabel")
+        
+
+        val2 = QLabel(f"{fmt_huf(right_value)} Ft")
+        val2.setObjectName("monthInfoValue")
+        val2.setProperty("positive", right_value >= 0)
+    
+
+        val1.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        val2.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+        grid.addWidget(lbl1, 0, 0)
+        grid.addWidget(val1, 0, 1)
+        grid.addWidget(lbl2, 0, 2)
+        grid.addWidget(val2, 0, 3)
+
+        grid.setColumnStretch(0, 0)
+        grid.setColumnStretch(1, 1)
+        grid.setColumnStretch(2, 0)
+        grid.setColumnStretch(3, 1)
+
+        return row
+
+
+    def _make_single_value_row(self, label: str, value: float) -> QFrame:
+        row = QFrame()
+        row.setObjectName("monthInfoRow")
+
+        layout = QGridLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setHorizontalSpacing(24)
+        layout.setVerticalSpacing(4)
+
+        lbl = QLabel(label)
+        lbl.setObjectName("monthInfoLabel")
+        
+
+        val = QLabel(f"{fmt_huf(value)} Ft")
+        val.setObjectName("monthInfoValue")
+        val.setProperty("positive", value >= 0)
+        val.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+        layout.addWidget(lbl, 0, 0)
+        layout.addWidget(val, 0, 1)
+        layout.setColumnStretch(0, 0)
+        layout.setColumnStretch(1, 1)
+
+        return row
+
+
+    def _make_month_card(self, row: HomeSummaryRow) -> QFrame:
+        card = QFrame()
+        card.setObjectName("monthSummaryCard")
+        card.setProperty("hoverable", True)
+        card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        card.setMinimumHeight(200)
+
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(14, 14, 14, 14)
+        layout.setSpacing(10)
+
+        title = QLabel(row.month_label)
+        title.setObjectName("monthCardTitle")
+        layout.addWidget(title)
+
+       
+
+       
+        card = QFrame()
+        card.setObjectName("monthSummaryCard")
+        card.setProperty("hoverable", True)
+        card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        card.setMinimumHeight(200)
+
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(14, 14, 14, 14)
+        layout.setSpacing(10)
+
+        title = QLabel(row.month_label)
+        title.setObjectName("monthCardTitle")
+        layout.addWidget(title)
+
+        divider = QFrame()
+        divider.setObjectName("monthCardDivider")
+        divider.setFrameShape(QFrame.Shape.HLine)
+        layout.addWidget(divider)
+
+        layout.addWidget(
+            self._make_card_value_row("Valós bevétel", row.actual_income, "income")
+        )
+        layout.addWidget(
+            self._make_card_value_row("Valós kiadás", row.actual_expense, "expense")
+        )
+        layout.addWidget(
+            self._make_card_value_row("Megtakarítás", row.actual_savings, "savings")
+        )
+
+        layout.addStretch()
+
+        card.mousePressEvent = lambda event: self._open_month_details(event, row)
+
+        return card
+
+        
+
+
+
+
+
+
+
+
+
+
+    def _make_card_value_row(self, label_text: str, value: float, row_type: str) -> QWidget:
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+
+        label = QLabel(label_text)
+        label.setObjectName("monthCardRowLabel")
+
+        value_label = QLabel(f"{value:,.0f} Ft".replace(",", " "))
+        value_label.setObjectName("monthCardRowValue")
+        value_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        value_label.setProperty("rowType", row_type)
+
+        layout.addWidget(label)
+        layout.addStretch(1)
+        layout.addWidget(value_label)
+
+        return row
 
 
 
@@ -457,34 +517,7 @@ class HomePage(QWidget):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _update_table_height(self) -> None:
-        header_h = self.table.horizontalHeader().height()
-        rows_h = sum(self.table.rowHeight(r) for r in range(self.table.rowCount()))
-        frame_h = self.table.frameWidth() * 2
-        extra = 8
-        self.table.setFixedHeight(header_h + rows_h + frame_h + extra)
-
+  
 
     def set_year(self, year: int) -> None:
         self._year = int(year)
@@ -496,17 +529,10 @@ class HomePage(QWidget):
     
     
     def reload(self) -> None:
-        if not isValid(self.table):
-            return
-
         self._updating = True
         try:
             rows = self._build_summary_rows()
-
-            if not self.dev_mode:
-                self._render_normal_rows(rows)
-            else:
-                self._render_dev_rows(rows)
+            self._render_dev_rows(rows)
 
             cash, bank, sec, metal, total = self.ctx.db.get_dashboard_balances()
 
@@ -516,98 +542,91 @@ class HomePage(QWidget):
                 securities_balance=sec,
                 metal_balance=metal,
             )
-
         finally:
             self._updating = False
 
 
-
-
-    # Normál mód:
-    def _render_normal_rows(self, rows: list[HomeSummaryRow]) -> None:
-        for r, row in enumerate(rows):
-            self.table.setItem(r, 1, self._make_item(row.planned_income, True))
-            self.table.setItem(r, 2, self._make_item(row.actual_income, False))
-            self.table.setItem(r, 3, self._make_item(row.income_diff, False))
-
-            self.table.setItem(r, 4, self._make_item(row.planned_expense, True))
-            self.table.setItem(r, 5, self._make_item(row.planned_fixed_expense, True))
-            self.table.setItem(r, 6, self._make_item(row.actual_expense, False))
-            self.table.setItem(r, 7, self._make_item(row.expense_diff, False))
-
-            self.table.setItem(r, 8, self._make_item(row.planned_savings, False))
-            self.table.setItem(r, 9, self._make_item(row.actual_savings, False))
-
+   
 
     # DEV mód:
     def _render_dev_rows(self, rows: list[HomeSummaryRow]) -> None:
-        for r, row in enumerate(rows):
-            self.table.setItem(r, 1, self._make_item(row.planned_income, True))
-            self.table.setItem(r, 2, self._make_item(row.actual_income, False))
-            self.table.setItem(r, 3, self._make_item(row.income_diff, False))
+        print("HOME DEV render rows:", len(rows))
 
-            self.table.setItem(r, 4, self._make_item(row.planned_expense, True))
-            self.table.setItem(r, 5, self._make_item(row.actual_expense, False))
-            self.table.setItem(r, 6, self._make_item(row.expense_diff, False))
-            self.table.setItem(r, 7, self._make_item(row.actual_savings, False))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def _on_item_changed(self, item: QTableWidgetItem) -> None:
-        if self._updating:
+        if self.cards_container is None:
             return
 
-        row = item.row()
-        col = item.column()
-        month = row + 1
-        value = parse_huf(item.text())
+        layout = self.cards_container.layout()
+        if layout is None:
+            return
 
-        if not self.dev_mode:
-            if col not in (1, 4, 5):
-                return
+        self._clear_layout(layout)
 
-            if col == 1:
-                self.ctx.db.upsert_month_plan(self._year, month, planned_income=value)
-            elif col == 4:
-                self.ctx.db.upsert_month_plan(self._year, month, planned_expense=value)
+        outer_card = QFrame()
+        outer_card.setObjectName("homeTableCard")
+        outer_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        outer_layout = QVBoxLayout(outer_card)
+        outer_layout.setContentsMargins(12, 12, 12, 12)
+        outer_layout.setSpacing(12)
+
+        title = QLabel("Havi összesítő")
+        title.setObjectName("sectionTitle")
+        outer_layout.addWidget(title)
+
+        rows_host = QWidget()
+        rows_host.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+        rows_layout = QVBoxLayout(rows_host)
+        rows_layout.setContentsMargins(0, 0, 0, 0)
+        rows_layout.setSpacing(12)
+        rows_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        for i in range(0, len(rows), 2):
+            row_wrap = QWidget()
+            row_wrap.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+            row_layout = QHBoxLayout(row_wrap)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.setSpacing(12)
+
+            left_card = self._make_month_card(rows[i])
+            row_layout.addWidget(left_card, 1)
+
+            if i + 1 < len(rows):
+                right_card = self._make_month_card(rows[i + 1])
+                row_layout.addWidget(right_card, 1)
             else:
-                self.ctx.db.upsert_month_plan(
-                    self._year,
-                    month,
-                    planned_fixed_expense=value,
-                )
-        else:
-            if col not in (1, 4):
-                return
+                spacer = QWidget()
+                spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+                row_layout.addWidget(spacer, 1)
 
-            if col == 1:
-                self.ctx.db.upsert_month_plan(self._year, month, planned_income=value)
-            else:
-                self.ctx.db.upsert_month_plan(self._year, month, planned_expense=value)
+            row_wrap.setMinimumHeight(210)   # vagy 220
+            rows_layout.addWidget(row_wrap)
 
-        self.reload()
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True) 
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(rows_host)
+
+        outer_layout.addWidget(scroll, 1)
+
+
+        layout.addWidget(outer_card, 1)
+
+        print("HOME DEV cards added")
+
+
+
+
+
+    def _open_month_details(self, event, row: HomeSummaryRow) -> None:
+        if event.button() == Qt.LeftButton:
+            dlg = MonthDetailsDialog(row, self)
+            dlg.exec()
+
+
+
+    def open_table_dialog(self):
+        dlg = HomeTableDialog(self.ctx, self)
+        dlg.exec()

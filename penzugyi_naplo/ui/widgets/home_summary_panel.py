@@ -43,25 +43,15 @@ class _Card(QFrame):
         super().__init__(parent)
         self.setObjectName("card")
         self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         lay = QVBoxLayout(self)
         lay.setContentsMargins(12, 10, 12, 12)
         lay.setSpacing(8)
 
         self.title_lbl = QLabel(title)
-
-        if title == "Számított értékek":
-            self.title_lbl.setObjectName("cardTitleStrong")
-        else:
-            self.title_lbl.setObjectName("cardTitle")
-
+        self.title_lbl.setObjectName("cardTitle")
         lay.addWidget(self.title_lbl)
-
-
-        # hely a cím és az alatta lévő tartalom között
-        lay.addSpacing(8)
-
 
         self.body = QWidget(self)
         self.body_lay = QVBoxLayout(self.body)
@@ -149,13 +139,12 @@ class HomeSummaryPanel(QWidget):
         grid.setContentsMargins(0, 0, 0, 0)
 
         # sorok
-        self.lbl_cash = self._make_value_row(grid, 0, "Kézpénz:")
-        grid.setRowMinimumHeight(3, 12)
-        self.lbl_bank = self._make_value_row(grid, 1, "Aktuális egyenleg:")
+        self.lbl_bank = self._make_value_row(
+            grid, 0, "Aktuális egyenleg (folyószámla):"
+        )
+        self.lbl_total = self._make_value_row(grid, 1, "Teljes egyenleg:", big=True)
         self.lbl_sec = self._make_value_row(grid, 2, "Értékpapírszámla:")
-        self.lbl_total = self._make_value_row(grid, 4, "Teljes egyenleg:", big=True)
-        grid.setRowMinimumHeight(5, 12)
-        self.lbl_metal = self._make_value_row(grid, 6, "Nemesfém egyenleg:")
+        self.lbl_metal = self._make_value_row(grid, 3, "Nemesfém egyenleg:")
 
         w_grid = QWidget()
         w_grid.setLayout(grid)
@@ -191,13 +180,13 @@ class HomeSummaryPanel(QWidget):
     def _make_value_row(
         self, grid: QGridLayout, row: int, label: str, big: bool = False
     ) -> QLabel:
-        lbl = QLabel(label)
-        lbl.setObjectName("sumLabelBig" if big else "sumLabel")
+        l = QLabel(label)
+        l.setObjectName("sumLabelBig" if big else "sumLabel")
         v = QLabel("—")
         v.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         v.setObjectName("sumValueBig" if big else "sumValue")
 
-        grid.addWidget(lbl, row, 0)
+        grid.addWidget(l, row, 0)
         grid.addWidget(v, row, 1)
         return v
 
@@ -252,7 +241,6 @@ class HomeSummaryPanel(QWidget):
         self.lbl_bank.setText(_money_fmt(bank_balance))
         self.lbl_sec.setText(_money_fmt(securities_balance))
         self.lbl_metal.setText(_money_fmt(metal_balance))
-        self.lbl_cash.setText(_money_fmt(cash_balance))
 
         total = None
         if (
