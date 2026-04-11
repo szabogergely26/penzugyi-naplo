@@ -1,5 +1,5 @@
 # Fejlesztői -  pénzügyi_napló/main.py
-# ----------------------------
+# ------------------------------------
 
 """
 Alkalmazás belépési pont
