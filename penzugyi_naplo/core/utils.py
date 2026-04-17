@@ -30,6 +30,10 @@ Függvények röviden:
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
+
 from datetime import datetime
 from typing import Optional
 
@@ -127,3 +131,16 @@ def month_key_from_date(date_str: str) -> str:
     'YYYY-MM-DD' -> 'YYYY-MM'
     """
     return date_str[:7] if date_str and len(date_str) >= 7 else ""
+
+
+
+
+def open_with_default_app(path: str) -> None:
+    if sys.platform.startswith("linux"):
+        subprocess.Popen(["xdg-open", path])
+    elif sys.platform == "darwin":
+        subprocess.Popen(["open", path])
+    elif os.name == "nt":
+        os.startfile(path)  # type: ignore[attr-defined]
+    else:
+        raise RuntimeError("Nem támogatott platform.")

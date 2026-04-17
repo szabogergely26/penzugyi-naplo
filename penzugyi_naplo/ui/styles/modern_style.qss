@@ -63,6 +63,34 @@ QPushButton#dangerLiteButton:hover {
     background: #FEE2E2;
 }
 
+
+
+/* Adatbázis törlése - gomb */ 
+
+QToolButton#dangerButton {
+    background: transparent;
+    color: #b23b3b;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-weight: 600;
+}
+
+QToolButton#dangerButton:hover {
+    background: #ffe3e3;
+    border: 1px solid #d98f8f;
+}
+
+QToolButton#dangerButton:pressed {
+    background: #ffd4d4;
+}
+
+
+
+
+
+
+
 /* ====== YearTabsBar (2023/2024/...) – ha a gombok sima QPushButton-ek ======
    Tipp: a YearTabsBar-ben adj a gomboknak objectName-t: yearTabButton
    és az aktívnak: yearTabButtonActive
@@ -484,4 +512,98 @@ QLabel#monthDetailsSectionTitle {
     text-decoration: underline;
     color: #2a2a2a;
     padding-bottom: 4px;
+}
+
+
+
+/*             Gombok állapota    */
+/* ---------------------------------------------- */
+
+/* --- Felső navigációs sáv */
+
+QPushButton#navButton,
+QPushButton#yearFilterButton {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+QPushButton#navButton:hover,
+QPushButton#yearFilterButton:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+QPushButton#navButton:checked,
+QPushButton#yearFilterButton:checked {
+    background-color: rgba(90, 140, 220, 0.18);
+    border: 1px solid rgba(120, 170, 255, 0.45);
+    padding-top: 7px;
+    padding-bottom: 5px;
+}
+
+QPushButton#navButton:checked:hover,
+QPushButton#yearFilterButton:checked:hover {
+    background-color: rgba(90, 140, 220, 0.24);
+    border: 1px solid rgba(120, 170, 255, 0.55);
+}
+
+
+/* Alap gomb */
+QPushButton#navButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+/* hover */
+QPushButton#navButton:hover {
+    background-color: rgba(205, 220, 255, 0.28);
+    border: 1px solid rgba(165, 205, 255, 0.72);
+    color: #182230;
+}
+
+/* Aktív */
+QPushButton#navButton:checked {
+    background-color: rgba(255, 255, 255, 0.08);
+    padding-top: 7px;
+    padding-bottom: 5px;
+}
+
+
+/* Aktív + hover */
+QPushButton#navButton:checked:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+
+/* --- Évszűrő gombok: */
+
+QPushButton#yearTabButton {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(120, 170, 255, 0.38);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #364152;
+}
+
+QPushButton#yearTabButton:hover {
+    background-color: rgba(205, 220, 255, 0.40);
+    border: 1px solid rgba(165, 205, 255, 0.92);
+    color: #182230;
+}
+
+QPushButton#yearTabButton:checked {
+    background-color: rgba(90, 140, 220, 0.42);
+    border: 1px solid rgba(140, 190, 255, 0.95);
+    color: white;
+    padding-top: 7px;
+    padding-bottom: 5px;
+}
+
+QPushButton#yearTabButton:checked:hover {
+    background-color: rgba(125, 170, 240, 0.58);
+    border: 1px solid rgba(200, 230, 255, 1.0);
+    color: white;
 }

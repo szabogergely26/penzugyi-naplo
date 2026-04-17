@@ -1,3 +1,7 @@
+# - Fejlesztői -
+# -----------------------
+
+
 """
 ui/helpers/icons.py
 

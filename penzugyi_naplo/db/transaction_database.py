@@ -153,6 +153,11 @@ def _to_float_or_none(value: Any) -> float | None:
         return float(value)
     except Exception:
         return None
+    
+
+
+
+
 
 
 # --- Dataclass-ok: ----
@@ -571,7 +576,7 @@ class TransactionDatabase:
             )
             conn.commit()
 
-    def get_latest_wallet_balance(self, wallet_type: str):
+    def get_latest_wallet_balance(self, wallet_type: str, year: int | None = None):
         valid_wallet_types = ("cash", "current_account")
         if wallet_type not in valid_wallet_types:
             raise ValueError(f"Invalid wallet_type: {wallet_type}")
@@ -579,8 +584,10 @@ class TransactionDatabase:
         self.ensure_wallet_balances()
         with self.get_db_connection() as conn:
             cur = conn.cursor()
-            cur.execute(
-                """
+
+            if year is None:
+                cur.execute(
+                    """
                 SELECT date, value
                 FROM wallet_balances
                 WHERE wallet_type = ?
@@ -588,7 +595,20 @@ class TransactionDatabase:
                 LIMIT 1
                 """,
                 (wallet_type,),
-            )
+                )
+
+            else:
+                cur.execute(
+                    """
+                    SELECT date, value
+                    FROM wallet_balances
+                    WHERE wallet_type = ?
+                        AND strftime('%Y', date) = ?
+                    ORDER BY date DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (wallet_type, str (int(year))),
+                )
             row = cur.fetchone()
 
         if not row:
@@ -678,13 +698,17 @@ class TransactionDatabase:
                     monthly_map[category_name][month] = amount
 
             elif category_name in PERIODIC_BILLS:
-                periodic_map[category_name].append(
-                    PeriodicAmount(
-                        start=period_start or tx_date,
-                        end=period_end or tx_date,
-                        amount=amount,
+                if 1 <= month <= 12:
+                    periodic_map[category_name].append(
+                        PeriodicAmount(
+                            month=month,
+                            start=period_start or tx_date,
+                            end=period_end or tx_date,
+                            amount=amount,
+                            invoice_number=None,
+                            is_paid=True,
+                        )   
                     )
-                )
 
         models: list[BillCardModel] = []
 
@@ -1857,30 +1881,36 @@ class TransactionDatabase:
 
 
 
-    def get_dashboard_balances(self) -> tuple[float, float, float, float, float]:
+    def get_dashboard_balances(
+        self, year: int | None = None
+        ) -> tuple[float, float, float, float, float]:
         """
         Visszaadja:
         cash_balance, bank_balance, securities_value, metal_value, total_balance
+
+        year=None esetén: legutolsó globális értékek
+        year=YYYY esetén: adott év utolsó ismert értékei
         """
+        
         with self.get_db_connection() as conn:
             cur = conn.cursor()
             self._ensure_account_valuations_table(cur)
             self._ensure_payment_source_column(cur)
 
-            # Kézpénz (utolsó mentett érték)
-            cash_row = self.get_latest_wallet_balance("cash")
+            if year is None:
+                cash_row = self.get_latest_wallet_balance("cash")
+                bank_row = self.get_latest_wallet_balance("current_account")
+                sec_row = self.get_latest_account_valuation("securities")
+                met_row = self.get_latest_account_valuation("metals")
+            else:
+                cash_row = self.get_latest_wallet_balance("cash", year=year)
+                bank_row = self.get_latest_wallet_balance("current_account", year=year)
+                sec_row = self.get_latest_account_valuation("securities", year=year)
+                met_row = self.get_latest_account_valuation("metals", year=year)
+
             cash_balance = float(cash_row["value"]) if cash_row else 0.0
-
-            # Folyószámla (utolsó mentett érték)
-            bank_row = self.get_latest_wallet_balance("current_account")
             bank_balance = float(bank_row["value"]) if bank_row else 0.0
-
-            # Értékpapírok (utolsó mentett érték)
-            sec_row = self.get_latest_account_valuation("securities")
             securities = float(sec_row["value"]) if sec_row else 0.0
-
-            # Nemesfémek (utolsó mentett érték)
-            met_row = self.get_latest_account_valuation("metals")
             metals = float(met_row["value"]) if met_row else 0.0
 
             total = cash_balance + bank_balance + securities + metals
@@ -1971,7 +2001,8 @@ class TransactionDatabase:
             self._ensure_bills_schema(cur)
             conn.commit()
 
-    def get_latest_account_valuation(self, account_type: str):
+    def get_latest_account_valuation(self, account_type: str, year:int | None = None):
+
         """Legutolsó (date DESC, id DESC) érték egy account_type-ra.
         Visszatér: None vagy {"date": "...", "value": ...}
         """
@@ -1983,7 +2014,9 @@ class TransactionDatabase:
 
         with self.get_db_connection() as conn:
             cur = conn.cursor()
-            cur.execute(
+
+            if year is None:
+                cur.execute(
                 """
                 SELECT date, value
                 FROM account_valuations
@@ -1992,12 +2025,31 @@ class TransactionDatabase:
                 LIMIT 1
                 """,
                 (account_type,),
-            )
+                )
+
+            else:
+
+                cur.execute(
+                    """
+                    SELECT date, value
+                    FROM account_valuations
+                    WHERE account_type = ?
+                        AND strftime('%Y', date) = ?
+                    ORDER BY date DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (account_type, str(int(year))),
+                )
+
             row = cur.fetchone()
 
         if not row:
             return None
         return {"date": row[0], "value": row[1]}
+    
+
+
+
 
     def _ensure_account_valuations(self, cur: sqlite3.Cursor) -> None:
         cur.execute("""

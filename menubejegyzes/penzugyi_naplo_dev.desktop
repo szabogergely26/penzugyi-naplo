@@ -1,0 +1,19 @@
+[Desktop Entry]
+Categories=Office;Finance;
+Comment[hu_HU]=Fejlesztői verzió indítása
+Comment=Fejlesztői verzió indítása
+Exec=/home/szaboger/Projects/Penzügyi_Naplo_Dev/penzugyi_naplo-dev.sh
+GenericName[hu_HU]=
+GenericName=
+Icon=/home/szaboger/Projects/Penzügyi_Naplo_Dev/icons/app_icon.png
+MimeType=
+Name[hu_HU]=Pénzügyi Napló DEV
+Name=Pénzügyi Napló DEV
+Path=/home/szaboger/Projects/Penzügyi_Naplo_Dev
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+Version=1.0
+X-KDE-SubstituteUID=false
+X-KDE-Username=

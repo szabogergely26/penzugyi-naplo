@@ -61,15 +61,12 @@ def _vline(parent: QWidget | None = None) -> QFrame:
 class AccountsPage(BasePage):
     """Egyszerű Accounts/Wallets oldal."""
 
-    def __init__(
-        self,
-        parent: Optional[QWidget] = None,
-        *,
-        db: Optional["TransactionDatabase"] = None,
-    ) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, *, db: Optional["TransactionDatabase"] = None, ) -> None:
         super().__init__(parent)
         self._db: Optional["TransactionDatabase"] = db
 
+        self._year = None
+        
         self._dev_mode = is_dev_mode()
 
         root = QVBoxLayout(self)
@@ -274,14 +271,17 @@ class AccountsPage(BasePage):
 
     def reload(self) -> None:
         """MainWindow hívhatja set_page-nél vagy DB csere után."""
+        
         if not self._db:
             self._set_kpis(None, None, None, None, None)
             self.tbl.setRowCount(0)
             return
+        
+        year = self._year
 
         # Készpénz (utolsó)
-        cash_row = self._db.get_latest_wallet_balance("cash")
-        current_account_row = self._db.get_latest_wallet_balance("current_account")
+        cash_row = self._db.get_latest_wallet_balance("cash", year=year)
+        current_account_row = self._db.get_latest_wallet_balance("current_account", year=year)
 
         cash = float(cash_row["value"]) if cash_row else None
         current_account = (
@@ -289,8 +289,8 @@ class AccountsPage(BasePage):
         )
 
         # Értékpapírok / Nemesfém (utolsó)
-        sec_row = self._db.get_latest_account_valuation("securities")
-        met_row = self._db.get_latest_account_valuation("metals")
+        sec_row = self._db.get_latest_account_valuation("securities", year=year)
+        met_row = self._db.get_latest_account_valuation("metals", year=year)
         sec = float(sec_row["value"]) if sec_row else None
         met = float(met_row["value"]) if met_row else None
 
@@ -372,4 +372,10 @@ class AccountsPage(BasePage):
             self._db.add_account_valuation(date_iso, t, value)
 
         self.sp_value.setValue(0.0)
+        self.reload()
+
+
+
+    def set_year(self, year: int) -> None:
+        self._year = int(year)
         self.reload()

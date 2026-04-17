@@ -1,3 +1,7 @@
+# - ui/shared/nav_bar.py
+# ----------------------------
+
+
 """
 Felső navigációs sáv (NavBar)
 (ui/widgets/nav_bar.py).
@@ -27,6 +31,8 @@ def v_separator(
       - NINCS hardcode méret/szín Pythonból
       - csak objectName → style.qss (#navSeparator) stílusolja
     """
+
+    
     sep = QFrame(parent)
     sep.setObjectName(object_name)
     sep.setFrameShape(QFrame.VLine)

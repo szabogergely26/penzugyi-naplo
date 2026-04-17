@@ -1,0 +1,24 @@
+# 1. venv létrehozása
+python3 -m venv .venv
+
+# 2. aktiválás
+source .venv/bin/activate
+
+# 3. pip frissítés
+python3 -m pip install --upgrade pip
+
+# 4. függőségek telepítése
+pip install -r requirements.txt
+
+# 5. futtatás
+python main.py
+
+
+# Ellenőrzés:
+
+which python
+which pip
+
+
+# DEV-hez:
+pip install -r requirements-dev.txt

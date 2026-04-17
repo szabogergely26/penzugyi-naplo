@@ -16,6 +16,11 @@ UI szerkezet:
     - Felső navigáció: RibbonBar / NavBar
     - Oldalak: QStackedWidget
 
+Gombok létrehozása:
+    - ui / shared / nav_bar.py : Felső sáv gombok
+    - ui / shared / widgets / year_tabs_bar.py : Évszűrő gombok
+
+
 Oldalak:
     - Kezdőoldal: ui/pages/home_page.py
         → Havi összesítő táblázat itt található
@@ -77,6 +82,7 @@ from penzugyi_naplo.ui.shared.nav_bar import NavBar
 from penzugyi_naplo.ui.shared.pages.coming_soon_page import ComingSoonPage
 from penzugyi_naplo.ui.shared.widgets.ribbon_bar import RibbonBar
 from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
+from penzugyi_naplo.ui.dialogs.log_viewer_dialog import LogViewerDialog
 
 # ------- Importok vége -------
 
@@ -467,6 +473,9 @@ class MainWindow(QMainWindow):
         self.act_version_info = QAction("Verzió infók", self)
         self.act_version_info.triggered.connect(self._show_version_info)
 
+        self.act_log_viewer = QAction("Alkalmazásnapló", self)
+        self.act_log_viewer.triggered.connect(self.show_log_viewer)
+
 
 
 
@@ -496,8 +505,18 @@ class MainWindow(QMainWindow):
         m_help = mb.addMenu("Súgó")
         m_help.addAction(self.act_about)
         m_help.addAction(self.act_version_info)
+        m_help.addSeparator()
+        m_help.addAction(self.act_log_viewer)
+
+       
 
     def _build_ribbon(self) -> None:
+
+        # FONTOS:
+        # A ribbon "Fájl" gombja nem ribbon-tab, hanem egy külön beépített gomb
+        # (self.ribbon.file_btn). Ezért ide nem add_tab()/add_action_button() kell,
+        # hanem egy külön QMenu-t építünk, és azt adjuk hozzá a file_btn-höz.
+
         self.ribbon = RibbonBar(self)
 
         tab_home = self.ribbon.add_tab("Fő")
@@ -517,20 +536,33 @@ class MainWindow(QMainWindow):
         self.ribbon.add_separator(tab_data, spacing=18)
 
         btn_delete = self.ribbon.add_action_button(tab_data, self.act_reset_db)
-        btn_delete.setObjectName("dangerLiteButton")
+        btn_delete.setObjectName("dangerButton")
+        btn_delete.style().unpolish(btn_delete)
+        btn_delete.style().polish(btn_delete)
+        btn_delete.update()
+
+
 
         tab_app = self.ribbon.add_tab("Nézet")
 
         tab_help = self.ribbon.add_tab("Súgó")
         self.ribbon.add_action_button(tab_help, self.act_about)
+        self.ribbon.add_action_button(tab_help, self.act_version_info)
+
+        self.ribbon.add_action_button(tab_help, self.act_log_viewer)
 
         self.ribbon.add_action_button(tab_app, self.act_toolbar_menubar)
         self.ribbon.add_action_button(tab_app, self.act_toolbar_ribbon)
 
-        menu = self._build_file_menu_for_ribbon()
-        self.ribbon.file_btn.setMenu(menu)
 
-        self.ribbon.add_separator(tab_data, spacing=18)
+        
+
+        # Fájl-hoz létrehozza a lenyíló menüt:
+
+        file_menu = self._build_file_menu_for_ribbon()
+        self.ribbon.file_btn.setMenu(file_menu)
+
+        
 
     def set_toolbar_mode(self, mode: str) -> None:
         s = QSettings(ORG_NAME, APP_NAME)
@@ -562,13 +594,7 @@ class MainWindow(QMainWindow):
         menu.addAction(self.act_new_tx)
         menu.addSeparator()
         menu.addAction(self.act_exit)
-
-        # (opcionális) almenük ribbon-hoz: Súgó/Névjegy
-        # Ha külön akarod, csinálj submenu-t:
-        help_menu = QMenu("Súgó", self)
-        help_menu.addAction(self.act_about)  # ha már létrehoztad
-        menu.addMenu(help_menu)
-
+        
         return menu
 
     def on_import(self) -> None:
@@ -761,3 +787,7 @@ class MainWindow(QMainWindow):
     def _show_version_info(self):
         dlg = VersionInfoDialog(self)
         dlg.exec()
+
+    def show_log_viewer(self) -> None:
+        dialog = LogViewerDialog(self)
+        dialog.exec()

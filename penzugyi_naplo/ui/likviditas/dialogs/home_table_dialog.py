@@ -36,7 +36,7 @@ class HomeTableDialog(QDialog):
         self._updating = False
 
         self.setWindowTitle(f"Havi összesítő – {self._year}")
-        self.resize(1200, 700)
+        self.setFixedSize(1280, 460)     # x; y
 
         layout = QVBoxLayout(self)
 
@@ -44,7 +44,7 @@ class HomeTableDialog(QDialog):
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
-        self.table = QTableWidget(12, 10)
+        self.table = QTableWidget(12, 10)   # sorszám, oszlopszám
         layout.addWidget(self.table, 1)
 
         self._setup_table()
@@ -55,15 +55,15 @@ class HomeTableDialog(QDialog):
     def _setup_table(self):
         headers = [
             "Hónap",
-            "Terv Bev",
-            "Valós Bev",
+            "Terv Bevétel",
+            "Valós Bevétel",
             "Δ Bev",
-            "Terv Kiad",
+            "Terv Kiadás",
             "Fix",
-            "Valós Kiad",
-            "Δ Kiad",
-            "Terv Megt",
-            "Valós Megt",
+            "Valós Kiadás",
+            "Δ Kiadás",
+            "Terv Megtakarítás",
+            "Valós Megtakarítás",
         ]
 
         self.table.setHorizontalHeaderLabels(headers)

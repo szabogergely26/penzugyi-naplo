@@ -1,5 +1,5 @@
-# penzugyi_naplo/ui/charts.py
-# ------------------------------
+# Fejlesztői - penzugyi_naplo/ui/charts.py
+# -----------------------------------------
 
 """
 Diagramkezelő réteg (ChartManager) a Statisztika / Diagramok tabhoz

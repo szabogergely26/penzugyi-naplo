@@ -59,7 +59,8 @@ class BillCard(QFrame):
 
         self.setObjectName("billCard")
         self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        
+        # self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(14, 12, 14, 12)
@@ -99,20 +100,11 @@ class BillCard(QFrame):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit(self.model.id)
+            from .bill_details_dialog import BillDetailsDialog
+
+            dlg = BillDetailsDialog(self.model, self)
+            dlg.exec()
+
         super().mousePressEvent(event)

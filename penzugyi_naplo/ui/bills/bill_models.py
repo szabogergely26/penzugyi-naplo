@@ -34,10 +34,12 @@ class MonthlyAmount:
 
 @dataclass(frozen=True)
 class PeriodicAmount:
-    start: str  # "YYYY-MM-DD"
-    end: str  # "YYYY-MM-DD"
-    amount: float
-
+    month: int  # 1..12, fizetés hónapja
+    start: str | None  # "YYYY-MM-DD"
+    end: str | None  # "YYYY-MM-DD"
+    amount: float | None
+    invoice_number: str | None = None
+    is_paid: bool = False
 
 @dataclass(frozen=True)
 class BillCardModel:

@@ -37,9 +37,7 @@ Topology (UI):
 
 from __future__ import annotations
 
-import logging
-import traceback
-from pathlib import Path
+
 from typing import Any
 
 from PySide6.QtCore import Qt, QTimer
@@ -67,7 +65,7 @@ from penzugyi_naplo.ui.likviditas.dialogs.transaction_edit_dialog import (
 
 # -Importok vége -
 
-print("EZ FUT: likviditas/pages/transactions_page.py")
+
 
 class SortKeyItem(QTableWidgetItem):
     """QTableWidgetItem, ami UserRole sort-kulcs alapján rendez."""
@@ -134,6 +132,11 @@ class TransactionsPage(QWidget):
 
     def __init__(self, parent: QWidget | None = None, db: Any | None = None) -> None:
         super().__init__(parent)
+
+        self.log = getattr(parent, "log", None)
+        if self.log:
+            self.log.d("AKTIV TRANSACTIONS_PAGE: ui/likviditas/pages/transactions_page.py")
+
         self.db = db
 
         # Szűrő alapértékek (hogy ne legyen _year AttributeError)
@@ -143,19 +146,7 @@ class TransactionsPage(QWidget):
         self._filter_year = None
         self._filter_all_years = True
 
-        # Logger (fájl)
-        log_dir = Path(__file__).resolve().parents[2] / "logs"  # projekt_root/logs
-        log_dir.mkdir(parents=True, exist_ok=True)
-        self._log_path = log_dir / "app.log"
-
-        self._logger = logging.getLogger("penzugyi.TransactionsPage")
-        if not self._logger.handlers:
-            self._logger.setLevel(logging.INFO)
-            fh = logging.FileHandler(self._log_path, encoding="utf-8")
-            fh.setFormatter(
-                logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
-            )
-            self._logger.addHandler(fh)
+       
 
         # --- UI: felső sáv ---
         self.search_edit = QLineEdit(self)
@@ -243,13 +234,9 @@ class TransactionsPage(QWidget):
         # első töltés
         self.reload()
 
-        # DEBUG:
-       # print("TP: tables:", self.findChildren(QTableWidget))
-       # print("TP: headers:", self.findChildren(QHeaderView))
+      
 
-       # print("DB PATH:", getattr(self.db, "db_name", "<no db_name>"))
-
-        self._logger.info("TransactionsPage init OK, log file: %s", self._log_path)
+        
 
         self.table.cellDoubleClicked.connect(self._on_table_double_clicked)
 
@@ -307,10 +294,11 @@ class TransactionsPage(QWidget):
                 all_years=self._filter_all_years,
                 query=query,
             )
-        except Exception as e:
-            self._logger.error("reload() DB hiba: %r\n%s", e, traceback.format_exc())
+        except Exception:
+            if self.log:
+                self.log.exception("TransactionsPage.reload() DB hiba")
             self.table.setRowCount(0)
-            self.table.clearContents()
+            self.table.clearContents()    
             return
 
         # 2) Takarítás
@@ -490,7 +478,9 @@ class TransactionsPage(QWidget):
 
         row = self.db.get_transaction_by_id(tx_id)
         if not row:
-            print("EDIT", tx_id, "not found")
+            
+            if self.log:
+                self.log.warning("EDIT", tx_id, "not found")
             return
 
         tx = dict(row)
@@ -498,7 +488,9 @@ class TransactionsPage(QWidget):
         # Kategóriák betöltése
         cats_rows = self.db.get_all_categories()
         categories = [(int(c["id"]), str(c["name"])) for c in cats_rows]
-        print("CATS SAMPLE:", dict(cats_rows[0]) if cats_rows else "NO CATS")
+        
+        if self.log:
+            self.log.d("CATS SAMPLE:", dict(cats_rows[0]) if cats_rows else "NO CATS")
 
         dlg = TransactionEditDialog(
             self,
@@ -519,7 +511,14 @@ class TransactionsPage(QWidget):
             tx_type=data["tx_type"],  # HU string: "Bevétel"/"Kiadás"
             name=data["name"],  # ÚJ mező
         )
-        print("EDIT SAVE", tx_id, "ok=", ok)
+        
+        # DEBUG:
+        if self.log:
+            if ok:
+                self.log.info("EDIT SAVE", tx_id, "ok=", ok)
+            else:
+                self.log.warning("EDIT SAVE", tx_id, "ok=", ok)
+
         if ok:
             self.reload()
 

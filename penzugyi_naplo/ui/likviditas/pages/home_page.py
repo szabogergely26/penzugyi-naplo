@@ -60,6 +60,8 @@ from penzugyi_naplo.ui.likviditas.dialogs.home_table_dialog import HomeTableDial
 from penzugyi_naplo.ui.likviditas.dialogs.month_details_dialog import MonthDetailsDialog
 from penzugyi_naplo.ui.likviditas.widgets.home_summary_panel import HomeSummaryPanel
 
+
+
 # - Importok vége - #
 
 
@@ -149,7 +151,13 @@ class HomePage(QWidget):
         self.dev_mode = self.ctx.dev_mode
         self._year = int(self.ctx.state.active_year)
 
-        print("AKTIV HOME_PAGE: ui/likviditas/pages/home_page.py")
+        self.log = getattr(parent, "log", None)
+
+        # LOG:
+        if self.log:
+            self.log.d("AKTIV HOME_PAGE: ui/likviditas/pages/home_page.py")
+
+
         self._updating = False
 
         # --- UI felépítése ---
@@ -271,11 +279,14 @@ class HomePage(QWidget):
         root.addWidget(subtitle)
         root.addWidget(content, 1)
 
+        
+
         self.reload()
 
       
         self._updating = False
 
+        
 
 
   
@@ -534,7 +545,8 @@ class HomePage(QWidget):
             rows = self._build_summary_rows()
             self._render_dev_rows(rows)
 
-            cash, bank, sec, metal, total = self.ctx.db.get_dashboard_balances()
+            year = getattr(self, "_year", None)
+            cash, bank, sec, metal, total = self.ctx.db.get_dashboard_balances(year=year)
 
             self.summary.set_balances(
                 cash_balance=cash,
@@ -550,7 +562,12 @@ class HomePage(QWidget):
 
     # DEV mód:
     def _render_dev_rows(self, rows: list[HomeSummaryRow]) -> None:
-        print("HOME DEV render rows:", len(rows))
+        
+        # LOG:
+        if self.log:
+            self.log.d("HOME DEV render rows:", len(rows))
+
+
 
         if self.cards_container is None:
             return
@@ -614,7 +631,8 @@ class HomePage(QWidget):
 
         layout.addWidget(outer_card, 1)
 
-        print("HOME DEV cards added")
+        if self.log:
+            self.log.d("HOME DEV: cards added")
 
 
 

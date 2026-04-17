@@ -140,6 +140,8 @@ class BillsPage(QWidget):
         self.scroll_area.setWidget(self.container)
         root.addWidget(self.scroll_area)
 
+        self.log = getattr(parent, "log", None)
+        
         self.reload()
 
 
@@ -156,9 +158,14 @@ class BillsPage(QWidget):
         year = self._year or date.today().year
 
         models = self._load_models_from_db(year)
-        source = "db"
         
-        print(f"BillsPage.reload source={source} year={year} models={len(models)}")
+        
+        self.log.d(f"BillsPage.reload source=db year={year} models={len(models)}")
+
+        source = "db"
+        if self.log:
+            self.log.d(f"BillsPage.reload source={source} year={year} models={len(models)}")
+
 
         self._render(models)
 
@@ -221,17 +228,20 @@ class BillsPage(QWidget):
 
         mvm_villany = BillCardModel(
             id=3,
-            name="MVM – Villany (időszakos)",
+            name="MVM – Villany",
             kind="periodic",
             periodic=[
-                PeriodicAmount(f"{year}-01-01", f"{year}-02-01", 17170),
                 PeriodicAmount(
-                    f"{year}-02-01", f"{year}-03-01", 0
-                ),  # 0 eset maradhat (— helyett itt Ft lesz; lásd lent)
-                PeriodicAmount(f"{year}-03-01", f"{year}-04-01", 19880),
+                    month=4,
+                    start=f"{year}-02-16",
+                    end=f"{year}-03-15",
+                    amount=4722,
+                    invoice_number="AA12345678",
+                    is_paid=True,
+                ),
             ],
         )
-
+        
         mvm_gaz = BillCardModel(
             id=4,
             name="MVM – Gáz (időszakos)",
