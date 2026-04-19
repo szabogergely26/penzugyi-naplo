@@ -389,7 +389,7 @@ QLabel#billCardTitle {
 
 
 
-/*  Számlák oldal */
+/* =========== Számlák oldal ============= */
 
 QLabel#emptyStateLabel {
     font-size: 20px;
@@ -424,7 +424,9 @@ QLabel#billsEmptyHint {
 }
 
 
-
+QLabel[periodicAmount="true"] {
+    font-weight: 700;
+}
 
 
 

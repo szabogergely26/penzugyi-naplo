@@ -7,7 +7,7 @@ Az alkalmazás fő vezérlő ablaka
 
 Architektúra szerep:
     - Globális UI felépítése
-    - Oldalak regisztrálása és navigációja
+    - Oldalak regisztrálása és navigációja  -->self.page_stack, set_page
     - Aktív év és oldal kezelése (AppState)
     - UI → oldal → DB koordináció
 

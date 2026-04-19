@@ -2,6 +2,17 @@
 # ---------------------------------------------------
 
 """
+
+ui/bills/bill_card.py
+
+Ha ezt keresed:
+- számla kártya rajzolása
+- kártya kattintására itt történik művelet
+- Részletek ablak a számlákhoz: bill_details_dialog.py
+- az adat a DB-ből nem itt van
+
+------------------------------------------------------------------------
+
 Számla-kártya UI komponens (Card view)
 (ui/bills/bill_card.py).
 
@@ -78,6 +89,7 @@ class BillCard(QFrame):
         # belső tartalom típustól függően
         if model.kind == "monthly":
             inner = MonthlyGridWidget(model.monthly or [], self)
+            inner.monthClicked.connect(self._open_month_transaction)
         else:
             inner = PeriodicListWidget(model.periodic or [], self)
 
@@ -101,10 +113,37 @@ class BillCard(QFrame):
 
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            from .bill_details_dialog import BillDetailsDialog
+        if event.button() != Qt.MouseButton.LeftButton:
+            super().mousePressEvent(event)
+            return
 
-            dlg = BillDetailsDialog(self.model, self)
-            dlg.exec()
+        from .bill_details_dialog import BillDetailsDialog
 
-        super().mousePressEvent(event)
+        dlg = BillDetailsDialog(
+            self.model,
+            parent=self,
+            db=getattr(self.window(), "db", None),
+        )
+
+        bills_page = self.parent()
+        while bills_page is not None and not hasattr(bills_page, "reload"):
+            bills_page = bills_page.parent()
+
+        if bills_page is not None:
+            dlg.billDeleted.connect(bills_page.reload)
+
+        dlg.exec()
+        return
+    
+
+    def _open_month_transaction(self, entry_id: int) -> None:
+        from penzugyi_naplo.ui.likviditas.dialogs.transaction_details_dialog import (
+            TransactionDetailsDialog,
+        )
+
+        dlg = TransactionDetailsDialog(
+            parent=self,
+            db=getattr(self.window(), "db", None),
+            txn_id=entry_id,
+        )
+        dlg.exec()

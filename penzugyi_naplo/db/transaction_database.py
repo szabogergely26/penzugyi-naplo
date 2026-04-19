@@ -682,7 +682,7 @@ class TransactionDatabase:
         finally:
             conn.close()
 
-        monthly_map: dict[str, dict[int, float]] = defaultdict(dict)
+        monthly_map: dict[str, dict[int, dict[str, int | None]]] = defaultdict(dict)
         periodic_map: dict[str, list[PeriodicAmount]] = defaultdict(list)
 
         for row in rows:
@@ -695,19 +695,23 @@ class TransactionDatabase:
 
             if category_name in MONTHLY_BILLS:
                 if 1 <= month <= 12:
-                    monthly_map[category_name][month] = amount
+                    monthly_map[category_name][month] = {
+                        "amount": amount,
+                        "entry_id": int(row["id"]),
+                    }
 
             elif category_name in PERIODIC_BILLS:
                 if 1 <= month <= 12:
                     periodic_map[category_name].append(
                         PeriodicAmount(
+                            entry_id=int(row["id"]),
                             month=month,
                             start=period_start or tx_date,
                             end=period_end or tx_date,
                             amount=amount,
                             invoice_number=None,
                             is_paid=True,
-                        )   
+                        )
                     )
 
         models: list[BillCardModel] = []
@@ -716,7 +720,11 @@ class TransactionDatabase:
         for category_name in sorted(monthly_map.keys()):
             month_dict = monthly_map[category_name]
             amounts = [
-                MonthlyAmount(month=m, amount=month_dict[m])
+                MonthlyAmount(
+                    month=m,
+                    amount=month_dict[m]["amount"],
+                    entry_id=month_dict[m]["entry_id"],
+                )
                 for m in sorted(month_dict.keys())
             ]
 
@@ -2115,3 +2123,15 @@ class TransactionDatabase:
                 ALTER TABLE transactions
                 ADD COLUMN payment_source TEXT NOT NULL DEFAULT 'bank'
             """)
+
+
+
+
+    def delete_transaction_by_id(self, tx_id: int) -> None:
+        conn = self.get_db_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM transactions WHERE id = ?", (int(tx_id),))
+            conn.commit()
+        finally:
+            conn.close()

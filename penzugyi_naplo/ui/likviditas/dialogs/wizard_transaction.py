@@ -1,32 +1,18 @@
-# penzugyi_naplo/ui/wizard_transaction.py
-# ------------------------------------------------
+# penzugyi_naplo/ui/likviditas/dialogs/wizard_transaction.py
+# --------------------------------------------------------------
 
 """
 Új tranzakció rögzítésére szolgáló varázsló (QWizard).
 
-    DB-be ment, majd a TransactionsPage táblázatában jelenik meg.
-Kapcsolódó nézet: ui/pages/transactions_page.py.
+Feladata:
+- normál bevétel / kiadás rögzítése
+- részletezett tételek kezelése
+- számlabefizetéses flow kezelése
 
-    - Lépések:
-        1) Tranzakció típusa (Bevétel / Kiadás)
-        2) Kategória, név, leírás és dátum megadása
-        3) Összeg megadása és validálása
-
-    - Tervezési elvek:
-        - B-modell: az amount mindig pozitív
-        - Validálás több lépcsőben (oldal + végső mentés)
-        - A wizard parent-je a MainWindow (DB elérés innen történik)
-
-    - Megjegyzés:
-        - A wizard nem tartalmaz SQL-t, csak a MainWindow.db API-t használja
-
-
-
-összefoglalja az egészet
-
-rögzíti a B-modell alapelvet
-
-leírja a parent → DB kapcsolatot
+Megjegyzések:
+- az amount B-modell szerint mindig pozitív
+- a wizard a MainWindow.db API-n keresztül ment
+- közvetlen SQL-t nem tartalmaz
 
 """
 
@@ -39,7 +25,7 @@ import re
 from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import SIGNAL, QLocale
+from PySide6.QtCore import QLocale
 from PySide6.QtWidgets import (
     QButtonGroup,
     QComboBox,
@@ -56,8 +42,17 @@ from PySide6.QtWidgets import (
 
 from penzugyi_naplo.core.utils import is_valid_date, parse_amount
 
+
+# ------ Importok vége -----------
+
+
 if TYPE_CHECKING:
     from penzugyi_naplo.ui.main_window import MainWindow
+
+
+
+# ------------ Segéd függvények: -------------------------
+
 
 
 # ---------------------------------------------------------------------------
@@ -117,14 +112,22 @@ def parse_details_line(line: str, *, loc: QLocale) -> tuple[str, float, float, f
     return (item_name, float(unit_price), float(quantity), float(amount))
 
 
-# ------ Importok vége -----------
+def bill_requires_period(provider: str) -> bool:
+    """Csak az MVMNext igényel időszak kezdete/vége mezőket."""
+    return (provider or "").strip() == "MVMNext"
+
+
+# ---------------- Segédfüggvények vége .............................
+
 
 
 class PageTypeSelection(QWizardPage):
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("1/5. Tranzakció Típusa")
-        self.setSubTitle("Válassza ki a tranzakció típusát: Bevétel vagy Kiadás.")
+        self.setTitle("Tranzakció Típusa")
+        self.setSubTitle(
+            "Válassza ki a tranzakció típusát: Bevétel, Kiadás vagy Számlabefizetés."
+        )
 
         layout = QVBoxLayout(self)
 
@@ -150,7 +153,7 @@ class PageTypeSelection(QWizardPage):
 
 class PageCategorySelection(QWizardPage):
     """
-    2/5 oldal: kategória + név + leírás + dátum.
+    Kategóriaválasztó oldal: kategória + név + leírás + dátum.
     Kategóriákat a kiválasztott tranzakciótípus alapján tölti be.
 
     Megjegyzés a 'unknown' hibákhoz:
@@ -160,7 +163,7 @@ class PageCategorySelection(QWizardPage):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("2/5. Kategória kiválasztása")
+        self.setTitle("Kategória kiválasztása")
         self.setSubTitle("Melyik kategóriához tartozik a tétel és mi a leírása?")
 
         layout = QGridLayout(self)
@@ -279,13 +282,13 @@ class PageCategorySelection(QWizardPage):
 
 class PageSplitDecision(QWizardPage):
     """
-    3/5 oldal: döntés, hogy a tétel bontott-e (részletezős) vagy sima (egy tétel).
+    Tétel típusa oldal: döntés, hogy a tétel bontott-e (részletezős) vagy sima (egy tétel).
     Field: 'has_details' (bool)
     """
 
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("3/5. Tétel típusa")
+        self.setTitle("Tétel típusa")
         self.setSubTitle("Egy tételként rögzíted, vagy több részletből áll?")
 
         layout = QVBoxLayout(self)
@@ -311,8 +314,7 @@ class PageSplitDecision(QWizardPage):
         layout.addWidget(self.rb_details)
         layout.addStretch(1)
 
-        # True, ha részletezés
-        self.registerField("has_details", self.rb_details)
+        self.registerField("has_details", self.rb_details, "checked", "toggled")
 
     def nextId(self) -> int:
         has_details = bool(self.field("has_details"))
@@ -321,12 +323,12 @@ class PageSplitDecision(QWizardPage):
 
 class PageBillProvider(QWizardPage):
     """
-    2/6 oldal (Számlabefizetés ág): szolgáltató választás.
+    Számlabefizetés oldal (Számlabefizetés ág): szolgáltató választás.
     """
 
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("2/6. Számlabefizetés")
+        self.setTitle("Számlabefizetés")
         self.setSubTitle("Válassza ki a célszámlát / szolgáltatót.")
 
         layout = QVBoxLayout(self)
@@ -344,15 +346,15 @@ class PageBillProvider(QWizardPage):
         layout.addStretch(1)
 
         self.registerField(
-            "bill_provider*",
-            self.combo,
-            "currentText",
-            SIGNAL("currentTextChanged(QString)")
+            "bill_provider*", 
+            self.combo, 
+            "currentText", 
+            self.combo.currentTextChanged,
         )
 
         self.combo.currentIndexChanged.connect(lambda _i: self.completeChanged.emit())
 
-    def isComplete(self):
+    def isComplete(self) -> bool:
         return self.combo.currentIndex() > 0
 
     def nextId(self) -> int:
@@ -361,12 +363,12 @@ class PageBillProvider(QWizardPage):
 
 class PageBillMvmType(QWizardPage):
     """
-    3/6 oldal (csak MVMNext-nél): Villany / Gáz.
+    MVMNext oldal (csak MVMNext-nél): Villany / Gáz.
     """
 
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("3/6. MVMNext")
+        self.setTitle("MVMNext")
         self.setSubTitle("Válassza ki: Villany vagy Gáz.")
 
         layout = QVBoxLayout(self)
@@ -393,7 +395,7 @@ class PageBillMvmType(QWizardPage):
 class PageAmount(QWizardPage):
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("4/6. Összeg Rögzítése")
+        self.setTitle("Összeg Rögzítése")
         self.setSubTitle("Adja meg a tranzakció értékét (csak pozitív számot).")
         self.setFinalPage(True)
 
@@ -433,13 +435,10 @@ class PageAmount(QWizardPage):
     def initializePage(self) -> None:
         super().initializePage()
 
-      
-
         wiz = self.wizard()
         mode = None
+        provider = ""
 
-        print("PageAmount.initializePage called, mode =", mode)
-        
         if (
             wiz is not None
             and wiz.page(0) is not None
@@ -447,21 +446,30 @@ class PageAmount(QWizardPage):
         ):
             mode = wiz.page(0).get_type()
 
+        if wiz is not None:
+            provider = (wiz.field("bill_provider") or "").strip()
+
         is_bill = mode == "bill"
+        needs_period = is_bill and bill_requires_period(provider)
 
         self.lbl_date.setVisible(is_bill)
         self.input_date.setVisible(is_bill)
-        self.lbl_period_start.setVisible(is_bill)
-        self.input_period_start.setVisible(is_bill)
-        self.lbl_period_end.setVisible(is_bill)
-        self.input_period_end.setVisible(is_bill)
+
+        self.lbl_period_start.setVisible(needs_period)
+        self.input_period_start.setVisible(needs_period)
+        self.lbl_period_end.setVisible(needs_period)
+        self.input_period_end.setVisible(needs_period)
 
         if is_bill:
             self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
-            self.input_period_start.clear()
-            self.input_period_end.clear()
             self.input_amount.clear()
 
+            if needs_period:
+                self.input_period_start.clear()
+                self.input_period_end.clear()
+            else:
+                self.input_period_start.clear()
+                self.input_period_end.clear()
 
 
 
@@ -473,18 +481,20 @@ class PageAmount(QWizardPage):
 
 
 
-
-
-
     def validatePage(self) -> bool:
         wiz = self.wizard()
         mode = None
+        provider = ""
+
         if (
             wiz is not None
             and wiz.page(0) is not None
             and hasattr(wiz.page(0), "get_type")
         ):
             mode = wiz.page(0).get_type()
+
+        if wiz is not None:
+            provider = (wiz.field("bill_provider") or "").strip()
 
         if mode == "bill":
             payment_date = is_valid_date(self.input_date.text().strip())
@@ -496,31 +506,32 @@ class PageAmount(QWizardPage):
                 )
                 return False
 
-            period_start = is_valid_date(self.input_period_start.text().strip())
-            if not period_start:
-                QMessageBox.warning(
-                    self,
-                    "Hiba",
-                    "Érvénytelen időszak kezdete! Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
-                )
-                return False
+            if bill_requires_period(provider):
+                period_start = is_valid_date(self.input_period_start.text().strip())
+                if not period_start:
+                    QMessageBox.warning(
+                        self,
+                        "Hiba",
+                        "Érvénytelen időszak kezdete! Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
+                    )
+                    return False
 
-            period_end = is_valid_date(self.input_period_end.text().strip())
-            if not period_end:
-                QMessageBox.warning(
-                    self,
-                    "Hiba",
-                    "Érvénytelen időszak vége! Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
-                )
-                return False
+                period_end = is_valid_date(self.input_period_end.text().strip())
+                if not period_end:
+                    QMessageBox.warning(
+                        self,
+                        "Hiba",
+                        "Érvénytelen időszak vége! Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
+                    )
+                    return False
 
-            if period_start > period_end:
-                QMessageBox.warning(
-                    self,
-                    "Hiba",
-                    "Az időszak kezdete nem lehet későbbi, mint az időszak vége.",
-                )
-                return False
+                if period_start > period_end:
+                    QMessageBox.warning(
+                        self,
+                        "Hiba",
+                        "Az időszak kezdete nem lehet későbbi, mint az időszak vége.",
+                    )
+                    return False
 
         amount_str = self.input_amount.text().strip()
         try:
@@ -539,6 +550,11 @@ class PageAmount(QWizardPage):
                 self, "Hiba", "Érvénytelen összeg formátum. Csak számokat használjon."
             )
             return False
+
+
+
+
+
 
     def get_amount(self) -> float:
         amount_str = self.input_amount.text().strip()
@@ -589,8 +605,6 @@ class TransactionWizard(QWizard):
 
    
     def accept(self) -> None:
-        print("PAGE 6:", type(self.page(6)))
-
         raw_mode = self.page(0).get_type()  # 'income' / 'expense' / 'bill'
         provider = (self.field("bill_provider") or "").strip()
 
@@ -601,7 +615,6 @@ class TransactionWizard(QWizard):
         else:
             mode = raw_mode
 
-        print(f"ACCEPT raw_mode={raw_mode!r} provider={provider!r} final_mode={mode!r}")
 
         has_details = bool(self.field("has_details"))
 
@@ -621,7 +634,6 @@ class TransactionWizard(QWizard):
         if mode == "bill":
             t_type = "expense"
 
-            print(f"BILL ACCEPT provider={provider!r}")
 
             if provider == "MVMNext":
                 is_gaz = self.page(6).is_gas()
@@ -648,41 +660,41 @@ class TransactionWizard(QWizard):
 
             amount_page = self.page(3)
 
+           
             date_raw = amount_page.get_bill_date_raw()
-            period_start_raw = amount_page.get_period_start_raw()
-            period_end_raw = amount_page.get_period_end_raw()
 
             name = target_name
             description = "Számlabefizetés"
             has_details = False
             amount = amount_page.get_amount()
 
-            period_start = is_valid_date(period_start_raw)
-            period_end = is_valid_date(period_end_raw)
+            if bill_requires_period(provider):
+                period_start_raw = amount_page.get_period_start_raw()
+                period_end_raw = amount_page.get_period_end_raw()
 
-            if not period_start or not period_end:
-                QMessageBox.critical(
-                    self,
-                    "Hiba",
-                    "Az időszak kezdete vagy vége érvénytelen.",
-                )
-                return
+                period_start = is_valid_date(period_start_raw)
+                period_end = is_valid_date(period_end_raw)
 
-            if period_start > period_end:
-                QMessageBox.critical(
-                    self,
-                    "Hiba",
-                    "Az időszak kezdete nem lehet későbbi, mint az időszak vége.",
-                )
-                return
+                if not period_start or not period_end:
+                    QMessageBox.critical(
+                        self,
+                        "Hiba",
+                        "Az időszak kezdete vagy vége érvénytelen.",
+                    )
+                    return
+
+                if period_start > period_end:
+                    QMessageBox.critical(
+                        self,
+                        "Hiba",
+                        "Az időszak kezdete nem lehet későbbi, mint az időszak vége.",
+                    )
+                    return
+                else:
+                    period_start = None
+                    period_end = None
 
 
-            print(
-                "RAW FIELDS:",
-                repr(amount_page.input_date.text()),
-                repr(amount_page.input_period_start.text()),
-                repr(amount_page.input_period_end.text()),
-            )
 
         # -------------------------------------------------
         # NORMÁL ÁG (BEVÉTEL / KIADÁS)
@@ -739,7 +751,6 @@ class TransactionWizard(QWizard):
         # -------------------------------------------------
         # MENTÉS
         # -------------------------------------------------
-        print("SAVE BILL:", date_raw, period_start, period_end)
 
         data = {
             "date": date,
@@ -754,6 +765,8 @@ class TransactionWizard(QWizard):
             "period_end": period_end,
         }
 
+
+        print("BILL SAVE DEBUG:", provider, target_name, period_start, period_end)
         tx_id = self.db.save_transaction(data)
 
         # Részletek mentése csak a nem-bill ágban, ha has_details=True
@@ -782,7 +795,13 @@ class TransactionWizard(QWizard):
                     amount=float(item_amount),
                 )
 
-        QMessageBox.information(self, "Siker", "A tranzakció sikeresen rögzítve lett!")
+        msg = (
+            "Számla sikeresen rögzítve!" 
+            if mode == "bill" 
+            else "Tranzakció sikeresen rögzítve!"
+        )
+        
+        QMessageBox.information(self, "Siker", msg)
         self.main_window.set_page("transactions")
         super().accept()
 
@@ -793,7 +812,7 @@ class TransactionWizard(QWizard):
 
 class PageDetails(QWizardPage):
     """
-    5/5 oldal: több tétel rögzítése (ideiglenes egyszerű UI).
+    Tételek rögzítése oldal: több tétel rögzítése (ideiglenes egyszerű UI).
     Formátum (soronként):
       - tételnév;egységár*db      (pl. rágó;349*3)
       - tételnév;egységár         (pl. kávé;450)  -> db=1
@@ -803,7 +822,7 @@ class PageDetails(QWizardPage):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("5/5. Részletek rögzítése")
+        self.setTitle("Részletek rögzítése")
         self.setSubTitle(
             "Soronként add meg: tételnév;egységár*db  (pl. rágó;349*3)  vagy tételnév;egységár  (db=1)."
         )
@@ -832,7 +851,11 @@ class PageDetails(QWizardPage):
         self._hidden_total.setText("0")
 
         # total megy a hidden_total-on
-        self.registerField("details_total", self._hidden_total, "text", "textChanged")
+        self.registerField(
+            "details_total", 
+            self._hidden_total, 
+            "text", "textChanged"
+        )
 
         self._hidden_text = QLineEdit(self)
         self._hidden_text.setVisible(False)
@@ -846,7 +869,6 @@ class PageDetails(QWizardPage):
 
     def _recalc_total(self) -> None:
         total = 0.0
-        ok_lines = 0
         lines = self.txt.toPlainText().splitlines()
         loc = QLocale.system()
         for line in lines:
@@ -856,7 +878,6 @@ class PageDetails(QWizardPage):
             try:
                 _, _, _, amount = parse_details_line(line, loc=loc)
                 total += float(amount)
-                ok_lines += 1
             except Exception:
                 # rossz sor: kihagyjuk, majd validatePage jelez
                 pass

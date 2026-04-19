@@ -1,4 +1,4 @@
-# - penzugyi_naplo/ui/pages/transactions_page.py
+# - penzugyi_naplo/ui/likviditas/pages/transactions_page.py
 # -------------------------------------------------
 
 """
@@ -113,6 +113,10 @@ def get_transaction_type_color(tx_type: str, is_bill: int) -> QColor:
     if tx_type == "expense" and int(is_bill or 0) == 1:
         return QColor(140, 90, 180)   # Számlabefizetés
     return QColor(170, 60, 60)        # Kiadás
+
+
+
+
 
 
 

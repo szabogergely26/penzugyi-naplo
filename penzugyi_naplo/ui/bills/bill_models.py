@@ -30,6 +30,7 @@ BillKind = Literal["monthly", "periodic"]
 class MonthlyAmount:
     month: int  # 1..12
     amount: float
+    entry_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,7 @@ class PeriodicAmount:
     start: str | None  # "YYYY-MM-DD"
     end: str | None  # "YYYY-MM-DD"
     amount: float | None
+    entry_id: int | None = None
     invoice_number: str | None = None
     is_paid: bool = False
 

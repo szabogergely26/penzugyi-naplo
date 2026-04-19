@@ -25,7 +25,7 @@ Leírás a ui.bills.bills_page-hez:
         - set_filter() -> reload() -> _render()
 
     - Adatforrás:
-        - jelenleg demó adatok
+        - jelenleg Normál módba nincs, dev-ben db.py -ből építkezik.
         - később DB: bills + bill_entries év szerint
 
     - Megjelenítés:
@@ -161,11 +161,6 @@ class BillsPage(QWidget):
         
         
         self.log.d(f"BillsPage.reload source=db year={year} models={len(models)}")
-
-        source = "db"
-        if self.log:
-            self.log.d(f"BillsPage.reload source={source} year={year} models={len(models)}")
-
 
         self._render(models)
 

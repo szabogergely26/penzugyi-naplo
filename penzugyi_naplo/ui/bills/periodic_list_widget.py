@@ -2,6 +2,8 @@
 # ---------------------------------------------------
 
 """
+    Kinézetért felel....
+
     Időszakos sorok:
     Időszak | Összeg
 
@@ -32,6 +34,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QLabel, QWidget
 
 from penzugyi_naplo.ui.bills.bill_models import PeriodicAmount
+
+# --------- Importok vége ---------------
+
+
 
 
 HU_MONTHS = [
@@ -64,7 +70,7 @@ class PeriodicListWidget(QWidget):
         lay = QGridLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setHorizontalSpacing(8)
-        lay.setVerticalSpacing(6)
+        lay.setVerticalSpacing(4)
 
         row = 0
         for month in range(1, 13):
@@ -73,28 +79,35 @@ class PeriodicListWidget(QWidget):
             month_name = HU_MONTHS[month - 1]
             status = "✓" if item and item.is_paid else "-"
 
-            lay.addWidget(self._cell(month_name, strong=True), row, 0)
-            lay.addWidget(
-                self._cell(
-                    status,
-                    align=Qt.AlignmentFlag.AlignRight,
-                    paid=bool(item and item.is_paid),
-                ),
-                row,
-                1,
+            month_label = self._cell(month_name)
+            status_label = self._cell(
+                status,
+                align=Qt.AlignmentFlag.AlignRight,
+                paid=bool(item and item.is_paid),
             )
+
+            lay.addWidget(month_label, row, 0)
+            lay.addWidget(status_label, row, 1)
             row += 1
 
             if item and item.is_paid:
                 period = f"Időszak: {self._fmt_period(item.start, item.end)}"
                 amount = f"Összeg: {self._fmt_huf(item.amount)}"
-                invoice = f"Számla: {item.invoice_number or '-'}"
+                invoice = "Számla sorszám: -"
 
-                lay.addWidget(self._cell(period, meta=True), row, 0, 1, 2)
+                lay.addWidget(self._meta_cell(period), row, 0, 1, 2)
                 row += 1
-                lay.addWidget(self._cell(amount, meta=True), row, 0, 1, 2)
+
+                lay.addWidget(self._spacer_cell(), row, 0, 1, 2)
                 row += 1
-                lay.addWidget(self._cell(invoice, meta=True), row, 0, 1, 2)
+
+                lay.addWidget(self._meta_cell(amount, strong=True), row, 0, 1, 2)
+                row += 1
+
+                lay.addWidget(self._meta_cell(invoice), row, 0, 1, 2)
+                row += 1
+
+                lay.addWidget(self._spacer_cell(height=8), row, 0, 1, 2)
                 row += 1
 
     def _cell(
@@ -102,24 +115,33 @@ class PeriodicListWidget(QWidget):
         text: str,
         *,
         align: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft,
-        strong: bool = False,
-        meta: bool = False,
         paid: bool = False,
     ) -> QLabel:
         lab = QLabel(text)
         lab.setAlignment(align | Qt.AlignmentFlag.AlignVCenter)
         lab.setWordWrap(False)
-
-        if strong:
-            lab.setProperty("periodicMonthTitle", True)
-        elif meta:
-            lab.setProperty("periodicMeta", True)
-        else:
-            lab.setProperty("cell", True)
+        lab.setProperty("cell", True)
 
         if paid:
             lab.setProperty("paid", True)
 
+        return lab
+
+    def _meta_cell(self, text: str, *, strong: bool = False) -> QLabel:
+        lab = QLabel(text)
+        lab.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        lab.setWordWrap(False)
+        lab.setContentsMargins(16, 0, 0, 0)  # behúzás
+        lab.setProperty("periodicMeta", True)
+
+        if strong:
+            lab.setProperty("periodicAmount", True)
+
+        return lab
+
+    def _spacer_cell(self, height: int = 4) -> QLabel:
+        lab = QLabel("")
+        lab.setFixedHeight(height)
         return lab
 
     @staticmethod
