@@ -471,14 +471,60 @@ class HomePage(QWidget):
         divider.setFrameShape(QFrame.Shape.HLine)
         layout.addWidget(divider)
 
-        layout.addWidget(
-            self._make_card_value_row("Valós bevétel", row.actual_income, "income")
+
+        has_data = any([
+            row.actual_income != 0,
+            row.actual_expense != 0,
+            row.actual_savings != 0,
+        ])
+
+        if not has_data:
+            empty_label = QLabel("Ehhez a hónaphoz még nincs rögzített adat.")
+            empty_label.setObjectName("monthCardEmptyText")
+            empty_label.setWordWrap(True)
+            layout.addWidget(empty_label)
+            layout.addStretch()
+            card.mousePressEvent = lambda event: self._open_month_details(event, row)
+            return card
+
+
+
+        max_value = max(
+            abs(row.actual_income),
+            abs(row.actual_expense),
+            abs(row.actual_savings),
+            1.0,  # nullával osztás ellen
         )
+
+        income_ratio = abs(row.actual_income) / max_value
+        expense_ratio = abs(row.actual_expense) / max_value
+        savings_ratio = abs(row.actual_savings) / max_value
+
         layout.addWidget(
-            self._make_card_value_row("Valós kiadás", row.actual_expense, "expense")
+            self._make_card_value_row(
+                "Valós bevétel",
+                row.actual_income,
+                "income",
+                income_ratio,
+            )
         )
+
         layout.addWidget(
-            self._make_card_value_row("Megtakarítás", row.actual_savings, "savings")
+            self._make_card_value_row(
+                "Valós kiadás",
+                row.actual_expense,
+                "expense",
+                expense_ratio,
+            )
+        )
+
+        layout.addWidget(
+            self._make_card_value_row(
+                "Megtakarítás",
+                row.actual_savings,
+                "savings",
+                savings_ratio,
+            )
         )
 
         layout.addStretch()
@@ -490,19 +536,24 @@ class HomePage(QWidget):
         
 
 
-
-
-
-
-
-
-
-
-    def _make_card_value_row(self, label_text: str, value: float, row_type: str) -> QWidget:
+    def _make_card_value_row(
+            self, 
+            label_text: str, 
+            value: float, 
+            row_type: str,
+            fill_ratio: float,
+    ) -> QWidget:
+        
         row = QWidget()
-        layout = QHBoxLayout(row)
+        layout = QVBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(4)
+
+        # --- felső sor: label + érték ---
+        top_row = QWidget()
+        top_layout = QHBoxLayout(top_row)
+        top_layout.setContentsMargins(0, 0, 0, 0)
+        top_layout.setSpacing(8)
 
         label = QLabel(label_text)
         label.setObjectName("monthCardRowLabel")
@@ -512,11 +563,48 @@ class HomePage(QWidget):
         value_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         value_label.setProperty("rowType", row_type)
 
-        layout.addWidget(label)
-        layout.addStretch(1)
-        layout.addWidget(value_label)
+        top_layout.addWidget(label)
+        top_layout.addStretch(1)
+        top_layout.addWidget(value_label)
+
+        # --- alsó sor: MINI BAR ---
+        bar_bg = QFrame()
+        bar_bg.setObjectName("miniBarBg")
+
+        bar_layout = QHBoxLayout(bar_bg)
+        bar_layout.setContentsMargins(0, 0, 0, 0)
+        bar_layout.setSpacing(0)
+
+        bar_fill = QFrame()
+        bar_fill.setObjectName("miniBarFill")
+        bar_fill.setProperty("rowType", row_type)
+
+        # 👉 arányos szélesség:
+        
+        BAR_MAX_FILL = 80   # Meddig futhat ki a sáv
+        BAR_TOTAL = 100     # teljes belső arányrendszer
+                            # stretch: tényleges kitöltés
+                            # rest: maradék hely
+
+        stretch = max(1, int(fill_ratio * BAR_MAX_FILL)) if value > 0 else 0
+        rest = max(0, BAR_TOTAL - stretch)
+
+        bar_layout.addWidget(bar_fill, stretch)
+        bar_layout.addStretch(rest)
+
+        # --- összeépítés ---
+        layout.addWidget(top_row)
+        layout.addWidget(bar_bg)
 
         return row
+
+
+
+
+
+
+
+    
 
 
 

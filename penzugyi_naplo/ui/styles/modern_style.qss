@@ -488,6 +488,44 @@ QLabel#monthInfoValue[positive="false"] {
 }
 
 
+/* vízszintes sávok */ 
+
+/* háttér sín */
+QFrame#miniBarBg {
+    background-color: #e6e6e6;
+    border-radius: 5px;
+    min-height: 10px;
+    max-height: 10px;
+}
+
+/* kitöltés alap */
+QFrame#miniBarFill {
+    border-radius: 5px;
+}
+
+/* bevétel */
+QFrame#miniBarFill[rowType="income"] {
+    background-color: #2ecc71;
+}
+
+/* kiadás */
+QFrame#miniBarFill[rowType="expense"] {
+    background-color: #e74c3c;
+}
+
+/* megtakarítás */
+QFrame#miniBarFill[rowType="savings"] {
+    background-color: #3498db;
+}
+
+
+/* - Üres sáv: */
+QLabel#monthCardEmptyText {
+    color: #8a8f98;
+    font-style: italic;
+    padding-top: 6px;
+}
+
 
 
 /* MonthsDetailsDialog */
@@ -609,3 +647,6 @@ QPushButton#yearTabButton:checked:hover {
     border: 1px solid rgba(200, 230, 255, 1.0);
     color: white;
 }
+
+
+
