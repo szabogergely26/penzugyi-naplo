@@ -203,7 +203,7 @@ class SettingsPage(QWidget):
         self.cmb_toolbar.blockSignals(True)
         style = str(self._settings.value(SETTINGS_KEY_STYLE_MODE, DEFAULT_STYLE_MODE))
         for i in range(self.cmb_toolbar.count()):
-            if self.cmb_toolbar.itemData(i) == mode:
+            if self.cmb_toolbar.itemData(i) == style:
                 self.cmb_toolbar.setCurrentIndex(i)
                 break
         self.cmb_toolbar.blockSignals(False)

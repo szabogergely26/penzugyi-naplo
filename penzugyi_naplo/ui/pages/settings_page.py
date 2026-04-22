@@ -81,7 +81,8 @@ class SettingsPage(QWidget):
         hint.setWordWrap(True)
         hint.setObjectName("pageHint")
         root.addWidget(hint)
-
+        self._load_values()
+        
         sep = QFrame(self)
         sep.setFrameShape(QFrame.HLine)
         sep.setFrameShadow(QFrame.Sunken)
