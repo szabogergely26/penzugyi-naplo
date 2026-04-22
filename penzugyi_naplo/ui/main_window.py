@@ -205,7 +205,7 @@ class MainWindow(QMainWindow):
         self._connect_core_signals()
         self._load_toolbar_mode()
 
-        self.setWindowTitle("Pénzügyi Napló : Fejlesztői verzió")
+        self.setWindowTitle("Pénzügyi Napló")
 
         # --  Induló ablakméret:   (szélesség, magasság)
         self.resize(1650, 1000)
