@@ -429,6 +429,20 @@ QLabel[periodicAmount="true"] {
 }
 
 
+QWidget#monthlyGrid QLabel[cell="true"] {
+    padding: 4px 6px;
+    border-radius: 6px;
+}
+
+QWidget#monthlyGrid QLabel[clickable="true"]:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+
+
+
+
+
 
 /* ===== Havi dashboard kártyák ===== */
 

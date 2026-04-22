@@ -12,6 +12,23 @@ ORG_NAME: str = "PenzugyiNaplo"
 
 SETTINGS_KEY_DEV_MODE: str = "app/dev_mode"
 
+
+
+SETTINGS_KEY_STYLE_MODE: str = "ui/style_mode"
+
+STYLE_CLASSIC: str = "classic"
+STYLE_MODERN: str = "modern"
+STYLE_MODERN_HOME: str = "modern_home"
+
+DEFAULT_STYLE_MODE: str = STYLE_CLASSIC
+
+AVAILABLE_STYLE_MODES: tuple[str, ...] = (
+    STYLE_CLASSIC,
+    STYLE_MODERN,
+    STYLE_MODERN_HOME,
+)
+
+
 DB_FILENAME_PROD: str = "transactions.sqlite3"
 DB_FILENAME_DEV: str = "transactions_dev.sqlite3"
 

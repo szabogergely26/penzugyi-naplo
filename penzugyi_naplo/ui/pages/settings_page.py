@@ -42,6 +42,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from penzugyi_naplo.config import (
+    APP_NAME, 
+    ORG_NAME,
+    SETTINGS_KEY_STYLE_MODE,
+    STYLE_CLASSIC,
+    STYLE_MODERN,
+    STYLE_MODERN_HOME,
+    DEFAULT_STYLE_MODE,
+    )
+
 # ------ Importok vége -----
 
 
@@ -52,7 +62,7 @@ class SettingsPage(QWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
-        self._settings = QSettings("SzaboG", "PenzugyiNaplo")
+        self._settings = QSettings(ORG_NAME, APP_NAME)
 
         self.setObjectName("settingsPage")
 
@@ -88,6 +98,19 @@ class SettingsPage(QWidget):
         row_ui.addWidget(self.cmb_toolbar, 1)
         root.addLayout(row_ui)
 
+        # --- 2) Téma (stílus) ---
+        row_style = QHBoxLayout()
+        lbl_style = QLabel("Téma:", self)
+
+        self.cmb_style = QComboBox(self)
+        self.cmb_style.addItem("Classic", STYLE_CLASSIC)
+        self.cmb_style.addItem("Modern", STYLE_MODERN)
+        self.cmb_style.addItem("Modern Home", STYLE_MODERN_HOME)
+
+        row_style.addWidget(lbl_style)
+        row_style.addWidget(self.cmb_style, 1)
+        root.addLayout(row_style)
+
         # --- 2) Keresés: minden évben (váz) ---
         self.chk_search_all_years = QCheckBox(
             "Keresés minden évben (ne csak az aktív évben)", self
@@ -99,6 +122,7 @@ class SettingsPage(QWidget):
         # --- Betöltés + események ---
         self._load_values()
         self.cmb_toolbar.currentIndexChanged.connect(self._on_toolbar_changed)
+        self.cmb_style.currentIndexChanged.connect(self._on_style_changed)
         self.chk_search_all_years.toggled.connect(self._on_search_all_years_changed)
 
     # -------------------------
@@ -118,6 +142,20 @@ class SettingsPage(QWidget):
         all_years = bool(self._settings.value("ui/search_all_years", True))
         self.chk_search_all_years.setChecked(all_years)
 
+        # --- STYLE ---
+        style = str(self._settings.value(SETTINGS_KEY_STYLE_MODE, DEFAULT_STYLE_MODE))
+
+        for i in range(self.cmb_style.count()):
+            if self.cmb_style.itemData(i) == style:
+                self.cmb_style.setCurrentIndex(i)
+                break
+
+
+
+
+
+
+
     def _on_toolbar_changed(self) -> None:
         mode = str(self.cmb_toolbar.currentData())
         if mode not in ("menubar", "ribbon"):
@@ -135,3 +173,23 @@ class SettingsPage(QWidget):
 
     def _on_search_all_years_changed(self, checked: bool) -> None:
         self._settings.setValue("ui/search_all_years", bool(checked))
+
+
+
+
+
+    def _on_style_changed(self) -> None:
+        mode = str(self.cmb_style.currentData())
+
+        if mode not in (STYLE_CLASSIC, STYLE_MODERN, STYLE_MODERN_HOME):
+            return
+
+        self._settings.setValue(SETTINGS_KEY_STYLE_MODE, mode)
+
+        # Live apply
+        mw = self.window()
+        if hasattr(mw, "apply_style_mode"):
+            try:
+                mw.apply_style_mode(mode)
+            except Exception:
+                pass

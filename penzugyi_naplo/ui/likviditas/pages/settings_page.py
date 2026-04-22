@@ -25,11 +25,17 @@ from PySide6.QtWidgets import (
 from penzugyi_naplo.config import (
     APP_NAME,
     ORG_NAME,
+    SETTINGS_KEY_STYLE_MODE,
+    STYLE_CLASSIC,
+    STYLE_MODERN,
+    STYLE_MODERN_HOME,
+    DEFAULT_STYLE_MODE,
     active_db_path,
     dev_db_path,
     is_dev_mode,
     prod_db_path,
     set_dev_mode,
+
 )
 
 
@@ -120,13 +126,14 @@ class SettingsPage(QWidget):
         row_ui.addWidget(self.cmb_toolbar, 1)
         layout.addLayout(row_ui)
 
-        # Style (Classic/Modern)
+        # Style
         row_style = QHBoxLayout()
         row_style.addWidget(QLabel("Stílus:"))
 
         self.cmb_style = QComboBox()
-        self.cmb_style.addItem("Classic", "classic")
-        self.cmb_style.addItem("Modern", "modern")
+        self.cmb_style.addItem("Classic", STYLE_CLASSIC)
+        self.cmb_style.addItem("Modern", STYLE_MODERN)
+        self.cmb_style.addItem("Modern Home", STYLE_MODERN_HOME)
 
         row_style.addWidget(self.cmb_style, 1)
         layout.addLayout(row_style)
@@ -141,9 +148,8 @@ class SettingsPage(QWidget):
 
         # Signals
         self.cmb_toolbar.currentIndexChanged.connect(self._on_toolbar_changed)
-        self.chk_search_all_years.toggled.connect(self._on_search_all_years_changed)
-
         self.cmb_style.currentIndexChanged.connect(self._on_style_changed)
+        self.chk_search_all_years.toggled.connect(self._on_search_all_years_changed)
 
         return page
 
@@ -195,7 +201,7 @@ class SettingsPage(QWidget):
     def _load_values(self) -> None:
         # --- toolbar_mode ---
         self.cmb_toolbar.blockSignals(True)
-        mode = str(self._settings.value("ui/toolbar_mode", "menubar"))
+        style = str(self._settings.value(SETTINGS_KEY_STYLE_MODE, DEFAULT_STYLE_MODE))
         for i in range(self.cmb_toolbar.count()):
             if self.cmb_toolbar.itemData(i) == mode:
                 self.cmb_toolbar.setCurrentIndex(i)
@@ -204,7 +210,7 @@ class SettingsPage(QWidget):
 
         # --- style_mode ---
         self.cmb_style.blockSignals(True)
-        style = str(self._settings.value("ui/style_mode", "classic"))
+        style = str(self._settings.value(SETTINGS_KEY_STYLE_MODE, DEFAULT_STYLE_MODE))
         for i in range(self.cmb_style.count()):
             if self.cmb_style.itemData(i) == style:
                 self.cmb_style.setCurrentIndex(i)
@@ -309,8 +315,12 @@ class SettingsPage(QWidget):
 
     def _on_style_changed(self) -> None:
         mode = str(self.cmb_style.currentData())
-        self._settings.setValue("ui/style_mode", mode)
-        self._settings.sync()  # optional, de jó “most rögtön” mentésre
+
+        if mode not in (STYLE_CLASSIC, STYLE_MODERN, STYLE_MODERN_HOME):
+            return
+
+        self._settings.setValue(SETTINGS_KEY_STYLE_MODE, mode)
+        self._settings.sync()
 
         mw = self.window()
         if hasattr(mw, "apply_style_mode"):

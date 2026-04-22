@@ -65,7 +65,17 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from penzugyi_naplo.config import APP_NAME, ORG_NAME
+from penzugyi_naplo.config import (
+    APP_NAME, 
+    ORG_NAME,
+    SETTINGS_KEY_STYLE_MODE,
+    STYLE_CLASSIC,
+    STYLE_MODERN,
+    STYLE_MODERN_HOME,
+    DEFAULT_STYLE_MODE,
+    AVAILABLE_STYLE_MODES,
+)
+
 from penzugyi_naplo.core.app_context import AppContext, AppState
 from penzugyi_naplo.core.logging_utils import DebugFlags, Log
 from penzugyi_naplo.db.transaction_database import TransactionDatabase
@@ -143,6 +153,7 @@ class MainWindow(QMainWindow):
 
         # --- BAL PANEL ---
         self._left_panel = QWidget(self._central)
+        self._left_panel.setObjectName("leftPanel")
         self._left_panel.setFixedWidth(140)
 
         self._left_layout = QVBoxLayout(self._left_panel)
@@ -238,31 +249,34 @@ class MainWindow(QMainWindow):
 
     def apply_style_mode(self, mode: str) -> None:
         mode = (mode or "").strip().lower()
-        if mode not in ("classic", "modern"):
-            mode = "classic"
 
-        # 1) fájl kiválasztás
+        style_to_file = {
+            STYLE_CLASSIC: "classic_style.qss",
+            STYLE_MODERN: "modern_style.qss",
+            STYLE_MODERN_HOME: "modern_style_home.qss",
+        }
+
+        if mode not in AVAILABLE_STYLE_MODES:
+            mode = DEFAULT_STYLE_MODE
+
         base = Path(__file__).resolve().parent  # .../ui
-        qss_path = (
-            base
-            / "styles"
-            / ("classic_style.qss" if mode == "classic" else "modern_style.qss")
-        )
+        qss_path = base / "styles" / style_to_file[mode]
 
-        # 2) betöltés
         try:
             qss = qss_path.read_text(encoding="utf-8")
         except Exception as e:
             self.log.d("QSS load failed:", str(qss_path), e)
             qss = ""
 
-        # 3) alkalmazás
         self.setStyleSheet(qss)
         self.log.d("Style mode set:", mode, "QSS:", str(qss_path))
 
+
+
+
     def load_style_mode(self) -> None:
         s = QSettings(ORG_NAME, APP_NAME)
-        mode = str(s.value("ui/style_mode", "classic"))
+        mode = str(s.value(SETTINGS_KEY_STYLE_MODE, DEFAULT_STYLE_MODE))
         self.apply_style_mode(mode)
 
     def on_year_selected(self, year: int) -> None:
