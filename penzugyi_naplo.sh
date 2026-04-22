@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-PROJECT_DIR="$HOME/Projects/Penzügyi_Naplo_Dev"
+PROJECT_DIR="$HOME/Projects/Penzugyi_Naplo"
 PYTHON_BIN="$PROJECT_DIR/.venv/bin/python"
 MAIN_FILE="$PROJECT_DIR/main.py"
 
