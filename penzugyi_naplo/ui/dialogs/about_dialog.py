@@ -14,8 +14,9 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "4.0-dev"
-BUILD_INFO = "Fejlesztői verzió\n2025. november –"
+APP_VERSION = "4.5-dev"
+BUILD_INFO = "Fejlesztés alatt...\n2025. novembertől"
+DEV_STATE = "Aktuális fejlesztési állapot:\n4.6"
 
 
 class AboutDialog(QDialog):
@@ -36,6 +37,13 @@ class AboutDialog(QDialog):
         build = QLabel(BUILD_INFO)
         build.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        state = QLabel(DEV_STATE)
+        state.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+
+
+
+
         sysinfo = QLabel(
             f"Python: {platform.python_version()}\nSQLite: {sqlite3.sqlite_version}"
         )
@@ -46,6 +54,8 @@ class AboutDialog(QDialog):
 
         layout.addWidget(title)
         layout.addWidget(version)
+        layout.addWidget(state)
+        layout.addSpacing(10)
         layout.addWidget(build)
         layout.addSpacing(10)
         layout.addWidget(sysinfo)

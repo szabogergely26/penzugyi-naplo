@@ -93,6 +93,7 @@ from penzugyi_naplo.ui.shared.pages.coming_soon_page import ComingSoonPage
 from penzugyi_naplo.ui.shared.widgets.ribbon_bar import RibbonBar
 from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
 from penzugyi_naplo.ui.dialogs.log_viewer_dialog import LogViewerDialog
+from penzugyi_naplo.ui.dialogs.version_history_dialog import VersionHistoryDialog
 
 # ------- Importok vége -------
 
@@ -193,6 +194,9 @@ class MainWindow(QMainWindow):
 
         self.act_about = QAction("Névjegy", self)
         self.act_about.triggered.connect(self._show_about)
+        
+        self.act_version_history = QAction("Verziótörténet", self)
+        self.act_version_history.triggered.connect(self._show_version_history)
 
         self._build_menubar()
 
@@ -521,6 +525,7 @@ class MainWindow(QMainWindow):
         m_help.addAction(self.act_version_info)
         m_help.addSeparator()
         m_help.addAction(self.act_log_viewer)
+        m_help.addAction(self.act_version_history)
 
        
 
@@ -562,8 +567,10 @@ class MainWindow(QMainWindow):
         tab_help = self.ribbon.add_tab("Súgó")
         self.ribbon.add_action_button(tab_help, self.act_about)
         self.ribbon.add_action_button(tab_help, self.act_version_info)
+        self.ribbon.add_action_button(tab_help, self.act_version_history)
 
         self.ribbon.add_action_button(tab_help, self.act_log_viewer)
+
 
         self.ribbon.add_action_button(tab_app, self.act_toolbar_menubar)
         self.ribbon.add_action_button(tab_app, self.act_toolbar_ribbon)
@@ -804,4 +811,9 @@ class MainWindow(QMainWindow):
 
     def show_log_viewer(self) -> None:
         dialog = LogViewerDialog(self)
+        dialog.exec()
+
+
+    def _show_version_history(self) -> None:
+        dialog = VersionHistoryDialog(self)
         dialog.exec()
