@@ -15,7 +15,7 @@ class VersionHistoryDialog(QDialog):
         browser.setHtml("""
         <h1>Verziótörténet – Pénzügyi Napló</h1>
 
-        <h2>4.5 – 2026-04-22</h2>
+        <h2>4.5 – 2026-04-22-23</h2>
         <ul>
             <li>Névjegy ablak main ághoz igazítva</li>
             <li>Fejlesztés kezdete megjelenítve</li>

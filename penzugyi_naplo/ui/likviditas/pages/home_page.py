@@ -19,14 +19,14 @@ Adatforrás:
 
 UI:
     - havi táblázatos nézet (Jan–Dec fix sorrend)
-    - belső tabok: "Kezdőoldal" / "Számlák"
+
 
 Topology (UI):
     MainWindow
       └─ HomePage  ← this
            ├─ HomeSummaryPanel (ui/home_summary_panel.py)
-           └─ QTableWidget (havi dashboard)
-
+           ├─ monthly cards view
+           └─ HomeTableDialog (táblázatos nézet)
 """
 
 
@@ -50,7 +50,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
-    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -182,34 +181,18 @@ class HomePage(QWidget):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(10)
 
-
-        
-
-
-        # --- Belső tabok a Kezdőoldalon ---
-        self.tabs = QTabWidget(content)
-        self.tabs.setObjectName("homeTabs")
-
-
-       
-
-
-
-
-
-        # 1) Kezdőoldal TAB
-        tab_dashboard = QWidget()
-        dash_layout = QVBoxLayout(tab_dashboard)
-        dash_layout.setContentsMargins(0, 0, 0, 0)
-        dash_layout.setSpacing(12)
-
         self.summary = HomeSummaryPanel(self)
-        dash_layout.addWidget(self.summary)
-        dash_layout.addSpacing(8)
+        content_layout.addWidget(self.summary)
+        content_layout.addSpacing(8)
 
-        btn = QPushButton("Táblázatos nézet")   
+        btn = QPushButton("Táblázatos nézet")
+        btn.setObjectName("secondaryButton")
+        btn.setMaximumWidth(180)
+        btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         btn.clicked.connect(self.open_table_dialog)
-        dash_layout.addWidget(btn)
+
+        content_layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignRight)
+        print("HOME PAGE: Tablázatos nézet gomb letrehozva")
 
         self.dashboard_body = QFrame()
         self.dashboard_body.setObjectName("homeDashboardBody")
@@ -221,72 +204,15 @@ class HomePage(QWidget):
         self.cards_container = self._build_cards_view()
         self.dashboard_body_layout.addWidget(self.cards_container)
 
-        dash_layout.addWidget(self.dashboard_body, 1)
-        
-        # kis térköz
-        dash_layout.addSpacing(8)
+        content_layout.addWidget(self.dashboard_body, 1)
 
-
-
-
-
-       
-
-
-
-    
-        # 2) Számlák TAB
-        tab_bills = QWidget()
-        bills_layout = QVBoxLayout(tab_bills)
-        bills_layout.setContentsMargins(0, 0, 0, 0)
-        bills_layout.setSpacing(12)
-
-        # Felül: számlainfók "kártya"
-        info_card = QFrame()
-        info_card.setObjectName("bankInfoCard")
-        info_layout = QVBoxLayout(info_card)
-        info_layout.setContentsMargins(12, 12, 12, 12)
-        info_layout.setSpacing(6)
-
-        info_title = QLabel("Raiffeisen Bank számlainfók")
-        info_title.setObjectName("sectionTitle")
-
-        self.lbl_total_balance = QLabel("Teljes egyenleg: –")
-        self.lbl_metal_balance = QLabel("Nemesfém egyenleg: –")
-        self.lbl_cash_balance = QLabel("Készpénz: –")
-
-        info_layout.addWidget(info_title)
-        info_layout.addWidget(self.lbl_total_balance)
-        info_layout.addWidget(self.lbl_metal_balance)
-        info_layout.addWidget(self.lbl_cash_balance)
-
-        bills_layout.addWidget(info_card)
-
-        # Alul: ide jön majd a számlák listája/táblája (később)
-        placeholder = QLabel("Számlák listája (hamarosan)")
-        placeholder.setObjectName("mutedText")
-        bills_layout.addWidget(placeholder, 1)
-
-        # Tabok felvétele
-        self.tabs.addTab(tab_dashboard, "Kezdőoldal")
-        self.tabs.addTab(tab_bills, "Számlák")
-
-        # TabWidget a content-be
-        content_layout.addWidget(self.tabs)
-
-        # --- összerakás ---
         root.addWidget(title)
         root.addWidget(subtitle)
         root.addWidget(content, 1)
 
-        
-
         self.reload()
-
-      
         self._updating = False
 
-        
 
 
   
@@ -602,28 +528,10 @@ class HomePage(QWidget):
 
 
 
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-  
-
     def set_year(self, year: int) -> None:
         self._year = int(year)
         self.reload()
 
-    
-    
     
     
     

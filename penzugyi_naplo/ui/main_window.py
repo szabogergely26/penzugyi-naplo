@@ -208,6 +208,7 @@ class MainWindow(QMainWindow):
 
         # --- RIGHT: ribbon + navbar + pages ---
         self._build_ribbon()
+        self.ribbon.setObjectName("ribbonBar")
         self._root_layout.addWidget(self.ribbon)
 
         self._build_navbar()
