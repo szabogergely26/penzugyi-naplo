@@ -14,8 +14,9 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "4.0-dev"
-BUILD_INFO = "Fejlesztői verzió\n2025. november –"
+APP_VERSION = "4.5"
+BUILD_INFO = "Fejlesztés kezdete:\n2025. november"
+
 
 
 class AboutDialog(QDialog):
@@ -36,18 +37,24 @@ class AboutDialog(QDialog):
         build = QLabel(BUILD_INFO)
         build.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+
         sysinfo = QLabel(
             f"Python: {platform.python_version()}\nSQLite: {sqlite3.sqlite_version}"
         )
         sysinfo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        
+
 
         btn_close = QPushButton("Bezár")
         btn_close.clicked.connect(self.accept)
 
         layout.addWidget(title)
         layout.addWidget(version)
+        layout.addSpacing(10)
         layout.addWidget(build)
         layout.addSpacing(10)
         layout.addWidget(sysinfo)
-        layout.addSpacing(20)
+        layout.addSpacing(25)
+        
         layout.addWidget(btn_close)
