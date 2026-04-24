@@ -13,17 +13,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "4.0-dev"
-APP_CHANNEL = "Fejlesztői verzió"
-BUILD_INFO = "2025. november –"
-
-
 
 APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "4.0-dev"
-APP_CHANNEL = "Fejlesztői verzió"
-BUILD_INFO = "2025. november –"
+APP_VERSION = "4.5"
+APP_CHANNEL = "Stabil kiadás verzió"
+BUILD_INFO = "2025. november – 2026. április"
 
 VERSION_DESCRIPTION = """
 <b>Fejlesztői verzió</b><br><br>
@@ -70,7 +64,7 @@ class VersionInfoDialog(QDialog):
         channel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         channel.setStyleSheet("font-size: 13px; font-weight: bold;")
 
-        build = QLabel(f"Build időszak: {BUILD_INFO}")
+        build = QLabel(f"Build időszak: <b>{BUILD_INFO}</b>")
         build.setAlignment(Qt.AlignmentFlag.AlignCenter)
         build.setStyleSheet("font-size: 13px;")
 
