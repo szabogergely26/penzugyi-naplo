@@ -1,3 +1,28 @@
+# ui/likviditas/dialogs/home_table_dialogs.py
+# ----------------------------------------------
+
+"""
+Táblázatos havi összesítő dialógus
+(ui/likviditas/dialogs/home_table_dialog.py).
+
+Felelősség:
+    - az aktív év havi összesítő adatainak táblázatos megjelenítése
+    - tervezett és tényleges bevételek / kiadások / megtakarítások áttekintése
+    - a szerkeszthető tervadatok visszaírása az adatbázisba
+
+UI:
+    - QDialog alapú külön ablak
+    - QTableWidget 12 sorral, a hónapokhoz igazítva
+    - 10 oszlopos táblázat pénzügyi összesítő adatokkal
+    - fix ablakméret: 1300 × 460 px
+
+Kapcsolódás:
+    - HomePage.open_table_dialog() nyitja meg
+    - adatforrás: AppContext / TransactionDatabase
+"""
+
+
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
@@ -36,7 +61,7 @@ class HomeTableDialog(QDialog):
         self._updating = False
 
         self.setWindowTitle(f"Havi összesítő – {self._year}")
-        self.setFixedSize(1280, 460)     # x; y
+        self.setFixedSize(1300, 460)     # x; y
 
         layout = QVBoxLayout(self)
 
@@ -72,7 +97,7 @@ class HomeTableDialog(QDialog):
         hdr = self.table.horizontalHeader()
         hdr.setSectionResizeMode(QHeaderView.Fixed)
 
-        widths = [120, 130, 130, 110, 130, 110, 130, 110, 140, 140]
+        widths = [120, 130, 130, 110, 130, 110, 130, 110, 140, 160]
         for i, w in enumerate(widths):
             self.table.setColumnWidth(i, w)
 
