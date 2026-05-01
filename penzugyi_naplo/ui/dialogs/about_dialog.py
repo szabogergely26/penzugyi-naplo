@@ -14,8 +14,8 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "4.5"
-BUILD_INFO = "Fejlesztés kezdete:\n2025. november"
+APP_VERSION = "4.6-stabil"
+BUILD_INFO = "Aktuális állapot:\n 2026.május: 4.6"
 
 
 
