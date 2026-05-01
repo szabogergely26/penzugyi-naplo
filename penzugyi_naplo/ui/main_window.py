@@ -132,6 +132,7 @@ class MainWindow(QMainWindow):
             state=self.state,
             dev_mode=self.dev_mode,
         )
+        
 
         # --- Debug/log (csak dev módban aktív) ---
         self.log = Log(
@@ -359,7 +360,7 @@ class MainWindow(QMainWindow):
 
         # --- Statisztika ---
         if self.dev_mode:
-            self.add_page("statistics", StatisticsPage(self))
+            self.add_page("statistics", StatisticsPage(self.ctx, parent=self))
         else:
             self.add_page(
                 "statistics",
@@ -444,6 +445,10 @@ class MainWindow(QMainWindow):
         # fallback: ha van reload, hívd
         elif hasattr(page, "reload"):
             page.reload()
+
+        # fallback: ha van refresh, hívd
+        elif hasattr(page, "refresh"):
+            page.refresh()
 
     def set_active_year(self, year: int) -> None:
         self.state.active_year = int(year)

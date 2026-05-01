@@ -26,7 +26,8 @@ Topology (UI):
 
 from __future__ import annotations
 
-from typing import Optional
+import sqlite3
+from typing import Any, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -43,9 +44,10 @@ from PySide6.QtWidgets import (
 
 
 class StatisticsPage(QWidget):
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, ctx:Any = None, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
+        self.ctx = ctx
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -199,11 +201,136 @@ class StatisticsPage(QWidget):
         """
         Statisztikai adatok újratöltése.
 
-        Jelenleg helyfoglaló metódus.
-        Később innen frissülhetnek:
-            - szöveges összegzés
-            - trenddiagram
-            - éves bevétel / kiadás diagram
-            - havi bontású diagramok
+        Jelenlegi funkció:
+            - aktív év lekérése az AppContextből
+            - éves bevétel / kiadás / megtakarítás összesítése
+            - szöveges összefoglaló megjelenítése
         """
-        pass
+        if self.ctx is None:
+            self.summary_text.setText(
+                "A statisztika oldal még nem kapott alkalmazás-környezetet."
+            )
+            return
+
+        active_year = getattr(self.ctx.state, "active_year", None)
+
+        if active_year is None:
+            self.summary_text.setText(
+                "Nincs aktív év kiválasztva a statisztika számításához."
+            )
+            return
+
+        try:
+            summary = self._build_year_summary_text(int(active_year))
+        except Exception as exc:
+            self.summary_text.setText(
+                "A statisztikai összegzés nem sikerült.\n\n"
+                f"Hiba:\n{exc}"
+            )
+            return
+
+        self.summary_text.setText(summary)
+
+
+    # Segéd metódusok:
+    def _build_year_summary_text(self, year: int) -> str:
+        """
+        Éves pénzügyi összefoglaló szövegének összeállítása.
+
+        Az adatokat a transactions táblából olvassa:
+            - income  → bevétel
+            - expense → kiadás
+        """
+        income_total, expense_total = self._load_year_totals(year)
+
+        saving = income_total - expense_total
+
+        if income_total > 0:
+            saving_rate = (saving / income_total) * 100
+        else:
+            saving_rate = 0.0
+
+        lines = [
+            f"{year} összefoglalója",
+            "",
+            f"Összes bevétel: {self._format_money(income_total)}",
+            f"Összes kiadás: {self._format_money(expense_total)}",
+            f"Megtakarítás: {self._format_money(saving)}",
+            f"Megtakarítási arány: {saving_rate:.1f}%",
+            "",
+        ]
+
+        if income_total == 0 and expense_total == 0:
+            lines.append("Ehhez az évhez még nincs rögzített tranzakció.")
+        elif saving > 0:
+            lines.append("A bevételek jelenleg meghaladják a kiadásokat.")
+        elif saving < 0:
+            lines.append("A kiadások jelenleg meghaladják a bevételeket.")
+        else:
+            lines.append("A bevételek és kiadások jelenleg egyensúlyban vannak.")
+
+        return "\n".join(lines)
+    
+
+
+
+    def _load_year_totals(self, year: int) -> tuple[float, float]:
+        """
+        Aktív év bevétel / kiadás összesítése SQLite adatbázisból.
+
+        Visszatérés:
+            tuple[income_total, expense_total]
+        """
+        db_path = self.ctx.db.db_name
+
+      
+        sql = """
+            SELECT
+                COALESCE(SUM(CASE WHEN tx_type = 'income' THEN amount ELSE 0 END), 0),
+                COALESCE(SUM(CASE WHEN tx_type = 'expense' THEN amount ELSE 0 END), 0)
+            FROM transactions
+            WHERE year = ?
+        """
+
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql, (year,))
+            row = cursor.fetchone()
+
+        
+        if row is None:
+            return 0.0, 0.0
+
+        income_total = float(row[0] or 0)
+        expense_total = float(row[1] or 0)
+
+        return income_total, expense_total
+    
+
+
+
+    def _format_money(self, value: float) -> str:
+        """
+        Forint összeg formázása magyaros, ezres tagolású alakra.
+        """
+        rounded = int(round(value))
+        return f"{rounded:,}".replace(",", " ") + " Ft"
+    
+
+
+    def reload(self) -> None:
+        """
+        Kompatibilitási alias a MainWindow által használt reload() mintához.
+        """
+        self.refresh()
+
+
+
+    def set_year(self, year: int) -> None:
+        """
+        Évváltáskor hívható hook.
+
+        A tényleges aktív év továbbra is a ctx.state.active_year értékéből jön,
+        de ez a metódus biztosítja, hogy évváltáskor frissülhessen az oldal.
+        """
+        self.refresh()
