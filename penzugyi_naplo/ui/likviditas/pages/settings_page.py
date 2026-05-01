@@ -127,6 +127,7 @@ class SettingsPage(QWidget):
         self.cmb_style = QComboBox()
         self.cmb_style.addItem("Classic", "classic")
         self.cmb_style.addItem("Modern", "modern")
+        self.cmb_style.addItem("Modern Home", "modern_home")
 
         row_style.addWidget(self.cmb_style, 1)
         layout.addLayout(row_style)
