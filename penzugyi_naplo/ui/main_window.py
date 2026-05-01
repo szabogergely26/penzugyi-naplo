@@ -238,19 +238,21 @@ class MainWindow(QMainWindow):
         
 
         
-
     def apply_style_mode(self, mode: str) -> None:
         mode = (mode or "").strip().lower()
-        if mode not in ("classic", "modern"):
+        if mode not in ("classic", "modern", "modern_home"):
             mode = "classic"
 
         # 1) fájl kiválasztás
         base = Path(__file__).resolve().parent  # .../ui
-        qss_path = (
-            base
-            / "styles"
-            / ("classic_style.qss" if mode == "classic" else "modern_style.qss")
-        )
+
+        qss_files = {
+            "classic": "classic_style.qss",
+            "modern": "modern_style.qss",
+            "modern_home": "modern_style_home.qss",
+        }
+
+        qss_path = base / "styles" / qss_files[mode]
 
         # 2) betöltés
         try:
@@ -262,6 +264,9 @@ class MainWindow(QMainWindow):
         # 3) alkalmazás
         self.setStyleSheet(qss)
         self.log.d("Style mode set:", mode, "QSS:", str(qss_path))
+   
+
+
 
     def load_style_mode(self) -> None:
         s = QSettings(ORG_NAME, APP_NAME)
