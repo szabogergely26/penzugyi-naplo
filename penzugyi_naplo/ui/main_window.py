@@ -699,8 +699,22 @@ class MainWindow(QMainWindow):
             f"Hibás / kihagyott tranzakciók: {failed_count}",
         )
 
-        for tx in transactions[:10]:
-            print(tx)
+        # Évfülek frissítése import után
+        years = self.db.get_transaction_years()
+
+        if years:
+            self.year_tabs.set_years(years)
+
+        if self.state.active_year in years:
+            self.year_tabs.set_active_year(self.state.active_year, emit=False)
+        else:
+            self.state.active_year = years[0]
+            self.year_tabs.set_active_year(years[0], emit=False)
+            self.set_active_year(years[0])
+
+        # Oldalak frissítése
+        self.reload_all_pages()
+        
 
 
     def on_export(self) -> None:
@@ -865,20 +879,6 @@ class MainWindow(QMainWindow):
 
         QMessageBox.information(self, "Számla részletek", f"Bill ID: {bill_id}")
 
-
-    def open_ods_transaction_import(self):
-        dialog = OdsTransactionImportWizard(self)
-
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-
-        transactions = dialog.get_importable_transactions()
-
-        # Egyelőre csak ellenőrzéshez:
-        print(f"Importálható tranzakciók száma: {len(transactions)}")
-
-        for tx in transactions[:10]:
-            print(tx)
 
     
 

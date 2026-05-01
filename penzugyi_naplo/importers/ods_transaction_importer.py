@@ -116,10 +116,7 @@ class OdsTransactionImporter:
     ) -> tuple[ImportColumnMap, list[PreviewTransaction]]:
         rows = self.read_sheet_rows(sheet_name, max_rows=max_preview_rows)
 
-        print("ODS DEBUG SHEET:", sheet_name)
-        print("ODS DEBUG TOTAL ROWS:", len(rows))
-        print("ODS DEBUG header_row:", header_row)
-        print("ODS DEBUG data_start_row:", data_start_row)
+        
 
 
         if not rows:
@@ -131,8 +128,7 @@ class OdsTransactionImporter:
         header = rows[header_index] if 0 <= header_index < len(rows) else []
         column_map = self.detect_columns(header)
 
-        print("ODS IMPORT HEADER:", header)
-        print("ODS IMPORT COLUMN MAP:", column_map)
+        
 
 
         preview: list[PreviewTransaction] = []

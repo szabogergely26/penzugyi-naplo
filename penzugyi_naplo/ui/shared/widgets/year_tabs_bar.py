@@ -95,9 +95,45 @@ class YearTabsBar(QWidget):
 
     def set_years(self, years: Iterable[int]) -> None:
         """
-        Később, ha dinamikus évlista kell (pl. DB-ből), bővíthető:
-        - egyszerűség kedvéért most nem implementáljuk az újraépítést.
+        Évlista dinamikus újraépítése.
+
+        Import / restore / reset után használható, amikor új évek kerülnek
+        az adatbázisba.
         """
-        self._years = list(years)
-        # (ha kell, újraépítjük a gombokat)
-        raise NotImplementedError("Dynamic year list not implemented yet.")
+        new_years = list(years)
+
+        layout = self.layout()
+
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+
+                if widget is not None:
+                    widget.deleteLater()
+
+        self._years = new_years
+        self._buttons.clear()
+        self._active_year = None
+
+        if layout is None:
+            layout = QVBoxLayout(self)
+            layout.setContentsMargins(12, 8, 12, 8)
+            layout.setSpacing(8)
+
+        for y in self._years:
+            btn = QPushButton(str(y))
+            btn.setObjectName("yearTabButton")
+            btn.setCheckable(True)
+            btn.setAutoExclusive(True)
+            btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            btn.clicked.connect(
+                lambda checked, year=y: self.set_active_year(year, emit=True)
+            )
+            layout.addWidget(btn)
+            self._buttons[y] = btn
+
+        layout.addStretch(1)
+
+        if self._years:
+            self.set_active_year(self._years[0], emit=False)
