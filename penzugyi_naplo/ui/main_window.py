@@ -51,7 +51,7 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import QSettings, Qt, QTimer
-from PySide6.QtGui import QAction, QActionGroup
+from PySide6.QtGui import QAction, QActionGroup, QIcon
 from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
@@ -205,7 +205,10 @@ class MainWindow(QMainWindow):
         self._connect_core_signals()
         self._load_toolbar_mode()
 
+
+        # --- Ablakcím + ikon beállítása ---
         self.setWindowTitle("Pénzügyi Napló")
+        self.setWindowIcon(QIcon("icons/app_icon.png"))
 
         # --  Induló ablakméret:   (szélesség, magasság)
         self.resize(1650, 1000)
