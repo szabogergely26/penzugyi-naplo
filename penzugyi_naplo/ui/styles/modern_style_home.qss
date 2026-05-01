@@ -639,6 +639,87 @@ QFrame#miniBarFill {
 
 
 /* ------------------ Statisztika oldal ---------------------- */
+
+/* ---- Felső statisztikai dashboard kártyák ---- */
+
+
+
+QFrame#statSummaryCard {
+    background-color: #f5f8fc;
+    border: 1px solid #d7e1ec;
+    border-radius: 16px;
+}
+
+/* nagyon fontos:
+   a belső cím / érték / alcím NE kapjon saját keretet vagy hátteret */
+QFrame#statSummaryCard QLabel {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+/* cím */
+QFrame#statSummaryCard QLabel#statCardTitle {
+    color: #5b6778;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* nagy érték */
+QFrame#statSummaryCard QLabel#statCardValue {
+    font-size: 24px;
+    font-weight: 900;
+    background: transparent;
+    border: none;
+}
+
+/* alsó magyarázó sor */
+QFrame#statSummaryCard QLabel#statCardSubtitle {
+    color: #748195;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+
+
+
+
+
+
+
+/* ---- Statisztika felső kártyák: jobb oldali jel ---- */
+
+QFrame#statSummaryCard QLabel#statCardSymbol {
+    background-color: #ffffff;
+    border: 1px solid #d2ddec;
+    border-radius: 20px;
+
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+
+    font-size: 22px;
+    font-weight: 900;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* --- tabos statisztika nézet, összefoglaló és diagramkártyák */
 
 QTabWidget#statisticsTabs::pane {
@@ -697,3 +778,7 @@ QComboBox#statisticsPeriodCombo {
     border-radius: 8px;
     background-color: #ffffff;
 }
+
+
+
+
