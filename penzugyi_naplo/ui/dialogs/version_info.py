@@ -20,22 +20,25 @@ APP_CHANNEL = "Stabil kiadás verzió"
 BUILD_INFO = "2025. november – 2026. április"
 
 VERSION_DESCRIPTION = """
-<b>Fejlesztői verzió</b><br><br>
-
-<b>Normál / PROD mód:</b><br>
-Készre csiszolt funkciók, de még hosszabb távú tesztelés alatt állnak.<br><br>
-
-<b>Fejlesztői mód:</b><br>
-Friss újdonságok, kísérleti vagy félkész funkciók.
-Hibák előfordulhatnak. Érzékeny adatok kezelésére nem ajánlott.<br><br>
-
 <b>Stabil verzió</b><br><br>
 
 <b>Normál / PROD mód:</b><br>
-Hibátlan funkciók, hosszú távú használatra javasolt. Stabil.<br><br>
+Normál mód: Készre csiszolt, hosszabb távú használatra szánt funkciók.
+A stabil ág célja a megbízható napi használat.<br><br>
+
+PROD mód: Fejlesztés alatt álló funkciók kipróbálása.
+Fejlesztés alatt álló funkciók stabilizálása.<br><br>
 
 <b>Fejlesztői mód:</b><br>
-Jövőbeni funkciók, még előfordulhatnak hibák.
+Tesztelésre és jövőbeni funkciók kipróbálására szolgál.
+Éles vagy érzékeny adatok kezelésére továbbra is a normál mód javasolt.<br><br><br>
+
+
+<b>Modern Home téma:</b><br>
+A stabil kiadásban is elérhető az új, kártyásabb kezdőoldali megjelenés.
+A téma a Beállítások oldalon választható ki.<br><br>
+
+
 """
 
 
