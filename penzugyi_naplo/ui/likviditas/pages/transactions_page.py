@@ -194,17 +194,28 @@ class TransactionsPage(QWidget):
         # header ELŐBB
         header = self.table.horizontalHeader()
 
-        # méretezések (autómatikus)
-        header.setSectionResizeMode(0, QHeaderView.Fixed)  # Jelzés - manuális
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Dátum
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Név
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Kategória
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # Egységár
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Db
-        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Összesen
-        header.setSectionResizeMode(7, QHeaderView.Stretch)  # Leírás
-        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Típus
-        header.setSectionResizeMode(9, QHeaderView.ResizeToContents)  # Műveletek
+        # méretezések – importált régi adatokhoz is stabil
+        header.setSectionResizeMode(0, QHeaderView.Fixed)        # Jelzés
+        header.setSectionResizeMode(1, QHeaderView.Fixed)        # Dátum
+        header.setSectionResizeMode(2, QHeaderView.Interactive)  # Név
+        header.setSectionResizeMode(3, QHeaderView.Fixed)        # Kategória
+        header.setSectionResizeMode(4, QHeaderView.Fixed)        # Egységár
+        header.setSectionResizeMode(5, QHeaderView.Fixed)        # Db
+        header.setSectionResizeMode(6, QHeaderView.Fixed)        # Összesen
+        header.setSectionResizeMode(7, QHeaderView.Interactive)  # Leírás
+        header.setSectionResizeMode(8, QHeaderView.Fixed)        # Típus
+        header.setSectionResizeMode(9, QHeaderView.Fixed)        # Műveletek
+
+        self.table.setColumnWidth(0, 28)     # Jelzés
+        self.table.setColumnWidth(1, 105)    # Dátum
+        self.table.setColumnWidth(2, 260)    # Név
+        self.table.setColumnWidth(3, 120)    # Kategória
+        self.table.setColumnWidth(4, 90)     # Egységár
+        self.table.setColumnWidth(5, 55)     # Db
+        self.table.setColumnWidth(6, 115)    # Összesen
+        self.table.setColumnWidth(7, 330)    # Leírás
+        self.table.setColumnWidth(8, 125)     # Típus
+        self.table.setColumnWidth(9, 200)    # Műveletek
 
         # --- Rendezés (fejléc-katt) ---
         header.setSectionsClickable(True)

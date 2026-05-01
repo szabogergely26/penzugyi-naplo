@@ -2135,3 +2135,29 @@ class TransactionDatabase:
             conn.commit()
         finally:
             conn.close()
+
+
+    def get_transaction_years(self) -> list[int]:
+        """
+        Visszaadja az adatbázisban szereplő tranzakciós éveket.
+
+        A year oszlopból dolgozik, mert a transactions tábla ezt már
+        külön tárolja a gyorsabb szűréshez.
+        """
+
+        conn = self.get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT DISTINCT year
+            FROM transactions
+            WHERE year IS NOT NULL
+            ORDER BY year DESC
+            """
+        )
+
+        rows = cur.fetchall()
+        conn.close()
+
+        return [int(row[0]) for row in rows]

@@ -94,6 +94,7 @@ from penzugyi_naplo.ui.shared.widgets.ribbon_bar import RibbonBar
 from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
 from penzugyi_naplo.ui.dialogs.log_viewer_dialog import LogViewerDialog
 from penzugyi_naplo.ui.dialogs.version_history_dialog import VersionHistoryDialog
+from penzugyi_naplo.ui.importers.ods_transaction_import_wizard import OdsTransactionImportWizard
 
 # ------- Importok vége -------
 
@@ -200,11 +201,22 @@ class MainWindow(QMainWindow):
 
         self._build_menubar()
 
+
+
         # --- LEFT: Year tabs (EGYSZER) ---
+        
+        years = self.db.get_transaction_years()
+
+        if not years:
+            years = [self.state.active_year]
+
         self.year_tabs = YearTabsBar(
-            years=[2023, 2024, 2025, 2026], parent=self._left_panel
+            years=years,
+            parent=self._left_panel,
         )
         self._left_layout.addWidget(self.year_tabs)
+
+
 
         # --- RIGHT: ribbon + navbar + pages ---
         self._build_ribbon()
@@ -620,7 +632,76 @@ class MainWindow(QMainWindow):
         return menu
 
     def on_import(self) -> None:
-        QMessageBox.information(self, "Import", "Import funkció még nincs megírva.")
+        """
+        ODS tranzakció import előnézet megnyitása.
+
+        Jelenleg csak az import varázslót nyitja meg, és az érvényes
+        előnézeti tranzakciókat konzolra írja ki. Az adatbázisba írás
+        későbbi lépésben kerül bekötésre.
+        """
+        dialog = OdsTransactionImportWizard(self)
+
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        transactions = dialog.get_importable_transactions()
+
+        if not transactions:
+            QMessageBox.information(
+                self,
+                "Import",
+                "Nincs importálható tranzakció.",
+            )
+            return
+        
+
+        answer = QMessageBox.question(
+            self,
+            "Import megerősítése",
+            f"{len(transactions)} tranzakció importálható.\n\n"
+            "Biztosan beírod ezeket az adatbázisba?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        saved_count = 0
+        failed_count = 0
+
+        for tx in transactions:
+            try:
+                category_id = 2 if tx.tx_type == "income" else 7
+
+                self.ctx.db.save_transaction(
+                    {
+                        "date": tx.tx_date,
+                        "type": tx.tx_type,
+                        "amount": tx.amount,
+                        "category_id": category_id,
+                        "name": tx.description or "",
+                        "description": tx.description or "",
+                        "payment_source": "bank",
+                    }
+                )
+
+                saved_count += 1
+
+            except Exception as exc:
+                failed_count += 1
+                print(f"Import hiba, forrás sor {tx.source_row}: {exc}")
+
+        QMessageBox.information(
+            self,
+            "Import kész",
+            f"Sikeresen importált tranzakciók: {saved_count}\n"
+            f"Hibás / kihagyott tranzakciók: {failed_count}",
+        )
+
+        for tx in transactions[:10]:
+            print(tx)
+
 
     def on_export(self) -> None:
         QMessageBox.information(self, "Export", "Export funkció még nincs megírva.")
@@ -783,6 +864,23 @@ class MainWindow(QMainWindow):
         # TODO: később rendes részletek
 
         QMessageBox.information(self, "Számla részletek", f"Bill ID: {bill_id}")
+
+
+    def open_ods_transaction_import(self):
+        dialog = OdsTransactionImportWizard(self)
+
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        transactions = dialog.get_importable_transactions()
+
+        # Egyelőre csak ellenőrzéshez:
+        print(f"Importálható tranzakciók száma: {len(transactions)}")
+
+        for tx in transactions[:10]:
+            print(tx)
+
+    
 
     def reload_all_pages(self) -> None:
         # ahol van bind_db: újra ráadjuk a DB-t (ha restore/reset miatt új példány lett)

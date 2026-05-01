@@ -19,6 +19,13 @@ UI:
 Kapcsolódás:
     - HomePage.open_table_dialog() nyitja meg
     - adatforrás: AppContext / TransactionDatabase
+
+
+Nem felelőssége:
+    - évválasztás kezelése
+    - főoldali kártyák megjelenítése
+    - tranzakciók létrehozása vagy törlése
+    - import / export műveletek kezelése
 """
 
 
