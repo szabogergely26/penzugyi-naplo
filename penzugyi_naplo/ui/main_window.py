@@ -640,9 +640,15 @@ class MainWindow(QMainWindow):
         """
         ODS tranzakció import előnézet megnyitása.
 
-        Jelenleg csak az import varázslót nyitja meg, és az érvényes
-        előnézeti tranzakciókat konzolra írja ki. Az adatbázisba írás
-        későbbi lépésben kerül bekötésre.
+        Tesztverzió:
+            - megnyitja az ODS import dialógust
+            - előnézetet készít
+            - az Import gomb után lekéri az érvényes sorokat
+            - adatbázisba még nem ír
+
+        Fontos:
+            Ez a metódus jelenleg szándékosan nem ment adatbázisba.
+            Először azt ellenőrizzük, hogy a wizard jó adatokat ad-e vissza.
         """
         dialog = OdsTransactionImportWizard(self)
 
@@ -658,6 +664,27 @@ class MainWindow(QMainWindow):
                 "Nincs importálható tranzakció.",
             )
             return
+
+        print("ODS import - importálható tranzakciók:")
+        print(f"Darabszám: {len(transactions)}")
+
+        for tx in transactions[:10]:
+            print(
+                tx.tx_date,
+                tx.tx_type,
+                tx.category,
+                tx.amount,
+                tx.description,
+            )
+
+        QMessageBox.information(
+            self,
+            "ODS import előnézet",
+            "Az import előnézet elkészült.\n\n"
+            f"Importálható tranzakciók száma: {len(transactions)}\n\n"
+            "Az első néhány tranzakció kiíródott a konzolra.\n"
+            "Adatbázisba mentés még nem történt.",
+        )
         
 
         answer = QMessageBox.question(

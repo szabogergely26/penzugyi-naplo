@@ -782,3 +782,8 @@ QComboBox#statisticsPeriodCombo {
 
 
 
+QFrame#odsImportSummaryBox {
+    border: 1px solid #d7dee8;
+    border-radius: 8px;
+    padding: 4px;
+}
