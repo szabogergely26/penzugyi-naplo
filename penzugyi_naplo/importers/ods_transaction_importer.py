@@ -169,7 +169,7 @@ class OdsTransactionImporter:
                     "description", 
                     "nev", 
                     "tranzakcio", 
-                    "tetel"
+                    "tetel",
                     "termek",
                     "szolgaltatas",
                     "munkaber",
@@ -214,7 +214,7 @@ class OdsTransactionImporter:
 
             elif column_map.type_col is None and self._matches(
                 normalized,
-                ["tipus", "tipusa" "type", "irany"],
+                ["tipus", "tipusa", "type", "irany"],
             ):
                 column_map.type_col = index
 
@@ -302,9 +302,27 @@ class OdsTransactionImporter:
         Egy ODS sor biztonságos beolvasása.
 
         Fontos:
-            Az ODS fájlok üres cellákra is használhatnak
-            number-columns-repeated attribútumot. Ezt korlátozni kell,
-            különben egyetlen sorból rengeteg oszlop keletkezhet.
+            Az ODS fájlok az egymás utáni üres cellákat gyakran
+            number-columns-repeated attribútummal tárolják.
+
+            Ezeket NEM szabad 1 darab üres cellára összenyomni,
+            mert akkor az utána következő oszlopok balra csúsznak.
+
+            Példa:
+                K, L oszlop üres,
+                M oszlop = Ár összesen,
+                N oszlop = Tipusa
+
+            Ha a K-L üres részt 1 cellára tömörítjük, akkor:
+                M -> L
+                N -> M
+
+            Emiatt az importer rossz oszlopból olvassa az összeget
+            és a típust.
+
+        Védelem:
+            A sort továbbra is maximum max_columns oszlopig bontjuk ki,
+            hogy egy hibás / túl nagy ODS ne gyártson hatalmas listát.
         """
         values: list[Any] = []
         max_columns = 50
@@ -319,10 +337,9 @@ class OdsTransactionImporter:
             )
             cell_value = self._read_cell_value(cell)
 
-            # Üres ismételt cellából legfeljebb 1 darabot veszünk figyelembe.
-            if cell_value in (None, ""):
-                repeated_cols = 1
-
+            # Fontos:
+            # Üres celláknál is megtartjuk az ismétlésszámot,
+            # mert különben elcsúszik az oszlopsorrend.
             remaining = max_columns - len(values)
             repeated_cols = min(repeated_cols, remaining)
 
@@ -489,8 +506,14 @@ class OdsTransactionImporter:
         if not text:
             return None
 
-        # ODS datevalue gyakran ISO formátumú: 2024-01-31
-        for fmt in ("%Y-%m-%d", "%Y.%m.%d", "%Y/%m/%d", "%d.%m.%Y", "%d/%m/%Y"):
+        # Régi ODS / kézzel írt dátumok normalizálása:
+        # 2024.06.01. -> 2024.06.01
+        # 2024-06-01  -> 2024.06.01
+        # 2024/06/01  -> 2024.06.01
+        text = text.replace("-", ".").replace("/", ".")
+        text = text.rstrip(".")
+
+        for fmt in ("%Y.%m.%d", "%d.%m.%Y"):
             try:
                 return datetime.strptime(text, fmt).date().isoformat()
             except ValueError:
