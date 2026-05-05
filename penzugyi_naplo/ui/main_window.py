@@ -298,15 +298,38 @@ class MainWindow(QMainWindow):
         self.apply_style_mode(mode)
 
     def on_year_selected(self, year: int) -> None:
-        self.set_active_year(int(year))  # állapot + oldalak év
+        """
+        Konkrét év kiválasztása a bal oldali évlistából.
+
+        Ilyenkor a tranzakciós kereső hatóköre visszaáll
+        "Aktuális év" módra.
+        """
+        self.set_active_year(int(year))
         self._filter_all_years = False
         self._filter_year = int(year)
-        self._apply_year_filter()
+
+        tx = self.pages.get("transactions")
+        if tx and hasattr(tx, "set_search_scope"):
+            tx.set_search_scope("active_year")
+        else:
+            self._apply_year_filter()
 
     def on_all_years(self) -> None:
+        """
+        A bal oldali "Minden év" tab kiválasztása.
+
+        Ilyenkor a tranzakciós oldalon lévő keresési hatókör is
+        átáll "Minden év" módra, hogy a bal oldali vizuális állapot
+        és a táblázat tartalma ugyanazt mutassa.
+        """
         self._filter_all_years = True
         self._filter_year = None
-        self._apply_year_filter()
+
+        tx = self.pages.get("transactions")
+        if tx and hasattr(tx, "set_search_scope"):
+            tx.set_search_scope("all_years")
+        else:
+            self._apply_year_filter()
 
     def _apply_year_filter(self) -> None:
         tx = self.pages.get("transactions")
@@ -391,6 +414,7 @@ class MainWindow(QMainWindow):
         Most szándékosan üres.
         """
         self.year_tabs.yearChanged.connect(self.on_year_selected)
+        self.year_tabs.allYearsSelected.connect(self.on_all_years)
         self.navbar.pageRequested.connect(self.set_page)
 
         return

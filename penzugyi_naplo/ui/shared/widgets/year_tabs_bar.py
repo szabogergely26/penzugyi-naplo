@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
 
 class YearTabsBar(QWidget):
     yearChanged = Signal(int)
+    allYearsSelected = Signal()
 
     def __init__(self, years: Iterable[int], parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -47,9 +48,24 @@ class YearTabsBar(QWidget):
         self._buttons: dict[int, QPushButton] = {}
         self._active_year: Optional[int] = None
 
+        self._all_years_active = False
+        self._all_years_button: Optional[QPushButton] = None
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 8, 12, 8)
         layout.setSpacing(8)
+
+        # "Minden év" tab
+        self._all_years_button = QPushButton("Minden év")
+        self._all_years_button.setObjectName("yearTabButton")
+        self._all_years_button.setCheckable(True)
+        self._all_years_button.setAutoExclusive(True)
+        self._all_years_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._all_years_button.clicked.connect(
+            lambda checked: self.set_all_years_active(emit=True)
+        )
+        layout.addWidget(self._all_years_button)
+
 
         # Bal oldali "tabs"
         for y in self._years:
@@ -82,6 +98,14 @@ class YearTabsBar(QWidget):
             return
 
         self._active_year = year
+        self._all_years_active = False
+
+        if self._all_years_button is not None:
+            self._all_years_button.setChecked(False)
+            self._all_years_button.setProperty("active", False)
+            self._all_years_button.style().unpolish(self._all_years_button)
+            self._all_years_button.style().polish(self._all_years_button)
+
         self._buttons[year].setChecked(True)
 
         # Objektumnév / property a QSS-hez (aktív tab kiemelés)
@@ -92,6 +116,30 @@ class YearTabsBar(QWidget):
 
         if emit:
             self.yearChanged.emit(year)
+    
+    def set_all_years_active(self, *, emit: bool = True) -> None:
+        """
+        A "Minden év" nézet aktívvá tétele.
+
+        Ilyenkor nincs konkrét aktív év, a hívó oldalnak minden év
+        tranzakcióját kell megjelenítenie.
+        """
+        self._active_year = None
+        self._all_years_active = True
+
+        if self._all_years_button is not None:
+            self._all_years_button.setChecked(True)
+            self._all_years_button.setProperty("active", True)
+            self._all_years_button.style().unpolish(self._all_years_button)
+            self._all_years_button.style().polish(self._all_years_button)
+
+        for _, button in self._buttons.items():
+            button.setProperty("active", False)
+            button.style().unpolish(button)
+            button.style().polish(button)
+
+        if emit:
+            self.allYearsSelected.emit()
 
     def set_years(self, years: Iterable[int]) -> None:
         """
@@ -115,11 +163,36 @@ class YearTabsBar(QWidget):
         self._years = new_years
         self._buttons.clear()
         self._active_year = None
+        self._all_years_active = False
+        self._all_years_button = None
 
         if layout is None:
             layout = QVBoxLayout(self)
             layout.setContentsMargins(12, 8, 12, 8)
             layout.setSpacing(8)
+
+
+
+        # "Minden év" tab
+        self._all_years_button = QPushButton("Minden év")
+        self._all_years_button.setObjectName("yearTabButton")
+        self._all_years_button.setCheckable(True)
+        self._all_years_button.setAutoExclusive(True)
+        self._all_years_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._all_years_button.clicked.connect(
+            lambda checked: self.set_all_years_active(emit=True)    
+        )
+        layout.addWidget(self._all_years_button)
+
+
+
+
+
+
+
+
+
+
 
         for y in self._years:
             btn = QPushButton(str(y))

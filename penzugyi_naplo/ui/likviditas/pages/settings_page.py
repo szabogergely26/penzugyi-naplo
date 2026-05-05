@@ -139,17 +139,33 @@ class SettingsPage(QWidget):
         layout.addLayout(row_style)
 
         # Search
-        self.chk_search_all_years = QCheckBox(
-            "Keresés minden évben (ne csak az aktív évben)"
-        )
-        layout.addWidget(self.chk_search_all_years)
+        # --- 2) Keresés: alapértelmezett hatókör ---
+        # Itt azt állítjuk be, hogy az app indításkor alapból
+        # csak az aktív évben vagy minden évben keressen.
+        search_scope_row = QHBoxLayout()
+
+        search_scope_label = QLabel("Keresés alapértelmezett hatóköre:", self)
+
+        self.cmb_search_scope = QComboBox(self)
+        self.cmb_search_scope.addItem("Aktuális év", "active_year")
+        self.cmb_search_scope.addItem("Minden év", "all_years")
+        self.cmb_search_scope.setMinimumWidth(180)
+
+        search_scope_row.addWidget(search_scope_label)
+        search_scope_row.addWidget(self.cmb_search_scope)
+        search_scope_row.addStretch(1)
+
+        layout.addLayout(search_scope_row)
 
         layout.addStretch(1)
 
         # Signals
         self.cmb_toolbar.currentIndexChanged.connect(self._on_toolbar_changed)
         self.cmb_style.currentIndexChanged.connect(self._on_style_changed)
-        self.chk_search_all_years.toggled.connect(self._on_search_all_years_changed)
+        
+        self.cmb_search_scope.currentIndexChanged.connect(
+            self._on_search_scope_changed
+        )
 
         return page
 
@@ -199,13 +215,19 @@ class SettingsPage(QWidget):
     # =========================================================
 
     def _load_values(self) -> None:
-        # --- toolbar_mode ---
+       # --- toolbar_mode ---
         self.cmb_toolbar.blockSignals(True)
-        style = str(self._settings.value(SETTINGS_KEY_STYLE_MODE, DEFAULT_STYLE_MODE))
+
+        toolbar_mode = str(self._settings.value("ui/toolbar_mode", "menubar"))
+
+        if toolbar_mode not in ("menubar", "ribbon"):
+            toolbar_mode = "menubar"
+
         for i in range(self.cmb_toolbar.count()):
-            if self.cmb_toolbar.itemData(i) == style:
+            if self.cmb_toolbar.itemData(i) == toolbar_mode:
                 self.cmb_toolbar.setCurrentIndex(i)
                 break
+
         self.cmb_toolbar.blockSignals(False)
 
         # --- style_mode ---
@@ -217,11 +239,20 @@ class SettingsPage(QWidget):
                 break
         self.cmb_style.blockSignals(False)
 
-        # --- search_all_years ---
-        self.chk_search_all_years.blockSignals(True)
-        all_years = self._settings.value("ui/search_all_years", True, type=bool)
-        self.chk_search_all_years.setChecked(all_years)
-        self.chk_search_all_years.blockSignals(False)
+        # --- search_scope ---
+        self.cmb_search_scope.blockSignals(True)
+
+        search_scope = str(self._settings.value("ui/search_scope", "active_year"))
+
+        if search_scope not in ("active_year", "all_years"):
+            search_scope = "active_year"
+
+        for i in range(self.cmb_search_scope.count()):
+            if self.cmb_search_scope.itemData(i) == search_scope:
+                self.cmb_search_scope.setCurrentIndex(i)
+            break
+
+        self.cmb_search_scope.blockSignals(False)
 
         # --- dev_mode (FONTOS) ---
         self.chk_dev_mode.blockSignals(True)
@@ -248,8 +279,21 @@ class SettingsPage(QWidget):
             except Exception:
                 pass
 
-    def _on_search_all_years_changed(self, checked: bool) -> None:
-        self._settings.setValue("ui/search_all_years", checked)
+    def _on_search_scope_changed(self) -> None:
+        """
+        A keresés alapértelmezett hatókörének mentése.
+
+        Ez csak az alapértéket menti.
+        A tranzakciós oldalon lévő keresősáv ezt induláskor visszaolvassa,
+        de ott később ideiglenesen felülírható lesz.
+        """
+        search_scope = self.cmb_search_scope.currentData()
+
+        if search_scope not in ("active_year", "all_years"):
+            search_scope = "active_year"
+
+        self._settings.setValue("ui/search_scope", search_scope)
+        self._settings.sync()
 
     def _on_dev_mode_changed(self, checked: bool) -> None:
         current = is_dev_mode()

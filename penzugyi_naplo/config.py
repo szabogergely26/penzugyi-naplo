@@ -33,6 +33,30 @@ DB_FILENAME_PROD: str = "transactions.sqlite3"
 DB_FILENAME_DEV: str = "transactions_dev.sqlite3"
 
 
+# A keresés alapértelmezett hatóköre.
+# Ezt a Beállítások ablak menti, a keresősáv pedig induláskor visszaolvassa.
+SETTINGS_KEY_SEARCH_SCOPE = "search/default_scope"
+
+# Csak az aktív év tranzakcióiban keresünk.
+SEARCH_SCOPE_ACTIVE_YEAR = "active_year"
+
+# Az összes év tranzakcióiban keresünk.
+SEARCH_SCOPE_ALL_YEARS = "all_years"
+
+# Alapértelmezett keresési hatókör, ha még nincs beállítás mentve.
+DEFAULT_SEARCH_SCOPE = SEARCH_SCOPE_ACTIVE_YEAR
+
+
+
+
+
+
+
+
+
+
+
+
 # -----------------------------
 # Settings
 # -----------------------------
@@ -106,3 +130,52 @@ def prod_db_path() -> Path:
 
 def dev_db_path() -> Path:
     return active_data_dir() / DB_FILENAME_DEV
+
+
+
+# ---------------------------------
+# Search
+# ---------------------------------
+
+
+def get_default_search_scope() -> str:
+    """
+    A keresés alapértelmezett hatókörének betöltése.
+
+    Visszatérés:
+        - "active_year": csak az aktív évben keres
+        - "all_years": minden évben keres
+
+    Ha még nincs elmentett érték, akkor az aktív év az alapértelmezett.
+    """
+    settings = QSettings(ORG_NAME, APP_NAME)
+
+    value = settings.value(
+        SETTINGS_KEY_SEARCH_SCOPE,
+        DEFAULT_SEARCH_SCOPE,
+        type=str,
+    )
+
+    if value not in {
+        SEARCH_SCOPE_ACTIVE_YEAR,
+        SEARCH_SCOPE_ALL_YEARS,
+    }:
+        return DEFAULT_SEARCH_SCOPE
+
+    return value
+
+
+def set_default_search_scope(scope: str) -> None:
+    """
+    A keresés alapértelmezett hatókörének mentése.
+
+    Ezt a Beállítások ablak használja.
+    """
+    if scope not in {
+        SEARCH_SCOPE_ACTIVE_YEAR,
+        SEARCH_SCOPE_ALL_YEARS,
+    }:
+        scope = DEFAULT_SEARCH_SCOPE
+
+    settings = QSettings(ORG_NAME, APP_NAME)
+    settings.setValue(SETTINGS_KEY_SEARCH_SCOPE, scope)
