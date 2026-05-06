@@ -22,13 +22,20 @@ Gombok létrehozása:
 
 
 Oldalak:
-    - Kezdőoldal: ui/pages/home_page.py
+    - Kezdőoldal: ui/likviditas/pages/home_page.py
         → Havi összesítő táblázat itt található
+
     - Tranzakciók: ui/pages/transactions_page.py
         → Részletes tranzakciós tábla
+
     - Statisztika: ui/charts.py (ChartManager)
+
     - Számlák: ui/pages/bills_page.py
+
     - Beállítások: ui/pages/settings_page.py
+
+    
+
 
 Adatkapcsolat:
     - TransactionDatabase példány kezelése

@@ -4,7 +4,7 @@
 
 """
 Kezdőoldal / Dashboard oldal
-(ui/pages/home_page.py).
+(penzugyi_naplo/ui/likviditas/pages/home_page.py).
 
 Felelősség:
     - havi bontású pénzügyi összesítések megjelenítése
@@ -235,41 +235,11 @@ class HomePage(QWidget):
 
 
     
-        # 2) Számlák TAB
-        tab_bills = QWidget()
-        bills_layout = QVBoxLayout(tab_bills)
-        bills_layout.setContentsMargins(0, 0, 0, 0)
-        bills_layout.setSpacing(12)
-
-        # Felül: számlainfók "kártya"
-        info_card = QFrame()
-        info_card.setObjectName("bankInfoCard")
-        info_layout = QVBoxLayout(info_card)
-        info_layout.setContentsMargins(12, 12, 12, 12)
-        info_layout.setSpacing(6)
-
-        info_title = QLabel("Raiffeisen Bank számlainfók")
-        info_title.setObjectName("sectionTitle")
-
-        self.lbl_total_balance = QLabel("Teljes egyenleg: –")
-        self.lbl_metal_balance = QLabel("Nemesfém egyenleg: –")
-        self.lbl_cash_balance = QLabel("Készpénz: –")
-
-        info_layout.addWidget(info_title)
-        info_layout.addWidget(self.lbl_total_balance)
-        info_layout.addWidget(self.lbl_metal_balance)
-        info_layout.addWidget(self.lbl_cash_balance)
-
-        bills_layout.addWidget(info_card)
-
-        # Alul: ide jön majd a számlák listája/táblája (később)
-        placeholder = QLabel("Számlák listája (hamarosan)")
-        placeholder.setObjectName("mutedText")
-        bills_layout.addWidget(placeholder, 1)
+      
 
         # Tabok felvétele
         self.tabs.addTab(tab_dashboard, "Kezdőoldal")
-        self.tabs.addTab(tab_bills, "Számlák")
+        
 
         # TabWidget a content-be
         content_layout.addWidget(self.tabs)
