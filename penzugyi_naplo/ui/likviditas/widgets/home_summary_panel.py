@@ -89,7 +89,14 @@ class HomeSummaryPanel(QWidget):
         root.setSpacing(12)
 
         # -------- Bal: Fix bevételek --------
+        
         self.card_fixed = _Card("Állandó (aktuális bevételek)", self)
+
+        # A QSS innen tudja felismerni, hogy ez a szerkeszthető/fix bevételi kártya.
+        # Ehhez tartozik a modern_style_home.qss-ben:
+        # QFrame#summaryFixedCard { ... }
+        self.card_fixed.setObjectName("summaryFixedCard")
+
         root.addWidget(self.card_fixed, 1)
 
         form = QFormLayout()
@@ -141,6 +148,12 @@ class HomeSummaryPanel(QWidget):
 
         # -------- Jobb: Egyenlegek --------
         self.card_bal = _Card("Számított értékek", self)
+
+        # A QSS innen tudja felismerni, hogy ez a számított egyenlegek kártyája.
+        # Ehhez tartozik a modern_style_home.qss-ben:
+        # QFrame#summaryCalcCard { ... }
+        self.card_bal.setObjectName("summaryCalcCard")
+
         root.addWidget(self.card_bal, 1)
 
         grid = QGridLayout()
