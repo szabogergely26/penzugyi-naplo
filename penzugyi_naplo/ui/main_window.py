@@ -343,7 +343,7 @@ class MainWindow(QMainWindow):
 
         # --- Statisztika ---
         if self.dev_mode:
-            self.add_page("statistics", StatisticsPage(self))
+            self.add_page("statistics", StatisticsPage(self.ctx, parent=self))
         else:
             self.add_page(
                 "statistics",
