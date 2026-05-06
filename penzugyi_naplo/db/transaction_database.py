@@ -88,7 +88,7 @@ TxType = str  # 'income' | 'expense'
 
 
 
-print("### LOADED transaction_database FROM FEJLESZTES ###")
+print("### LOADED transaction_database.py ###")
 
 
 def _now_ts() -> str:
