@@ -79,22 +79,24 @@ from penzugyi_naplo.config import (
 from penzugyi_naplo.core.app_context import AppContext, AppState
 from penzugyi_naplo.core.logging_utils import DebugFlags, Log
 from penzugyi_naplo.db.transaction_database import TransactionDatabase
-from penzugyi_naplo.ui.bills.bills_page import BillsPage
+
 from penzugyi_naplo.ui.dialogs.about_dialog import AboutDialog
 from penzugyi_naplo.ui.dialogs.version_info import VersionInfoDialog
 from penzugyi_naplo.ui.likviditas.dialogs.wizard_transaction import TransactionWizard
-from penzugyi_naplo.ui.likviditas.pages.accounts_page import AccountsPage
-from penzugyi_naplo.ui.likviditas.pages.home_page import HomePage
-from penzugyi_naplo.ui.likviditas.pages.settings_page import SettingsPage
-from penzugyi_naplo.ui.likviditas.pages.statistics_page import StatisticsPage
-from penzugyi_naplo.ui.likviditas.pages.transactions_page import TransactionsPage
+
+
 from penzugyi_naplo.ui.shared.nav_bar import NavBar
-from penzugyi_naplo.ui.shared.pages.coming_soon_page import ComingSoonPage
+
 from penzugyi_naplo.ui.shared.widgets.ribbon_bar import RibbonBar
 from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
 from penzugyi_naplo.ui.dialogs.log_viewer_dialog import LogViewerDialog
 from penzugyi_naplo.ui.dialogs.version_history_dialog import VersionHistoryDialog
 from penzugyi_naplo.ui.importers.ods_transaction_import_wizard import OdsTransactionImportWizard
+
+
+from penzugyi_naplo.ui.main_window.likviditas.register_pages import (
+    register_likviditas_pages,
+)
 
 # ------- Importok vége -------
 
@@ -367,46 +369,15 @@ class MainWindow(QMainWindow):
     def _build_navbar(self) -> None:
         self.navbar = NavBar(parent=self._right_panel)
 
-    # Oldalak regisztrálása
-    # ---------------------------
-
-    # (gerinc metódusok, hogy a konstruktor tiszta maradjon)
-
+   
     def _register_core_pages(self) -> None:
         """
-        Placeholder oldalak létrehozása.
-        DEV módban: valódi (félkész) oldalak is elérhetők.
-        Normál módban: ezek "Hamarosan" placeholder-rel jelennek meg.
+        Likviditás modul oldalainak regisztrálása.
+
+        A konkrét oldalak létrehozása külön modulban van, hogy a MainWindow
+        megmaradjon főablak-váznak.
         """
-        self.add_page("home", HomePage(self))
-        self.add_page("transactions", TransactionsPage(self, db=self.db))
-
-        # --- Statisztika ---
-        if self.dev_mode:
-            self.add_page("statistics", StatisticsPage(self.ctx, parent=self))
-        else:
-            self.add_page(
-                "statistics",
-                ComingSoonPage(
-                    title="Statisztika",
-                    msg="Diagrammok és kimutatások (fejlesztés alatt).",
-                ),
-            )
-
-        self.add_page("settings", SettingsPage(self))
-
-        # --- Számlák ---
-       
-        self.bills_page = BillsPage(self, db=self.db)
-        self.bills_page.billRequested.connect(self.on_bill_requested)
-        self.add_page("bills", self.bills_page)
-        
-           
-
-
-        # --- Pénztárcák / egyenlegek (Accounts/Wallets) ---
-        # Ez NEM a bills (kötelezők) oldal, hanem egyenleg/érték nyilvántartás.
-        self.add_page("accounts", AccountsPage(self, db=self.db))
+        register_likviditas_pages(self)
 
     def _connect_core_signals(self) -> None:
         """
