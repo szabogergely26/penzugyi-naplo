@@ -51,7 +51,6 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import QSettings, Qt, QTimer
-from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
@@ -103,6 +102,11 @@ from penzugyi_naplo.ui.main_window.likviditas.menus import (
     build_likviditas_menubar,
     build_likviditas_ribbon,
 )
+
+from penzugyi_naplo.ui.main_window.likviditas.actions import (
+    create_likviditas_actions,
+)
+
 
 
 # ------- Importok vége -------
@@ -203,12 +207,7 @@ class MainWindow(QMainWindow):
         # --- Actions + menü ---
         self._create_actions()
 
-        self.act_about = QAction("Névjegy", self)
-        self.act_about.triggered.connect(self._show_about)
-        
-        self.act_version_history = QAction("Verziótörténet", self)
-        self.act_version_history.triggered.connect(self._show_version_history)
-
+       
         self._build_menubar()
 
 
@@ -468,52 +467,8 @@ class MainWindow(QMainWindow):
                 tx.reload()
 
     def _create_actions(self) -> None:
-        self.act_exit = QAction("Kilépés", self)
-        self.act_exit.triggered.connect(self.close)
-
-        self.act_import = QAction("Import", self)
-        self.act_import.triggered.connect(self.on_import)  # majd megírod
-
-        self.act_export = QAction("Export", self)
-        self.act_export.triggered.connect(self.on_export)  # majd megírod
-
-        self.act_backup_db = QAction("Mentés (backup)…", self)
-        self.act_backup_db.triggered.connect(self.on_backup_database)
-
-        self.act_restore_db = QAction("Betöltés (restore)…", self)
-        self.act_restore_db.triggered.connect(self.on_restore_database)
-
-        self.act_new_tx = QAction("Új tranzakció", self)
-        self.act_new_tx.triggered.connect(self.on_new_transaction)  # majd megírod
-
-        self.act_toolbar_menubar = QAction("Menüsor mód", self, checkable=True)
-        self.act_toolbar_ribbon = QAction("Szalag mód", self, checkable=True)
-
-        self.act_toolbar_menubar.triggered.connect(
-            lambda: self.set_toolbar_mode("menubar")
-        )
-        self.act_toolbar_ribbon.triggered.connect(
-            lambda: self.set_toolbar_mode("ribbon")
-        )
-
-        self.toolbar_mode_group = QActionGroup(self)
-        self.toolbar_mode_group.setExclusive(True)
-
-        self.act_toolbar_menubar.setActionGroup(self.toolbar_mode_group)
-        self.act_toolbar_ribbon.setActionGroup(self.toolbar_mode_group)
-
-        self.act_reset_db = QAction("Adatbázis törlése…", self)
-        self.act_reset_db.triggered.connect(self.on_reset_database)
-
-        self.act_about = QAction("Névjegy", self)
-        self.act_about.triggered.connect(self._show_about)
-
-        self.act_version_info = QAction("Verzió infók", self)
-        self.act_version_info.triggered.connect(self._show_version_info)
-
-        self.act_log_viewer = QAction("Alkalmazásnapló", self)
-        self.act_log_viewer.triggered.connect(self.show_log_viewer)
-
+        """Likviditás nézethez tartozó actionök létrehozása."""
+        create_likviditas_actions(self)
 
 
 
