@@ -1,4 +1,4 @@
-# pénzügyi_napló/ui/main_window.py
+# pénzügyi_napló/ui/main_window/main_window.py
 # -----------------------------------
 
 """
@@ -277,7 +277,7 @@ class MainWindow(QMainWindow):
         if mode not in AVAILABLE_STYLE_MODES:
             mode = DEFAULT_STYLE_MODE
 
-        base = Path(__file__).resolve().parent  # .../ui
+        base = Path(__file__).resolve().parent.parent  # .../ui
         qss_path = base / "styles" / style_to_file[mode]
 
         try:
