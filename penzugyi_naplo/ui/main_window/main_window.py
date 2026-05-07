@@ -107,7 +107,10 @@ from penzugyi_naplo.ui.main_window.likviditas.actions import (
     create_likviditas_actions,
 )
 
-
+from penzugyi_naplo.ui.main_window.likviditas.toolbar_mode import (
+    load_likviditas_toolbar_mode,
+    set_likviditas_toolbar_mode,
+)
 
 # ------- Importok vége -------
 
@@ -485,27 +488,12 @@ class MainWindow(QMainWindow):
         
 
     def set_toolbar_mode(self, mode: str) -> None:
-        s = QSettings(ORG_NAME, APP_NAME)
-        s.setValue("ui/toolbar_mode", mode)
-
-        is_ribbon = mode == "ribbon"
-        # menüsor mindig létezhet, de el is rejthető:
-        self.menuBar().setVisible(not is_ribbon)
-
-        if hasattr(self, "ribbon") and self.ribbon:
-            self.ribbon.setVisible(is_ribbon)
-
-        self.act_toolbar_menubar.setChecked(not is_ribbon)
-        self.act_toolbar_ribbon.setChecked(is_ribbon)
-
-        QTimer.singleShot(0, self._sync_left_year_offset)
+        """Toolbar mód beállítása."""
+        set_likviditas_toolbar_mode(self, mode)
 
     def _load_toolbar_mode(self) -> None:
-        s = QSettings(ORG_NAME, APP_NAME)
-        mode = str(s.value("ui/toolbar_mode", "menubar"))
-        if mode not in ("menubar", "ribbon"):
-            mode = "menubar"
-        self.set_toolbar_mode(mode)
+        """Toolbar mód betöltése QSettings-ből."""
+        load_likviditas_toolbar_mode(self)
 
     def _build_file_menu_for_ribbon(self) -> QMenu:
         """Ribbon Fájl menü felépítése."""
