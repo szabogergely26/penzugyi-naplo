@@ -87,7 +87,7 @@ from penzugyi_naplo.ui.likviditas.dialogs.wizard_transaction import TransactionW
 
 from penzugyi_naplo.ui.shared.nav_bar import NavBar
 
-from penzugyi_naplo.ui.shared.widgets.ribbon_bar import RibbonBar
+
 from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
 from penzugyi_naplo.ui.dialogs.log_viewer_dialog import LogViewerDialog
 from penzugyi_naplo.ui.dialogs.version_history_dialog import VersionHistoryDialog
@@ -97,6 +97,13 @@ from penzugyi_naplo.ui.importers.ods_transaction_import_wizard import OdsTransac
 from penzugyi_naplo.ui.main_window.likviditas.register_pages import (
     register_likviditas_pages,
 )
+
+from penzugyi_naplo.ui.main_window.likviditas.menus import (
+    build_likviditas_file_menu_for_ribbon,
+    build_likviditas_menubar,
+    build_likviditas_ribbon,
+)
+
 
 # ------- Importok vége -------
 
@@ -512,89 +519,13 @@ class MainWindow(QMainWindow):
 
 
     def _build_menubar(self) -> None:
-        mb = self.menuBar()
-        mb.clear()
-
-        m_file = mb.addMenu("Fájl")
-        m_file.addAction(self.act_new_tx)
-        m_file.addSeparator()
-        m_file.addAction(self.act_exit)
-
-        m_data = mb.addMenu("Adatok")
-        m_data.addAction(self.act_backup_db)
-        m_data.addAction(self.act_restore_db)
-        m_data.addSeparator()
-        m_data.addAction(self.act_import)
-        m_data.addAction(self.act_export)
-        m_data.addSeparator()
-        m_data.addAction(self.act_reset_db)
-
-        m_view = mb.addMenu("Nézet")
-        m_view.addAction(self.act_toolbar_menubar)
-        m_view.addAction(self.act_toolbar_ribbon)
-
-        m_help = mb.addMenu("Súgó")
-        m_help.addAction(self.act_about)
-        m_help.addAction(self.act_version_info)
-        m_help.addSeparator()
-        m_help.addAction(self.act_log_viewer)
-        m_help.addAction(self.act_version_history)
-
+        """Klasszikus menüsor felépítése."""
+        build_likviditas_menubar(self)
        
 
     def _build_ribbon(self) -> None:
-
-        # FONTOS:
-        # A ribbon "Fájl" gombja nem ribbon-tab, hanem egy külön beépített gomb
-        # (self.ribbon.file_btn). Ezért ide nem add_tab()/add_action_button() kell,
-        # hanem egy külön QMenu-t építünk, és azt adjuk hozzá a file_btn-höz.
-
-        self.ribbon = RibbonBar(self)
-
-        tab_home = self.ribbon.add_tab("Fő")
-        self.ribbon.add_action_button(tab_home, self.act_new_tx)
-
-        tab_data = self.ribbon.add_tab("Adatok")
-
-        self.ribbon.add_action_button(tab_data, self.act_backup_db)
-        self.ribbon.add_action_button(tab_data, self.act_restore_db)
-
-        self.ribbon.add_separator(tab_data, spacing=12)
-
-        self.ribbon.add_action_button(tab_data, self.act_import)
-        self.ribbon.add_action_button(tab_data, self.act_export)
-
-        # vizuális elválasztás
-        self.ribbon.add_separator(tab_data, spacing=18)
-
-        btn_delete = self.ribbon.add_action_button(tab_data, self.act_reset_db)
-        btn_delete.setObjectName("dangerButton")
-        btn_delete.style().unpolish(btn_delete)
-        btn_delete.style().polish(btn_delete)
-        btn_delete.update()
-
-
-
-        tab_app = self.ribbon.add_tab("Nézet")
-
-        tab_help = self.ribbon.add_tab("Súgó")
-        self.ribbon.add_action_button(tab_help, self.act_about)
-        self.ribbon.add_action_button(tab_help, self.act_version_info)
-        self.ribbon.add_action_button(tab_help, self.act_version_history)
-
-        self.ribbon.add_action_button(tab_help, self.act_log_viewer)
-
-
-        self.ribbon.add_action_button(tab_app, self.act_toolbar_menubar)
-        self.ribbon.add_action_button(tab_app, self.act_toolbar_ribbon)
-
-
-        
-
-        # Fájl-hoz létrehozza a lenyíló menüt:
-
-        file_menu = self._build_file_menu_for_ribbon()
-        self.ribbon.file_btn.setMenu(file_menu)
+        """Ribbon felépítése."""
+        build_likviditas_ribbon(self)
 
         
 
@@ -622,14 +553,8 @@ class MainWindow(QMainWindow):
         self.set_toolbar_mode(mode)
 
     def _build_file_menu_for_ribbon(self) -> QMenu:
-        menu = QMenu("Fájl", self)
-
-        # Fájl menü elemek
-        menu.addAction(self.act_new_tx)
-        menu.addSeparator()
-        menu.addAction(self.act_exit)
-        
-        return menu
+        """Ribbon Fájl menü felépítése."""
+        return build_likviditas_file_menu_for_ribbon(self)
 
     def on_import(self) -> None:
         """
