@@ -98,7 +98,6 @@ from penzugyi_naplo.ui.main_window.likviditas.register_pages import (
 )
 
 from penzugyi_naplo.ui.main_window.likviditas.menus import (
-    build_likviditas_file_menu_for_ribbon,
     build_likviditas_menubar,
     build_likviditas_ribbon,
 )
@@ -495,10 +494,7 @@ class MainWindow(QMainWindow):
         """Toolbar mód betöltése QSettings-ből."""
         load_likviditas_toolbar_mode(self)
 
-    def _build_file_menu_for_ribbon(self) -> QMenu:
-        """Ribbon Fájl menü felépítése."""
-        return build_likviditas_file_menu_for_ribbon(self)
-
+    
     def on_import(self) -> None:
         """
         ODS tranzakció import előnézet megnyitása.
