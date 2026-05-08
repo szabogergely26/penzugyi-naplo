@@ -46,14 +46,14 @@ Fontos:
 
 from __future__ import annotations
 
-import shutil
+
 from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtWidgets import (
     QDialog,
-    QFileDialog,
+    
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -113,6 +113,12 @@ from penzugyi_naplo.ui.main_window.likviditas.toolbar_mode import (
 
 
 from penzugyi_naplo.ui.main_window.likviditas.import_handlers import handle_ods_import
+
+
+from penzugyi_naplo.ui.main_window.likviditas.backup_restore_handlers import (
+    handle_backup_database,
+    handle_restore_database,
+)
 
 
 # ------- Importok vége -------
@@ -520,101 +526,13 @@ class MainWindow(QMainWindow):
                 page.reload()
 
     def on_backup_database(self) -> None:
-        db_path = Path(self.db.db_name)
+         """Adatbázis biztonsági mentése."""
+         handle_backup_database(self)
 
-        if not db_path.exists():
-            QMessageBox.warning(self, "Mentés", f"A DB fájl nem található:\n{db_path}")
-            return
-
-        # alap fájlnév javaslat
-        suggested = f"{db_path.stem}_backup.sqlite3"
-        target, _ = QFileDialog.getSaveFileName(
-            self,
-            "Adatbázis mentése (backup)",
-            str(db_path.with_name(suggested)),
-            "SQLite DB (*.sqlite3 *.db);;Minden fájl (*)",
-        )
-        if not target:
-            return
-
-        try:
-            # biztos ami biztos: flush/close ha van
-            self.db.close() if hasattr(self.db, "close") else None
-            shutil.copy2(str(db_path), target)
-            QMessageBox.information(self, "Mentés kész", f"Backup elkészült:\n{target}")
-        except Exception as e:
-            QMessageBox.critical(self, "Mentés hiba", f"Nem sikerült menteni:\n{e}")
-        finally:
-            # visszanyitjuk a DB-t, hogy az app menjen tovább
-            from penzugyi_naplo.db.transaction_database import TransactionDatabase
-
-            self.db = TransactionDatabase(str(db_path))
-            self._rebind_db_to_pages()
 
     def on_restore_database(self) -> None:
-        db_path = Path(self.db.db_name)
-
-        source, _ = QFileDialog.getOpenFileName(
-            self,
-            "Adatbázis betöltése (restore)",
-            str(db_path.parent),
-            "SQLite DB (*.sqlite3 *.db);;Minden fájl (*)",
-        )
-        if not source:
-            return
-
-        ret = QMessageBox.warning(
-            self,
-            "Betöltés (restore)",
-            "Biztosan betöltöd ezt a backupot?\n\n"
-            "A jelenlegi adatbázis felül lesz írva.\n"
-            "A művelet nem visszavonható.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel,
-        )
-
-        if ret != QMessageBox.StandardButton.Yes:
-            return
-
-        source_path = Path(source)
-        if not source_path.exists():
-            QMessageBox.warning(
-                self, "Betöltés", f"A kiválasztott fájl nem létezik:\n{source}"
-            )
-            return
-
-        try:
-            # 1) DB bezár
-            self.db.close() if hasattr(self.db, "close") else None
-
-            # 2) biztonsági mentés a jelenlegiről (ugyanabba a mappába)
-            if db_path.exists():
-                safety = db_path.with_suffix(db_path.suffix + ".pre_restore.bak")
-                shutil.copy2(str(db_path), str(safety))
-
-            # 3) restore (felülírjuk az app DB-jét)
-            shutil.copy2(str(source_path), str(db_path))
-
-            # 4) DB újranyit + oldalak újrakötése + reload
-            from penzugyi_naplo.db.transaction_database import TransactionDatabase
-
-            self.db = TransactionDatabase(str(db_path))
-            self._rebind_db_to_pages()
-            self.reload_all_pages()
-
-            QMessageBox.information(
-                self, "Betöltés kész", "A backup betöltve, az oldalak frissítve."
-            )
-        except Exception as e:
-            QMessageBox.critical(self, "Betöltés hiba", f"Nem sikerült betölteni:\n{e}")
-            # megpróbáljuk visszanyitni a meglévőt, hogy ne haljon meg az app
-            try:
-                from penzugyi_naplo.db.transaction_database import TransactionDatabase
-
-                self.db = TransactionDatabase(str(db_path))
-                self._rebind_db_to_pages()
-            except Exception:
-                pass
+        """Adatbázis betöltése"""
+        handle_restore_database(self)
 
     def on_new_transaction(self) -> None:
         wiz = TransactionWizard(self.db, self, parent=self)
