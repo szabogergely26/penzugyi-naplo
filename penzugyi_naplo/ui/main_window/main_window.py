@@ -81,7 +81,7 @@ from penzugyi_naplo.db.transaction_database import TransactionDatabase
 
 from penzugyi_naplo.ui.dialogs.about_dialog import AboutDialog
 from penzugyi_naplo.ui.dialogs.version_info import VersionInfoDialog
-from penzugyi_naplo.ui.likviditas.dialogs.wizard_transaction import TransactionWizard
+from penzugyi_naplo.ui.likviditas.wizard.wizard_transaction import TransactionWizard
 
 
 from penzugyi_naplo.ui.shared.nav_bar import NavBar

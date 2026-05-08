@@ -1,5 +1,9 @@
-# penzugyi_naplo/ui/likviditas/dialogs/wizard_transaction.py
+# penzugyi_naplo/ui/likviditas/wizard/wizard_transaction.py
 # --------------------------------------------------------------
+# Likviditás / Tranzakciórögzítő varázsló
+# --------------------------------------------------------------
+
+
 
 """
 Új tranzakció rögzítésére szolgáló varázsló (QWizard).
