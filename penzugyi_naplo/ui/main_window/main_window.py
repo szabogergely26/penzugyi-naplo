@@ -57,7 +57,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
-    QMenu,
+    
     QMessageBox,
     QStackedWidget,
     QVBoxLayout,
@@ -90,7 +90,7 @@ from penzugyi_naplo.ui.shared.nav_bar import NavBar
 from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
 from penzugyi_naplo.ui.dialogs.log_viewer_dialog import LogViewerDialog
 from penzugyi_naplo.ui.dialogs.version_history_dialog import VersionHistoryDialog
-from penzugyi_naplo.ui.importers.ods_transaction_import_wizard import OdsTransactionImportWizard
+
 
 
 from penzugyi_naplo.ui.main_window.likviditas.register_pages import (
@@ -110,6 +110,10 @@ from penzugyi_naplo.ui.main_window.likviditas.toolbar_mode import (
     load_likviditas_toolbar_mode,
     set_likviditas_toolbar_mode,
 )
+
+
+from penzugyi_naplo.ui.main_window.likviditas.import_handlers import handle_ods_import
+
 
 # ------- Importok vége -------
 
@@ -496,115 +500,8 @@ class MainWindow(QMainWindow):
 
     
     def on_import(self) -> None:
-        """
-        ODS tranzakció import előnézet megnyitása.
-
-        Tesztverzió:
-            - megnyitja az ODS import dialógust
-            - előnézetet készít
-            - az Import gomb után lekéri az érvényes sorokat
-            - adatbázisba még nem ír
-
-        Fontos:
-            Ez a metódus jelenleg szándékosan nem ment adatbázisba.
-            Először azt ellenőrizzük, hogy a wizard jó adatokat ad-e vissza.
-        """
-        dialog = OdsTransactionImportWizard(self)
-
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-
-        transactions = dialog.get_importable_transactions()
-
-        if not transactions:
-            QMessageBox.information(
-                self,
-                "Import",
-                "Nincs importálható tranzakció.",
-            )
-            return
-
-        print("ODS import - importálható tranzakciók:")
-        print(f"Darabszám: {len(transactions)}")
-
-        for tx in transactions[:10]:
-            print(
-                tx.tx_date,
-                tx.tx_type,
-                tx.category,
-                tx.amount,
-                tx.description,
-            )
-
-        QMessageBox.information(
-            self,
-            "ODS import előnézet",
-            "Az import előnézet elkészült.\n\n"
-            f"Importálható tranzakciók száma: {len(transactions)}\n\n"
-            "Az első néhány tranzakció kiíródott a konzolra.\n"
-            "Adatbázisba mentés még nem történt.",
-        )
-        
-
-        answer = QMessageBox.question(
-            self,
-            "Import megerősítése",
-            f"{len(transactions)} tranzakció importálható.\n\n"
-            "Biztosan beírod ezeket az adatbázisba?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-
-        if answer != QMessageBox.StandardButton.Yes:
-            return
-
-        saved_count = 0
-        failed_count = 0
-
-        for tx in transactions:
-            try:
-                category_id = 2 if tx.tx_type == "income" else 7
-
-                self.ctx.db.save_transaction(
-                    {
-                        "date": tx.tx_date,
-                        "type": tx.tx_type,
-                        "amount": tx.amount,
-                        "category_id": category_id,
-                        "name": tx.description or "",
-                        "description": tx.description or "",
-                        "payment_source": "bank",
-                    }
-                )
-
-                saved_count += 1
-
-            except Exception as exc:
-                failed_count += 1
-                print(f"Import hiba, forrás sor {tx.source_row}: {exc}")
-
-        QMessageBox.information(
-            self,
-            "Import kész",
-            f"Sikeresen importált tranzakciók: {saved_count}\n"
-            f"Hibás / kihagyott tranzakciók: {failed_count}",
-        )
-
-        # Évfülek frissítése import után
-        years = self.db.get_transaction_years()
-
-        if years:
-            self.year_tabs.set_years(years)
-
-        if self.state.active_year in years:
-            self.year_tabs.set_active_year(self.state.active_year, emit=False)
-        else:
-            self.state.active_year = years[0]
-            self.year_tabs.set_active_year(years[0], emit=False)
-            self.set_active_year(years[0])
-
-        # Oldalak frissítése
-        self.reload_all_pages()
+        """ODS tranzakció import indítása."""
+        handle_ods_import(self)
         
 
 
