@@ -662,6 +662,7 @@ class TransactionDatabase:
                     t.tx_date,
                     t.period_start,
                     t.period_end,
+                    invoice_number,
                     t.amount,
                     t.description,
                     t.name,
@@ -690,6 +691,7 @@ class TransactionDatabase:
             tx_date = str(row["tx_date"] or "").strip()
             period_start = str(row["period_start"] or "").strip()
             period_end = str(row["period_end"] or "").strip()
+            invoice_number = str(row["invoice_number"] or "").strip() or None
             amount = int(round(float(row["amount"] or 0)))
             month = int(row["month"] or 0)
 
@@ -709,7 +711,7 @@ class TransactionDatabase:
                             start=period_start or tx_date,
                             end=period_end or tx_date,
                             amount=amount,
-                            invoice_number=None,
+                            invoice_number=invoice_number,
                             is_paid=True,
                         )
                     )
@@ -815,11 +817,15 @@ class TransactionDatabase:
         period_start = _iso_date(raw_period_start) if raw_period_start else None
         period_end = _iso_date(raw_period_end) if raw_period_end else None
 
+        invoice_number = (data.get("invoice_number") or "").strip() or None
+
         if (period_start and not period_end) or (period_end and not period_start):
             raise ValueError("Az időszak kezdete és vége együtt adandó meg.")
 
         if period_start and period_end and period_start > period_end:
             raise ValueError("Az időszak kezdete nem lehet későbbi, mint a vége.")
+        
+        
 
         conn = self.get_db_connection()
         cur = conn.cursor()
@@ -830,9 +836,9 @@ class TransactionDatabase:
             """
             INSERT INTO transactions (
                 tx_date, tx_type, amount, category_id, name, description,
-                created_at, year, month, payment_source, period_start, period_end
+                created_at, year, month, payment_source, period_start, period_end, invoice_number
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 iso,
@@ -847,6 +853,7 @@ class TransactionDatabase:
                 payment_source,
                 period_start,
                 period_end,
+                invoice_number
             ),
         )
 
@@ -1711,6 +1718,8 @@ class TransactionDatabase:
         if "period_end" not in cols:
             cur.execute("ALTER TABLE transactions ADD COLUMN period_end TEXT")
      
+        if "invoice_number" not in cols:
+            cur.execute("ALTER TABLE transactions ADD COLUMN invoice_number TEXT")
      
      
      

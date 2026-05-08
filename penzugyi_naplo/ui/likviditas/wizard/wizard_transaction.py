@@ -419,6 +419,16 @@ class PageAmount(QWizardPage):
         self.input_period_end = QLineEdit()
         self.input_period_end.setPlaceholderText("Pl.: 2025-04-15")
 
+        self.lbl_invoice_number = QLabel("Számla sorszáma:")
+        self.input_invoice_number = QLineEdit()
+        self.input_invoice_number.setPlaceholderText("Pl.: 1234567890")
+
+
+
+
+        layout.addWidget(self.lbl_invoice_number)
+        layout.addWidget(self.input_invoice_number)
+
         layout.addWidget(self.lbl_date)
         layout.addWidget(self.input_date)
         layout.addWidget(self.lbl_period_start)
@@ -464,9 +474,13 @@ class PageAmount(QWizardPage):
         self.lbl_period_end.setVisible(needs_period)
         self.input_period_end.setVisible(needs_period)
 
+        self.lbl_invoice_number.setVisible(needs_period)
+        self.input_invoice_number.setVisible(needs_period)
+
         if is_bill:
             self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
             self.input_amount.clear()
+            self.input_invoice_number.clear()
 
             if needs_period:
                 self.input_period_start.clear()
@@ -478,6 +492,7 @@ class PageAmount(QWizardPage):
 
 
     def reset_bill_fields(self) -> None:
+        self.input_invoice_number.clear()
         self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
         self.input_period_start.clear()
         self.input_period_end.clear()
@@ -578,6 +593,9 @@ class PageAmount(QWizardPage):
 
     def nextId(self) -> int:
         return -1
+    
+    def get_invoice_number_raw(self) -> str:
+        return self.input_invoice_number.text().strip()
 
 # Itt már a core.utils.is_valid_date-et használjuk.
 # Fontos: ez az osztály feltételezi, hogy ugyanabban a fájlban már létezik:
@@ -631,6 +649,7 @@ class TransactionWizard(QWizard):
         amount = 0.0
         period_start = None
         period_end = None
+        invoice_number = ""
 
         # -------------------------------------------------
         # BILL ÁG
@@ -673,6 +692,8 @@ class TransactionWizard(QWizard):
             amount = amount_page.get_amount()
 
             if bill_requires_period(provider):
+                invoice_number = amount_page.get_invoice_number_raw()
+
                 period_start_raw = amount_page.get_period_start_raw()
                 period_end_raw = amount_page.get_period_end_raw()
 
@@ -694,10 +715,7 @@ class TransactionWizard(QWizard):
                         "Az időszak kezdete nem lehet későbbi, mint az időszak vége.",
                     )
                     return
-                else:
-                    period_start = None
-                    period_end = None
-
+                
 
 
         # -------------------------------------------------
@@ -767,10 +785,19 @@ class TransactionWizard(QWizard):
             "has_details": int(bool(has_details)),
             "period_start": period_start,
             "period_end": period_end,
+            "invoice_number": invoice_number,
         }
 
 
-        print("BILL SAVE DEBUG:", provider, target_name, period_start, period_end)
+        print(
+            "BILL SAVE DEBUG:",
+            provider,
+            target_name,
+            invoice_number,
+            period_start,
+            period_end,
+        )
+        
         tx_id = self.db.save_transaction(data)
 
         # Részletek mentése csak a nem-bill ágban, ha has_details=True

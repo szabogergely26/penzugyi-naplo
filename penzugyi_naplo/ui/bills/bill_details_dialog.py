@@ -133,8 +133,8 @@ class BillDetailsDialog(QDialog):
 
                 note_parts = []
 
-                if item.invoice_number:
-                    note_parts.append(f"Számla sorszám: {item.invoice_number}")
+                #if item.invoice_number:
+                 #   note_parts.append(f"Számla sorszám: {item.invoice_number}")
 
                 if item.is_paid:
                     note_parts.append("Fizetve")
