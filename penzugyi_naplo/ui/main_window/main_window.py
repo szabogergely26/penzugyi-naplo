@@ -52,6 +52,10 @@ from typing import Optional
 
 from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtWidgets import (
+    QPushButton,
+    QButtonGroup,
+
+
     QDialog,
     
     QHBoxLayout,
@@ -121,6 +125,13 @@ from penzugyi_naplo.ui.main_window.likviditas.backup_restore_handlers import (
 )
 
 
+
+# - Aranyszámla importok:
+
+from penzugyi_naplo.ui.main_window.aranyszamla.register_pages import (
+    register_aranyszamla_pages,
+)
+
 # ------- Importok vége -------
 
 
@@ -174,15 +185,73 @@ class MainWindow(QMainWindow):
         self._central = QWidget(self)
         self.setCentralWidget(self._central)
 
-        # --- FŐ (bal + jobb) layout ---
-        self._main_layout = QHBoxLayout(self._central)
+        # --- TELJES ABLAK FŐ LAYOUT ---
+        # Felül: dev banner + ribbon
+        # Alul: modulválasztó + évszűrő + aktuális oldal tartalma
+        self._central_layout = QVBoxLayout(self._central)
+        self._central_layout.setContentsMargins(0, 0, 0, 0)
+        self._central_layout.setSpacing(0)
+
+        # --- ALSÓ FŐTERÜLET: bal + jobb panelek ---
+        self._main_layout = QHBoxLayout()
         self._main_layout.setContentsMargins(0, 0, 0, 0)
         self._main_layout.setSpacing(0)
+
+
+
+        # --- MODULVÁLASZTÓ PANEL ---
+        self._module_panel = QWidget(self._central)
+        self._module_panel.setObjectName("modulePanel")
+        self._module_panel.setFixedWidth(150)
+
+        self._module_layout = QVBoxLayout(self._module_panel)
+        self._module_layout.setContentsMargins(8, 8, 8, 8)
+        self._module_layout.setSpacing(12)
+
+        # A gombokat függőlegesen középre húzzuk.
+        self._module_layout.addStretch(1)
+
+        self.btn_module_likviditas = QPushButton("Likviditás")
+        self.btn_module_likviditas.setCheckable(True)
+        self.btn_module_likviditas.setChecked(True)
+        self.btn_module_likviditas.setObjectName("moduleButtonActive")
+        self.btn_module_likviditas.setMinimumHeight(54)
+
+        self.btn_module_aranyszamla = QPushButton("Aranyszámla")
+        self.btn_module_aranyszamla.setCheckable(True)
+        self.btn_module_aranyszamla.setObjectName("moduleButton")
+        self.btn_module_aranyszamla.setMinimumHeight(54)
+
+        self.module_button_group = QButtonGroup(self)
+        self.module_button_group.setExclusive(True)
+        self.module_button_group.addButton(self.btn_module_likviditas)
+        self.module_button_group.addButton(self.btn_module_aranyszamla)
+
+        self._module_layout.addWidget(self.btn_module_likviditas)
+        self._module_layout.addWidget(self.btn_module_aranyszamla)
+
+        # A gombok alatt is legyen hely, így középen maradnak.
+        self._module_layout.addStretch(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         # --- BAL PANEL ---
         self._left_panel = QWidget(self._central)
         self._left_panel.setObjectName("leftPanel")
-        self._left_panel.setFixedWidth(140)
+        self._left_panel.setFixedWidth(125)
 
         self._left_layout = QVBoxLayout(self._left_panel)
         self._left_layout.setContentsMargins(0, 0, 0, 0)
@@ -210,9 +279,10 @@ class MainWindow(QMainWindow):
         else:
             self.dev_banner.setVisible(False)
 
-        self._root_layout.addWidget(self.dev_banner)
+        self._central_layout.addWidget(self.dev_banner)
 
         # --- Panelok a fő layouthoz ---
+        self._main_layout.addWidget(self._module_panel, 0)
         self._main_layout.addWidget(self._left_panel, 0)
         self._main_layout.addWidget(self._right_panel, 1)
 
@@ -239,16 +309,21 @@ class MainWindow(QMainWindow):
 
 
 
-        # --- RIGHT: ribbon + navbar + pages ---
+        # --- FULL WIDTH: ribbon ---
         self._build_ribbon()
         self.ribbon.setObjectName("ribbonBar")
-        self._root_layout.addWidget(self.ribbon)
+        self._central_layout.addWidget(self.ribbon)
 
+        # --- ALSÓ FŐTERÜLET: modulválasztó + évszűrő + jobb panel ---
+        self._central_layout.addLayout(self._main_layout, 1)
+
+        # --- RIGHT: navbar + pages ---
         self._build_navbar()
         self._root_layout.addWidget(self.navbar)
 
         self._build_pages()
         self._root_layout.addWidget(self.page_stack, 1)
+
 
         # --- Signalok + kezdő állapot ---
         self._connect_core_signals()
@@ -370,19 +445,24 @@ class MainWindow(QMainWindow):
             if hasattr(bills, "reload"):
                 bills.reload()
 
+
+
+
     def _sync_left_year_offset(self) -> None:
-        """Az év-sávot lejjebb tolja a jobb oldali fejléc (ribbon + navbar) alá."""
+        """
+        Az év-sávot a jobb oldali modulon belüli navbar alá igazítja.
+
+        A ribbon már teljes szélességű felső sáv, ezért annak magasságát
+        itt nem kell beleszámolni.
+        """
         h = 0
 
-        if getattr(self, "ribbon", None) is not None and self.ribbon.isVisible():
-            h += self.ribbon.height()  # valós magasság
-
         if getattr(self, "navbar", None) is not None and self.navbar.isVisible():
-            h += self.navbar.height()  # valós magasság
+            h += self.navbar.height()
 
-        self._left_header_spacer.setFixedHeight(
-            h + 16
-        )  # +16: finom ráhagyás (igény szerint 12/20)
+        self._left_header_spacer.setFixedHeight(h + 16)
+
+
 
     def _build_navbar(self) -> None:
         self.navbar = NavBar(parent=self._right_panel)
@@ -396,6 +476,7 @@ class MainWindow(QMainWindow):
         megmaradjon főablak-váznak.
         """
         register_likviditas_pages(self)
+        register_aranyszamla_pages(self)
 
     def _connect_core_signals(self) -> None:
         """
@@ -405,6 +486,8 @@ class MainWindow(QMainWindow):
         self.year_tabs.yearChanged.connect(self.on_year_selected)
         self.year_tabs.allYearsSelected.connect(self.on_all_years)
         self.navbar.pageRequested.connect(self.set_page)
+        self.btn_module_likviditas.clicked.connect(self.switch_to_likviditas_module)
+        self.btn_module_aranyszamla.clicked.connect(self.switch_to_aranyszamla_module)
 
         return
 
@@ -462,6 +545,42 @@ class MainWindow(QMainWindow):
         # fallback: ha van refresh, hívd
         elif hasattr(page, "refresh"):
             page.refresh()
+
+
+
+    def switch_to_likviditas_module(self) -> None:
+        """
+        Likviditás modul aktiválása.
+        """
+
+        # Évszűrő panel láthatósága:
+        self._left_panel.setVisible(True)
+
+
+        # NavBar láthatósága    (Kezdő, Tranzakciók, stb......)
+        self.navbar.setVisible(True)
+
+         # Likviditás kezdőoldal visszaállítása:
+        self.set_page("home")
+
+
+
+
+    def switch_to_aranyszamla_module(self) -> None:
+        """
+        Aranyszámla modul aktiválása.
+
+        """
+        # Évszűrő panel láthatósága:
+        self._left_panel.setVisible(False)
+
+        
+
+        # NavBar láthatósága    (Kezdő, Tranzakciók, stb.......)
+        self.navbar.setVisible(False)
+        self.set_page("aranyszamla_home")
+
+
 
     def set_active_year(self, year: int) -> None:
         self.state.active_year = int(year)
