@@ -15,12 +15,14 @@ Később:
 - valós adatok bekötése adatbázisból
 - érték számítása aktuális árfolyam alapján
 - finom animáció / látványelemek
-
 """
+
+from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
+    QHBoxLayout,
     QLabel,
     QSizePolicy,
     QVBoxLayout,
@@ -43,50 +45,79 @@ class AranyszamlaHomePage(QWidget):
         title = QLabel("Aranyszámla")
         title.setObjectName("aranyszamlaPageTitle")
 
-        subtitle = QLabel("A nemesfém megtakarításod áttekintése")
+        subtitle = QLabel("Arany megtakarításod egyszerű áttekintése")
         subtitle.setObjectName("aranyszamlaPageSubtitle")
 
         hero_card = QFrame()
         hero_card.setObjectName("aranyszamlaHeroCard")
         hero_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        hero_layout = QVBoxLayout(hero_card)
-        hero_layout.setContentsMargins(36, 36, 36, 36)
-        hero_layout.setSpacing(22)
-        hero_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        hero_layout = QHBoxLayout(hero_card)
+        hero_layout.setContentsMargins(42, 38, 42, 38)
+        hero_layout.setSpacing(36)
+
+        visual_box = QFrame()
+        visual_box.setObjectName("aranyszamlaVisualBox")
+
+        visual_layout = QVBoxLayout(visual_box)
+        visual_layout.setContentsMargins(24, 24, 24, 24)
+        visual_layout.setSpacing(12)
+        visual_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         gold_icon = QLabel("🪙")
         gold_icon.setObjectName("aranyszamlaGoldIcon")
         gold_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        gold_title = QLabel("Aranytartalék")
-        gold_title.setObjectName("aranyszamlaGoldTitle")
-        gold_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        gold_caption = QLabel("Aranytartalék")
+        gold_caption.setObjectName("aranyszamlaGoldCaption")
+        gold_caption.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        grams_label = QLabel("Összes készlet")
+        visual_layout.addStretch(1)
+        visual_layout.addWidget(gold_icon)
+        visual_layout.addWidget(gold_caption)
+        visual_layout.addStretch(1)
+
+        info_box = QFrame()
+        info_box.setObjectName("aranyszamlaInfoBox")
+
+        info_layout = QVBoxLayout(info_box)
+        info_layout.setContentsMargins(28, 28, 28, 28)
+        info_layout.setSpacing(18)
+
+        section_title = QLabel("Jelenlegi állapot")
+        section_title.setObjectName("aranyszamlaSectionTitle")
+
+        grams_label = QLabel("Összes arany")
         grams_label.setObjectName("aranyszamlaInfoLabel")
-        grams_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        grams_value = QLabel("0,000 g")
-        grams_value.setObjectName("aranyszamlaMainValue")
-        grams_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.grams_value = QLabel("0,000 g")
+        self.grams_value.setObjectName("aranyszamlaMainValue")
 
         estimated_label = QLabel("Becsült érték")
         estimated_label.setObjectName("aranyszamlaInfoLabel")
-        estimated_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        estimated_value = QLabel("0 Ft")
-        estimated_value.setObjectName("aranyszamlaSecondaryValue")
-        estimated_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.estimated_value = QLabel("0 Ft")
+        self.estimated_value.setObjectName("aranyszamlaSecondaryValue")
 
-        hero_layout.addWidget(gold_icon)
-        hero_layout.addWidget(gold_title)
-        hero_layout.addSpacing(8)
-        hero_layout.addWidget(grams_label)
-        hero_layout.addWidget(grams_value)
-        hero_layout.addSpacing(12)
-        hero_layout.addWidget(estimated_label)
-        hero_layout.addWidget(estimated_value)
+        hint = QLabel(
+            "Az érték később a rögzített vásárlások, eladások és az aktuális "
+            "aranyár alapján számolható."
+        )
+        hint.setObjectName("aranyszamlaHintText")
+        hint.setWordWrap(True)
+
+        info_layout.addWidget(section_title)
+        info_layout.addSpacing(8)
+        info_layout.addWidget(grams_label)
+        info_layout.addWidget(self.grams_value)
+        info_layout.addSpacing(10)
+        info_layout.addWidget(estimated_label)
+        info_layout.addWidget(self.estimated_value)
+        info_layout.addStretch(1)
+        info_layout.addWidget(hint)
+
+        hero_layout.addWidget(visual_box, 2)
+        hero_layout.addWidget(info_box, 3)
 
         main_layout.addWidget(title)
         main_layout.addWidget(subtitle)
