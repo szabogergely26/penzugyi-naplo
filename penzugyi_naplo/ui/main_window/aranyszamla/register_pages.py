@@ -7,28 +7,16 @@ Aranyszámla modul oldalainak regisztrálása.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from penzugyi_naplo.ui.main_window.aranyszamla.module_page import (
+    AranyszamlaModulePage,
+)
 
 
 def register_aranyszamla_pages(window) -> None:
     """
-    Ideiglenes Aranyszámla kezdőoldal regisztrálása.
+    Regisztrálja az Aranyszámla modult a MainWindow központi stackjébe.
     """
 
-    page = QWidget(window.page_stack)
-    layout = QVBoxLayout(page)
+    aranyszamla_page = AranyszamlaModulePage(window.page_stack)
 
-    title = QLabel("Aranyszámla", page)
-    title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    title.setObjectName("pageTitle")
-
-    subtitle = QLabel("Vétel / Eladás / Árfolyamok később kerülnek kialakításra.", page)
-    subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-    layout.addStretch(1)
-    layout.addWidget(title)
-    layout.addWidget(subtitle)
-    layout.addStretch(1)
-
-    window.add_page("aranyszamla_home", page)
+    window.add_page("aranyszamla_home", aranyszamla_page)
