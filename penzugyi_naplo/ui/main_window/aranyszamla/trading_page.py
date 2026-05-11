@@ -93,9 +93,9 @@ class AranyszamlaTradingPage(QWidget):
         layout.addWidget(subtitle)
         layout.addWidget(table_card, 1)
 
-        self.load_demo_empty_state()
+        self.load_empty_state()
 
-    def load_demo_empty_state(self) -> None:
+    def load_empty_state(self) -> None:
         """
         Kezdeti üres állapot.
 

@@ -58,6 +58,7 @@ Tudatosan NEM UI-függő:
 """
 
 from __future__ import annotations
+from typing import Any
 
 import os
 import sqlite3
@@ -66,6 +67,13 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
+from penzugyi_naplo.ui.bills.bill_models import (
+    BillCardModel,
+    MonthlyAmount,
+    PeriodicAmount,
+)
+
+from penzugyi_naplo.db.gold_database import ensure_gold_tables
 from penzugyi_naplo.ui.bills.bill_models import (
     BillCardModel,
     MonthlyAmount,
@@ -329,6 +337,16 @@ class TransactionDatabase:
             )
             """
         )
+
+
+        ensure_gold_tables(conn)
+
+
+
+
+
+
+
 
         # detect old/new transactions table, mindig lefut
         cur.execute(
