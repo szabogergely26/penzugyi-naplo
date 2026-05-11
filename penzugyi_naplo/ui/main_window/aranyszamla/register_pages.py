@@ -17,6 +17,9 @@ def register_aranyszamla_pages(window) -> None:
     Regisztrálja az Aranyszámla modult a MainWindow központi stackjébe.
     """
 
-    aranyszamla_page = AranyszamlaModulePage(window.page_stack)
+    aranyszamla_page = AranyszamlaModulePage(
+    db_path=window.db.db_name,
+    parent=window.page_stack,
+)
 
     window.add_page("aranyszamla_home", aranyszamla_page)

@@ -694,14 +694,20 @@ class MainWindow(QMainWindow):
         wiz = GoldTradeWizard(self.db.db_name, parent=self)
 
         if wiz.exec() == QDialog.DialogCode.Accepted:
-            # Aranyszámla modul: mentés után maradunk az aranyszámla kereskedés nézeten.
-            self.set_page("aranyszamla_trading")
+            # Mentés után az Aranyszámla modulra váltunk.
+            self.set_page("aranyszamla_home")
 
-            page = self.pages.get("aranyszamla_trading")
-            if page and hasattr(page, "reload"):
-                page.reload()
+            # Az Aranyszámla modul egyetlen MainWindow-szintű oldal.
+            page = self.pages.get("aranyszamla_home")
+
+            if page and hasattr(page, "show_trading"):
+                page.show_trading()
+
+            if page and hasattr(page, "refresh"):
+                page.refresh()
 
 
+                
 
     def _build_pages(self) -> None:
         """Oldal-stack felépítése és az alap oldalak regisztrálása."""

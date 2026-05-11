@@ -225,3 +225,23 @@ def get_gold_summary(db_path: str) -> dict:
         "total_grams": float(row["total_grams"] or 0),
         "total_huf": int(row["total_huf"] or 0),
     }
+
+
+# Tranzakció törlése:
+def delete_gold_transaction(db_path: str, transaction_id: int) -> None:
+    """
+    Egy aranyszámla tranzakció törlése azonosító alapján.
+    """
+
+    with _connect(db_path) as conn:
+        ensure_gold_tables(conn)
+
+        conn.execute(
+            """
+            DELETE FROM gold_transactions
+            WHERE id = ?
+            """,
+            (transaction_id,),
+        )
+
+        conn.commit()

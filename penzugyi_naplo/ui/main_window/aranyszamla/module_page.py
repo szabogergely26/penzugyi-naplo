@@ -23,15 +23,19 @@ from PySide6.QtWidgets import (
 
 from penzugyi_naplo.ui.main_window.aranyszamla.home_page import AranyszamlaHomePage
 from penzugyi_naplo.ui.main_window.aranyszamla.trading_page import (
-    AranyszamlaTradingPage,
+    GoldTradingPage,
 )
 
 
 class AranyszamlaModulePage(QWidget):
     """Az Aranyszámla modul saját belső navigációval."""
 
-    def __init__(self, parent=None):
+    def __init__(self, db_path: str, parent=None):
         super().__init__(parent)
+
+         # Eltároljuk az adatbázis útvonalát, hogy tovább tudjuk adni
+        # az Aranyszámla belső oldalainak.
+        self.db_path = db_path
 
         self.setObjectName("aranyszamlaModulePage")
 
@@ -62,7 +66,11 @@ class AranyszamlaModulePage(QWidget):
         self.stack.setObjectName("aranyszamlaInnerStack")
 
         self.home_page = AranyszamlaHomePage(self.stack)
-        self.trading_page = AranyszamlaTradingPage(self.stack)
+        
+        self.trading_page = GoldTradingPage(
+            db_path=self.db_path,
+            parent=self.stack,
+        )
 
         self.stack.addWidget(self.home_page)
         self.stack.addWidget(self.trading_page)
@@ -88,3 +96,13 @@ class AranyszamlaModulePage(QWidget):
         self.stack.setCurrentWidget(self.trading_page)
         self.btn_home.setChecked(False)
         self.btn_trading.setChecked(True)
+
+
+
+    def refresh(self) -> None:
+        """
+        Frissíti az Aranyszámla modul belső oldalait.
+        """
+
+        if hasattr(self.trading_page, "refresh"):
+            self.trading_page.refresh()
