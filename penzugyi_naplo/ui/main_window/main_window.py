@@ -132,6 +132,10 @@ from penzugyi_naplo.ui.main_window.aranyszamla.register_pages import (
     register_aranyszamla_pages,
 )
 
+from penzugyi_naplo.ui.main_window.aranyszamla.wizard.gold_trade_wizard import (
+    GoldTradeWizard,
+)
+
 # ------- Importok vége -------
 
 
@@ -210,6 +214,10 @@ class MainWindow(QMainWindow):
 
         # A gombokat függőlegesen középre húzzuk.
         self._module_layout.addStretch(1)
+
+
+        # Alapértelmezett induló modul: Likviditás.
+        self.current_module = "likviditas"
 
         self.btn_module_likviditas = QPushButton("Likviditás")
         self.btn_module_likviditas.setCheckable(True)
@@ -553,6 +561,8 @@ class MainWindow(QMainWindow):
         Likviditás modul aktiválása.
         """
 
+        self.current_module = "likviditas"
+
         # Évszűrő panel láthatósága:
         self._left_panel.setVisible(True)
 
@@ -571,6 +581,10 @@ class MainWindow(QMainWindow):
         Aranyszámla modul aktiválása.
 
         """
+
+        self.current_module = "aranyszamla"
+
+
         # Évszűrő panel láthatósága:
         self._left_panel.setVisible(False)
 
@@ -652,17 +666,42 @@ class MainWindow(QMainWindow):
     def on_restore_database(self) -> None:
         """Adatbázis betöltése"""
         handle_restore_database(self)
+        
+
 
     def on_new_transaction(self) -> None:
+        """Az aktív modulhoz tartozó új művelet varázslóját nyitja meg."""
+
+        if self.current_module == "aranyszamla":
+            self.on_new_gold_trade()
+            return
+
         wiz = TransactionWizard(self.db, self, parent=self)
 
         if wiz.exec() == QDialog.DialogCode.Accepted:
-            # ha van majd transactions page reload metódus, itt lehet hívni
-            # de minimum: navigáljunk a tranzakciók oldalra
+            # Likviditás modul: mentés után a tranzakciós oldalra váltunk.
             self.set_page("transactions")
+
             page = self.pages.get("transactions")
             if page and hasattr(page, "reload"):
                 page.reload()
+
+
+
+    def on_new_gold_trade(self) -> None:
+        """Aranyszámla modul: vétel/eladás varázsló megnyitása."""
+
+        wiz = GoldTradeWizard(self.db.db_name, parent=self)
+
+        if wiz.exec() == QDialog.DialogCode.Accepted:
+            # Aranyszámla modul: mentés után maradunk az aranyszámla kereskedés nézeten.
+            self.set_page("aranyszamla_trading")
+
+            page = self.pages.get("aranyszamla_trading")
+            if page and hasattr(page, "reload"):
+                page.reload()
+
+
 
     def _build_pages(self) -> None:
         """Oldal-stack felépítése és az alap oldalak regisztrálása."""
