@@ -50,7 +50,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import QSettings, Qt, QTimer
+from PySide6.QtCore import QEvent, QSettings, Qt, QTimer
 from PySide6.QtWidgets import (
     QPushButton,
     QButtonGroup,
@@ -222,6 +222,9 @@ class MainWindow(QMainWindow):
         # True = teljes szélességű, False = összecsukott.
         self.module_sidebar_expanded = True
 
+        # Ha True, akkor az oldalsáv csak hover miatt van ideiglenesen kinyitva.
+        self.module_sidebar_hover_expanded = False
+
 
         # Hamburger gomb a bal oldali modulválasztó sávhoz.
         # Később ez fogja nyitni/csukni az oldalsávot.
@@ -377,8 +380,12 @@ class MainWindow(QMainWindow):
 
 
         
+        # Hamburger menü események:
 
-        
+        # Egér ráhúzás / elhagyás figyelése az összecsukott oldalsávnál.
+        self._module_panel.installEventFilter(self)
+
+        # kattintáskori művelet
         self.sidebar_toggle_button.clicked.connect(self.toggle_module_sidebar)
 
 
@@ -388,39 +395,92 @@ class MainWindow(QMainWindow):
         """
         Bal oldali modulválasztó sáv összecsukása / kibontása.
 
-        Első verzió:
-            - nyitva: 150 px széles, látszanak a Likviditás / Aranyszámla gombok
+        Kattintásos állapot:
+            - nyitva: 150 px széles, látszanak a modulválasztó gombok
             - csukva: 52 px széles, csak a hamburger ikon látszik
+
+        Hover:
+            - ha csukott állapotban rámegy az egér, ideiglenesen kinyílik
+            - ha az egér elhagyja, visszacsukódik
         """
         
+        self.module_sidebar_hover_expanded = False
         self.module_sidebar_expanded = not self.module_sidebar_expanded
 
         if self.module_sidebar_expanded:
-            # Teljes modulválasztó sáv.
-            self._module_panel.setFixedWidth(150)
+            self._set_module_sidebar_expanded(persistent=True)
+        else:
+            self._set_module_sidebar_collapsed()
 
-            # Modulválasztó gombok újra látszanak.
-            self.btn_module_likviditas.setVisible(True)
-            self.btn_module_aranyszamla.setVisible(True)
+    
+    # segéd metódusok a sidebar-hoz:
 
-            # Tooltip visszaállítása.
+    def _set_module_sidebar_expanded(self, persistent: bool = False) -> None:
+        """
+        Modulválasztó oldalsáv kinyitása.
+
+        persistent=True:
+            rendes, kattintással nyitott állapot
+
+        persistent=False:
+            ideiglenes, hover miatti kinyitás
+        """
+    
+        self._module_panel.setFixedWidth(150)
+
+        self.btn_module_likviditas.setVisible(True)
+        self.btn_module_aranyszamla.setVisible(True)
+
+        if persistent:
+            self.module_sidebar_expanded = True
+            self.module_sidebar_hover_expanded = False
             self.sidebar_toggle_button.setToolTip("Oldalsáv összecsukása")
             self.log.d("MODULE SIDEBAR: expanded")
-
         else:
-            # Keskeny modulválasztó sáv.
-            self._module_panel.setFixedWidth(52)
-
-            # Modulválasztó gombok elrejtése.
-            self.btn_module_likviditas.setVisible(False)
-            self.btn_module_aranyszamla.setVisible(False)
-
-            # Tooltip frissítése.
-            self.sidebar_toggle_button.setToolTip("Oldalsáv kibontása")
-            self.log.d("MODULE SIDEBAR: collapsed")
+            self.module_sidebar_hover_expanded = True
+            self.sidebar_toggle_button.setToolTip("Oldalsáv rögzített kibontása")
+            self.log.d("MODULE SIDEBAR: hover expanded")
 
 
+    def _set_module_sidebar_collapsed(self) -> None:
+        """
+        Modulválasztó oldalsáv összecsukása.
+        """
+        
+        self._module_panel.setFixedWidth(52)
 
+        self.btn_module_likviditas.setVisible(False)
+        self.btn_module_aranyszamla.setVisible(False)
+
+        self.module_sidebar_expanded = False
+        self.module_sidebar_hover_expanded = False
+
+        self.sidebar_toggle_button.setToolTip("Oldalsáv kibontása")
+        self.log.d("MODULE SIDEBAR: collapsed")
+
+
+
+    def eventFilter(self, watched: object, event: QEvent) -> bool:
+        """
+        Összecsukott modulválasztó sáv hover-kezelése.
+
+        Ha a sáv csukott állapotban van:
+            - egér belépésre ideiglenesen kinyitjuk
+            - egér kilépésre visszacsukjuk
+        """
+    
+        if watched is self._module_panel:
+            if event.type() == QEvent.Type.Enter:
+                if not self.module_sidebar_expanded:
+                    self._set_module_sidebar_expanded(persistent=False)
+                return False
+
+            if event.type() == QEvent.Type.Leave:
+                if self.module_sidebar_hover_expanded:
+                    self._set_module_sidebar_collapsed()
+                return False
+
+        return super().eventFilter(watched, event)
 
 
 
