@@ -21,6 +21,12 @@ from PySide6.QtGui import QAction, QActionGroup
 
 def create_likviditas_actions(window) -> None:
     """Likviditás nézethez tartozó actionök létrehozása."""
+
+    # Beállítások megnyitása.
+    window.act_settings = QAction("Beállítások", window)
+    window.act_settings.triggered.connect(window.show_settings_dialog)
+
+
     window.act_exit = QAction("Kilépés", window)
     window.act_exit.triggered.connect(window.close)
 

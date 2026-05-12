@@ -4,7 +4,7 @@
 
 """
 Felső navigációs sáv (NavBar)
-(ui/widgets/nav_bar.py).
+(ui/shared/nav_bar.py).
 
 Felelősség:
     - oldalgombok megjelenítése (home / transactions / statistics / bills / settings)
@@ -52,7 +52,7 @@ class NavBar(QFrame):
         ("statistics", "Statisztika"),
         ("bills", "Számlák"),
         ("accounts", "Pénztárcák"),
-        ("settings", "Beállítások"),
+        
     )
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -75,13 +75,9 @@ class NavBar(QFrame):
 
         lay.addStretch(1)
 
-        # --- elválasztó ---
-        lay.addWidget(v_separator(self))
+        
 
-        # --- settings ---
-        self._add_btn(lay, "settings", "Beállítások")
-
-        lay.addStretch(10)
+        
 
     def _add_btn(self, lay: QHBoxLayout, key: str, text: str) -> None:
         btn = QPushButton(text, self)

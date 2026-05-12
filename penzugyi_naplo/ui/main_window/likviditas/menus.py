@@ -28,6 +28,8 @@ def build_likviditas_menubar(window) -> None:
     m_file = mb.addMenu("Fájl")
     m_file.addAction(window.act_new_tx)
     m_file.addSeparator()
+    m_file.addAction(window.act_settings)
+    m_file.addSeparator()
     m_file.addAction(window.act_exit)
 
     m_data = mb.addMenu("Adatok")
@@ -102,6 +104,8 @@ def build_likviditas_file_menu_for_ribbon(window) -> QMenu:
     menu = QMenu("Fájl", window)
 
     menu.addAction(window.act_new_tx)
+    menu.addSeparator()
+    menu.addAction(window.act_settings)
     menu.addSeparator()
     menu.addAction(window.act_exit)
 

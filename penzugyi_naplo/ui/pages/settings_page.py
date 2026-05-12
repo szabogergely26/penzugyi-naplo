@@ -39,7 +39,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QVBoxLayout,
-    QWidget,
+    QDialog,
 )
 
 from penzugyi_naplo.config import (
@@ -58,9 +58,16 @@ from penzugyi_naplo.config import (
 # ------ SettingsPage osztály -----
 
 
-class SettingsPage(QWidget):
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+class SettingsDialog(QDialog):
+    def __init__(self, parent=None):
         super().__init__(parent)
+
+        # A SettingsDialog parentje a MainWindow.
+        # Így innen közvetlenül elérjük a MainWindow metódusait.
+        self.main_window = parent
+
+        self.setWindowTitle("Beállítások")
+        self.resize(720, 480)
 
         self._settings = QSettings(ORG_NAME, APP_NAME)
 
@@ -81,7 +88,7 @@ class SettingsPage(QWidget):
         hint.setWordWrap(True)
         hint.setObjectName("pageHint")
         root.addWidget(hint)
-        self._load_values()
+        
         
         sep = QFrame(self)
         sep.setFrameShape(QFrame.HLine)
@@ -159,18 +166,27 @@ class SettingsPage(QWidget):
 
     def _on_toolbar_changed(self) -> None:
         mode = str(self.cmb_toolbar.currentData())
+
         if mode not in ("menubar", "ribbon"):
             return
 
         self._settings.setValue("ui/toolbar_mode", mode)
 
-        # Ha a parent MainWindow tudja kezelni, akkor azonnali váltás
-        mw = self.window()
-        if hasattr(mw, "set_toolbar_mode"):
+        # QDialog esetén a self.window() már maga a dialog lehet,
+        # ezért a MainWindow-t a parentként eltett self.main_window alapján érjük el.
+        if hasattr(self.main_window, "set_toolbar_mode"):
             try:
-                mw.set_toolbar_mode(mode)  # MainWindow metódus
-            except Exception:
-                pass
+                self.main_window.set_toolbar_mode(mode)
+            except Exception as e:
+                if hasattr(self, "status_label"):
+                    self.status_label.setText(
+                        "Az eszköztár módja mentve lett, de csak újraindítás után lép teljesen életbe."
+                    )
+                print("DEBUG: toolbar mode live apply failed:", e)
+
+
+
+
 
     def _on_search_all_years_changed(self, checked: bool) -> None:
         self._settings.setValue("ui/search_all_years", bool(checked))
@@ -187,10 +203,18 @@ class SettingsPage(QWidget):
 
         self._settings.setValue(SETTINGS_KEY_STYLE_MODE, mode)
 
-        # Live apply
-        mw = self.window()
-        if hasattr(mw, "apply_style_mode"):
+        # Live apply a MainWindow-n.
+        if hasattr(self.main_window, "apply_style_mode"):
             try:
-                mw.apply_style_mode(mode)
-            except Exception:
-                pass
+                self.main_window.apply_style_mode(mode)
+
+                if hasattr(self, "status_label"):
+                    self.status_label.setText("A téma frissítve lett.")
+
+            except Exception as e:
+                if hasattr(self, "status_label"):
+                    self.status_label.setText(
+                        "A téma mentve lett, de csak újraindítás után lép teljesen életbe."
+                    )
+                print("DEBUG: style live apply failed:", e)
+        
