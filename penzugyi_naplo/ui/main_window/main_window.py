@@ -203,6 +203,8 @@ class MainWindow(QMainWindow):
 
 
 
+
+
         # --- MODULVÁLASZTÓ PANEL ---
         self._module_panel = QWidget(self._central)
         self._module_panel.setObjectName("modulePanel")
@@ -212,12 +214,31 @@ class MainWindow(QMainWindow):
         self._module_layout.setContentsMargins(8, 8, 8, 8)
         self._module_layout.setSpacing(12)
 
-        # A gombokat függőlegesen középre húzzuk.
-        self._module_layout.addStretch(1)
-
-
+    
         # Alapértelmezett induló modul: Likviditás.
         self.current_module = "likviditas"
+
+        # Bal oldali modulválasztó sáv állapota.
+        # True = teljes szélességű, False = összecsukott.
+        self.module_sidebar_expanded = True
+
+
+        # Hamburger gomb a bal oldali modulválasztó sávhoz.
+        # Később ez fogja nyitni/csukni az oldalsávot.
+        self.sidebar_toggle_button = QPushButton("☰")
+        self.sidebar_toggle_button.setObjectName("sidebarToggleButton")
+        self.sidebar_toggle_button.setFixedSize(36, 36)
+        self.sidebar_toggle_button.setCursor(Qt.PointingHandCursor)
+        self.sidebar_toggle_button.setToolTip("Oldalsáv összecsukása / kibontása")
+
+        # A hamburger mindig a modulpanel tetején legyen.
+        self._module_layout.addWidget(self.sidebar_toggle_button, 0, Qt.AlignHCenter)
+        
+        # Kis térköz a hamburger alatt.
+        self._module_layout.addSpacing(40)
+
+        # Ez húzza a modulválasztó gombokat középre/lejjebb.
+        self._module_layout.addStretch(1)
 
         self.btn_module_likviditas = QPushButton("Likviditás")
         self.btn_module_likviditas.setCheckable(True)
@@ -230,29 +251,20 @@ class MainWindow(QMainWindow):
         self.btn_module_aranyszamla.setObjectName("moduleButton")
         self.btn_module_aranyszamla.setMinimumHeight(54)
 
+        
+
         self.module_button_group = QButtonGroup(self)
         self.module_button_group.setExclusive(True)
         self.module_button_group.addButton(self.btn_module_likviditas)
         self.module_button_group.addButton(self.btn_module_aranyszamla)
 
+        
         self._module_layout.addWidget(self.btn_module_likviditas)
         self._module_layout.addWidget(self.btn_module_aranyszamla)
+        
 
         # A gombok alatt is legyen hely, így középen maradnak.
         self._module_layout.addStretch(1)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -367,6 +379,56 @@ class MainWindow(QMainWindow):
         
 
         
+        self.sidebar_toggle_button.clicked.connect(self.toggle_module_sidebar)
+
+
+
+
+    def toggle_module_sidebar(self) -> None:
+        """
+        Bal oldali modulválasztó sáv összecsukása / kibontása.
+
+        Első verzió:
+            - nyitva: 150 px széles, látszanak a Likviditás / Aranyszámla gombok
+            - csukva: 52 px széles, csak a hamburger ikon látszik
+        """
+        
+        self.module_sidebar_expanded = not self.module_sidebar_expanded
+
+        if self.module_sidebar_expanded:
+            # Teljes modulválasztó sáv.
+            self._module_panel.setFixedWidth(150)
+
+            # Modulválasztó gombok újra látszanak.
+            self.btn_module_likviditas.setVisible(True)
+            self.btn_module_aranyszamla.setVisible(True)
+
+            # Tooltip visszaállítása.
+            self.sidebar_toggle_button.setToolTip("Oldalsáv összecsukása")
+            self.log.d("MODULE SIDEBAR: expanded")
+
+        else:
+            # Keskeny modulválasztó sáv.
+            self._module_panel.setFixedWidth(52)
+
+            # Modulválasztó gombok elrejtése.
+            self.btn_module_likviditas.setVisible(False)
+            self.btn_module_aranyszamla.setVisible(False)
+
+            # Tooltip frissítése.
+            self.sidebar_toggle_button.setToolTip("Oldalsáv kibontása")
+            self.log.d("MODULE SIDEBAR: collapsed")
+
+
+
+
+
+
+
+
+
+
+
 
     def apply_style_mode(self, mode: str) -> None:
         mode = (mode or "").strip().lower()

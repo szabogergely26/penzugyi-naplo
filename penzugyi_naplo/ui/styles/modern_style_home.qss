@@ -787,3 +787,24 @@ QFrame#odsImportSummaryBox {
     border-radius: 8px;
     padding: 4px;
 }
+
+
+
+/* Hamburger menü teszt */
+
+#sidebarToggleButton {
+    border: none;
+    border-radius: 8px;
+    background-color: transparent;
+    color: #222222;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+#sidebarToggleButton:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+#sidebarToggleButton:pressed {
+    background-color: rgba(0, 0, 0, 0.14);
+}
