@@ -30,7 +30,11 @@ Kapcsolódás:
 
 from __future__ import annotations
 
-from PySide6.QtCore import QSettings, Qt
+import sys
+import shutil
+from pathlib import Path
+
+from PySide6.QtCore import QSettings, Qt, QProcess
 from PySide6.QtWidgets import (
     QButtonGroup,
     QComboBox,
@@ -221,6 +225,11 @@ class SettingsDialog(QDialog):
         db_path_label = QLabel("Aktuális adatbázis helye:")
         db_path_label.setObjectName("settingsFieldLabel")
 
+        self.db_path_value = QLabel(self._current_database_path_text())
+        self.db_path_value.setObjectName("settingsMutedLabel")
+        self.db_path_value.setWordWrap(True)
+
+
         db_path_text = "Nincs elérhető adatbázis-útvonal."
 
         if self.main_window is not None and hasattr(self.main_window, "db"):
@@ -237,9 +246,11 @@ class SettingsDialog(QDialog):
 
         prod_to_dev_btn = QPushButton("PROD → DEV másolás")
         prod_to_dev_btn.setObjectName("settingsDangerAwareButton")
+        prod_to_dev_btn.clicked.connect(self._on_copy_prod_to_dev)
 
         dev_to_prod_btn = QPushButton("DEV → PROD másolás")
         dev_to_prod_btn.setObjectName("settingsDangerButton")
+        dev_to_prod_btn.clicked.connect(self._on_copy_dev_to_prod)
 
         layout.addWidget(title)
         layout.addWidget(description)
@@ -367,6 +378,8 @@ class SettingsDialog(QDialog):
 
         if dev_mode_enabled:
             dev_mode_btn.setText("Fejlesztői mód engedélyezve")
+        else:
+            dev_mode_btn.setText("Fejlesztői mód engedélyezése")
 
         dev_mode_btn.toggled.connect(
             lambda checked: self._on_dev_mode_toggled(dev_mode_btn, checked)
@@ -535,6 +548,76 @@ class SettingsDialog(QDialog):
             self.main_window.set_toolbar_mode(mode)
 
 
+    def _ask_restart_application(self) -> None:
+        """
+        Újraindítás felajánlása beállításmódosítás után.
+
+        A fejlesztői mód induláskor választ adatbázist,
+        ezért a változás teljesen csak újraindítás után lesz tiszta.
+        """
+        answer = QMessageBox.question(
+            self,
+            "Alkalmazás újraindítása",
+            (
+                "A fejlesztői mód beállítása megváltozott.\n\n"
+                "A módosítás teljes érvényesítéséhez az alkalmazást újra kell indítani.\n\n"
+                "Újraindítod most?"
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+
+        if answer == QMessageBox.StandardButton.Yes:
+            self._restart_application()
+
+
+
+    def _restart_application(self) -> None:
+        """
+        Az alkalmazás újraindítása.
+
+        Működés:
+            - ugyanazzal a Python futtatóval indul újra, amivel most is fut
+            - ugyanazokat az indítási argumentumokat kapja meg
+            - a jelenlegi QApplication bezáródik
+        """
+        program = sys.executable
+        arguments = sys.argv
+
+        started = QProcess.startDetached(program, arguments)
+
+        if not started:
+            QMessageBox.critical(
+                self,
+                "Újraindítás sikertelen",
+                "Nem sikerült újraindítani az alkalmazást.",
+            )
+            return
+
+        app = self.window().windowHandle()
+        _ = app  # csak hogy később se zavarjon, ha nem használjuk
+
+        from PySide6.QtWidgets import QApplication
+
+        QApplication.quit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def _on_dev_mode_toggled(self, button: QPushButton, checked: bool) -> None:
         """
         Fejlesztői mód kapcsoló kezelése.
@@ -592,3 +675,319 @@ class SettingsDialog(QDialog):
                 button.setText("Fejlesztői mód engedélyezve")
 
         button.blockSignals(False)
+
+
+
+    def _current_database_path_text(self) -> str:
+        """Aktuális adatbázis útvonalának kiírása."""
+        if self.main_window is None or not hasattr(self.main_window, "db"):
+            return "Nincs elérhető adatbázis-útvonal."
+
+        db = self.main_window.db
+
+        if not hasattr(db, "db_name"):
+            return "Nincs elérhető adatbázis-útvonal."
+
+        return str(db.db_name)
+
+
+    def _database_paths(self) -> tuple[Path, Path]:
+        """
+        PROD és DEV adatbázis útvonal meghatározása.
+
+        Jelenlegi logika:
+            - PROD: transactions.sqlite3
+            - DEV: transactions_dev.sqlite3
+
+        Mindkettő ugyanabban a mappában van, mint az aktuálisan használt DB.
+        """
+        if self.main_window is None or not hasattr(self.main_window, "db"):
+            raise RuntimeError("Nem érhető el a MainWindow adatbázis példánya.")
+
+        db = self.main_window.db
+
+        if not hasattr(db, "db_name"):
+            raise RuntimeError("Nem érhető el az adatbázis útvonala.")
+
+        current_path = Path(str(db.db_name)).expanduser()
+
+        prod_path = current_path.with_name("transactions.sqlite3")
+        dev_path = current_path.with_name("transactions_dev.sqlite3")
+
+        return prod_path, dev_path
+
+
+    def _refresh_database_path_label(self) -> None:
+        """A Beállítások ablakban látható DB útvonal frissítése."""
+        if hasattr(self, "db_path_value"):
+            self.db_path_value.setText(self._current_database_path_text())
+
+
+    # PROD DB másolása DEV-be:
+    def _on_copy_prod_to_dev(self) -> None:
+        """PROD adatbázis másolása DEV adatbázisba."""
+        prod_path, dev_path = self._database_paths()
+
+        self._copy_database_with_confirmation(
+            source_path=prod_path,
+            target_path=dev_path,
+            title="PROD → DEV másolás",
+            message=(
+                "Ez a művelet felülírja a fejlesztői adatbázist "
+                "az éles/stabil adatbázis tartalmával.\n\n"
+                f"Forrás:\n{prod_path}\n\n"
+                f"Cél:\n{dev_path}\n\n"
+                "Folytatod?"
+            ),
+        )
+
+    # DEV DB másolása PROD-ba:
+    def _on_copy_dev_to_prod(self) -> None:
+        """DEV adatbázis másolása PROD adatbázisba."""
+        prod_path, dev_path = self._database_paths()
+
+        self._copy_database_with_confirmation(
+            source_path=dev_path,
+            target_path=prod_path,
+            title="DEV → PROD másolás",
+            message=(
+                "Figyelem! Ez a művelet felülírja az éles/stabil adatbázist "
+                "a fejlesztői adatbázis tartalmával.\n\n"
+                f"Forrás:\n{dev_path}\n\n"
+                f"Cél:\n{prod_path}\n\n"
+                "Csak akkor folytasd, ha biztos vagy benne, hogy a fejlesztői "
+                "adatbázis helyes.\n\n"
+                "Folytatod?"
+            ),
+            dangerous=True,
+        )
+
+
+    def _copy_database_with_confirmation(
+        self,
+        source_path: Path,
+        target_path: Path,
+        title: str,
+        message: str,
+        dangerous: bool = False,
+    ) -> None:
+        """
+        Adatbázis másolása megerősítéssel.
+
+        Ha az aktuálisan használt DB fájlt írjuk felül, akkor:
+            - bezárjuk a régi DB kapcsolatot, ha van close()
+            - elvégezzük a másolást
+            - új TransactionDatabase példányt adunk a MainWindow-nak
+            - frissítjük az oldalakat
+        """
+        if not source_path.exists():
+            QMessageBox.warning(
+                self,
+                title,
+                f"A forrás adatbázis nem található:\n\n{source_path}",
+            )
+            return
+
+        icon = QMessageBox.Icon.Warning if dangerous else QMessageBox.Icon.Question
+
+        box = QMessageBox(self)
+        box.setIcon(icon)
+        box.setWindowTitle(title)
+        box.setText(message)
+        box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        box.setDefaultButton(QMessageBox.StandardButton.No)
+
+        answer = box.exec()
+
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+
+            current_db_path = None
+
+            if self.main_window is not None and hasattr(self.main_window, "db"):
+                db = self.main_window.db
+                if hasattr(db, "db_name"):
+                    current_db_path = Path(str(db.db_name)).expanduser().resolve()
+
+            target_is_active_db = (
+                current_db_path is not None
+                and target_path.expanduser().resolve() == current_db_path
+            )
+
+            if target_is_active_db:
+                self._replace_active_database(source_path, target_path)
+            else:
+                shutil.copy2(source_path, target_path)
+
+            QMessageBox.information(
+                self,
+                title,
+                "Az adatbázis másolása elkészült.",
+            )
+
+            self._refresh_database_path_label()
+
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                title,
+                f"Nem sikerült az adatbázis másolása:\n\n{exc}",
+            )
+
+
+    def _replace_active_database(self, source_path: Path, target_path: Path) -> None:
+        """
+        Aktuálisan használt adatbázis biztonságosabb felülírása.
+
+        Fontos:
+            - Nem csak simán rámásolunk a nyitott SQLite fájlra.
+            - Előbb megpróbáljuk lezárni a meglévő DB kapcsolatot.
+            - Másolás után új TransactionDatabase példányt hozunk létre.
+        """
+        if self.main_window is None:
+            raise RuntimeError("Nem érhető el a MainWindow.")
+
+        old_db = self.main_window.db
+
+        if hasattr(old_db, "close"):
+            old_db.close()
+
+        shutil.copy2(source_path, target_path)
+
+        from penzugyi_naplo.db.transaction_database import TransactionDatabase
+
+        new_db = TransactionDatabase(str(target_path))
+
+        self.main_window.db = new_db
+
+        if hasattr(self.main_window, "ctx"):
+            self.main_window.ctx.db = new_db
+
+        if hasattr(self.main_window, "reload_all_pages"):
+            self.main_window.reload_all_pages()
+
+
+    def _on_dev_mode_toggled(self, button: QPushButton, checked: bool) -> None:
+        """
+        Fejlesztői mód kapcsoló kezelése.
+
+        A beállítás QSettings-be kerül.
+        A futó példány teljes működése csak újraindítás után tekinthető biztosnak,
+        mert az induláskor választódik ki a DEV / PROD adatbázis.
+        """
+        settings = QSettings(ORG_NAME, APP_NAME)
+
+        # Visszaállításkor ne fusson újra a toggled logika.
+        button.blockSignals(True)
+
+        if checked:
+            answer = QMessageBox.question(
+                self,
+                "Fejlesztői mód engedélyezése",
+                (
+                    "Fejlesztői mód engedélyezésére készülsz.\n\n"
+                    "Ez kísérleti vagy félkész funkciókat is elérhetővé tehet, "
+                    "és a fejlesztői adatbázist használhatja.\n\n"
+                    "Biztosan engedélyezed?"
+                ),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+
+            if answer == QMessageBox.StandardButton.Yes:
+                settings.setValue(SETTINGS_KEY_DEV_MODE, True)
+                settings.sync()
+
+                button.setChecked(True)
+                button.setText("Fejlesztői mód engedélyezve")
+
+                self._ask_restart_application()
+            else:
+                settings.setValue(SETTINGS_KEY_DEV_MODE, False)
+                settings.sync()
+
+                button.setChecked(False)
+                button.setText("Fejlesztői mód engedélyezése")
+
+        else:
+            answer = QMessageBox.question(
+                self,
+                "Fejlesztői mód kikapcsolása",
+                (
+                    "A fejlesztői mód kikapcsolására készülsz.\n\n"
+                    "A kísérleti funkciók nem lesznek elérhetők, "
+                    "és az alkalmazás következő indításkor a normál működést "
+                    "használhatja.\n\n"
+                    "Folytatod?"
+                ),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+
+            if answer == QMessageBox.StandardButton.Yes:
+                settings.setValue(SETTINGS_KEY_DEV_MODE, False)
+                settings.sync()
+
+                button.setChecked(False)
+                button.setText("Fejlesztői mód engedélyezése")
+
+                self._ask_restart_application()
+            else:
+                settings.setValue(SETTINGS_KEY_DEV_MODE, True)
+                settings.sync()
+
+                button.setChecked(True)
+                button.setText("Fejlesztői mód engedélyezve")
+
+        button.blockSignals(False)
+
+
+    def _ask_restart_application(self) -> None:
+        """
+        Újraindítás felajánlása beállításmódosítás után.
+
+        A fejlesztői mód induláskor választ adatbázist,
+        ezért a változás teljesen csak újraindítás után lesz tiszta.
+        """
+        answer = QMessageBox.question(
+            self,
+            "Alkalmazás újraindítása",
+            (
+                "A fejlesztői mód beállítása megváltozott.\n\n"
+                "A módosítás teljes érvényesítéséhez az alkalmazást újra kell indítani.\n\n"
+                "Újraindítod most?"
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+
+        if answer == QMessageBox.StandardButton.Yes:
+            self._restart_application()
+
+
+    def _restart_application(self) -> None:
+        """
+        Az alkalmazás újraindítása ugyanazzal a Python futtatóval
+        és ugyanazokkal az argumentumokkal.
+        """
+        program = sys.executable
+        arguments = sys.argv
+
+        started = QProcess.startDetached(program, arguments)
+
+        if not started:
+            QMessageBox.critical(
+                self,
+                "Újraindítás sikertelen",
+                "Nem sikerült újraindítani az alkalmazást.",
+            )
+            return
+
+        from PySide6.QtWidgets import QApplication
+
+        QApplication.quit()
