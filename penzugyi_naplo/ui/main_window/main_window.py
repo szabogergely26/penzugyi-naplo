@@ -87,7 +87,7 @@ from penzugyi_naplo.ui.dialogs.about_dialog import AboutDialog
 from penzugyi_naplo.ui.dialogs.version_info import VersionInfoDialog
 from penzugyi_naplo.ui.likviditas.wizard.wizard_transaction import TransactionWizard
 
-from penzugyi_naplo.ui.pages.settings_page import SettingsDialog
+from penzugyi_naplo.ui.settings.settings import SettingsDialog
 
 from penzugyi_naplo.ui.shared.nav_bar import NavBar
 
@@ -895,8 +895,26 @@ class MainWindow(QMainWindow):
 
 
     def show_settings_dialog(self) -> None:
-        """Beállítások ablak megnyitása."""
+        """
+        Megnyitja a Beállítások ablakot.
+
+        Megjegyzés:
+            - A Beállítások korábban külön oldalként/page-ként működött.
+            - Az új működés szerint külön QDialog ablak nyílik.
+            - Emiatt nem set_page("settings") hívás történik,
+                hanem SettingsDialog példányosítás és dialog.exec().
+            - A settings_page.py később kivezethető, ha már minden régi hivatkozás megszűnt.
+        """
+
         dialog = SettingsDialog(self)
+
+        # Fontos:
+        # A QDialog külön top-level ablak, ezért nem mindig örökli szépen
+        # a MainWindow stylesheetjét. Itt kézzel ráadjuk az aktuális témát.
+        dialog.setStyleSheet(self.styleSheet())
+
+
+
         dialog.exec()
 
 

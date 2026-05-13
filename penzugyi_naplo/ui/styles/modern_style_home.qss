@@ -1,5 +1,6 @@
 /* modern_style_home.qss
    --------------------------------------------------
+
    Barátságosabb, világosabb, otthonos modern téma
    a Pénzügyi Naplóhoz.
 */
@@ -20,6 +21,221 @@ QDialog {
     background-color: #f7f9fc;
     color: #243042;
 }
+
+
+/* ======================== SettingsDialog - Beállítások ==================== */
+/* ==========================================================================
+   SettingsDialog - modern_home világos, otthonos verzió
+   ========================================================================== */
+
+QDialog#settingsDialog {
+    background-color: #f5f0e8;
+}
+
+#settingsSidebar {
+    background-color: #fffaf2;
+    border: 1px solid #d8cbb8;
+    border-radius: 14px;
+}
+
+#settingsContent {
+    background-color: #fffdf8;
+    border: 1px solid #d8cbb8;
+    border-radius: 14px;
+}
+
+/* Fontos: a QLabel ne örököljön furcsa globális hátteret. */
+#settingsContent QLabel,
+#settingsStack QLabel {
+    background-color: transparent;
+}
+
+/* Bal oldali kategóriagombok */
+
+QPushButton#settingsCategoryButton {
+    background-color: transparent;
+    color: #3b3128;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: left;
+}
+
+QPushButton#settingsCategoryButton:hover {
+    background-color: #f1e6d6;
+    border: 1px solid #d9c2a3;
+}
+
+QPushButton#settingsCategoryButton:checked {
+    background-color: #e8f6fb;
+    color: #12637a;
+    border: 1px solid #5bb9d6;
+    font-weight: bold;
+}
+
+/* Vizuális elválasztó:
+   világos témában ez inkább elegáns akcentus, nem erős neon. */
+
+#settingsCategorySeparator {
+    background-color: #5bb9d6;
+    min-height: 2px;
+    max-height: 2px;
+    border-radius: 1px;
+    margin: 10px 12px;
+}
+
+/* Jobb oldali címek és szövegek */
+
+#settingsPageTitle {
+    color: #2f261f;
+    font-size: 22px;
+    font-weight: bold;
+    background-color: transparent;
+}
+
+#settingsSectionTitle {
+    color: #4a3828;
+    font-size: 15px;
+    font-weight: bold;
+    margin-top: 8px;
+    background-color: transparent;
+}
+
+#settingsDescriptionLabel {
+    color: #6d5c4d;
+    background-color: transparent;
+}
+
+#settingsPlaceholderLabel {
+    color: #6d5c4d;
+    background-color: #fbf4ea;
+    border: 1px dashed #d6bfa0;
+    border-radius: 12px;
+    padding: 10px;
+}
+
+#settingsFieldLabel {
+    color: #3b3128;
+    font-weight: bold;
+    background-color: transparent;
+}
+
+#settingsMutedLabel {
+    color: #7b6a5b;
+    background-color: transparent;
+}
+
+
+
+
+/* Beviteli / választó elemek */
+
+QComboBox#settingsComboBox {
+    background-color: #ffffff;
+    color: #3b3128;
+    border: 1px solid #d0b896;
+    border-radius: 9px;
+    padding: 6px 10px;
+}
+
+QComboBox#settingsComboBox:hover {
+    border: 1px solid #5bb9d6;
+}
+
+QComboBox#settingsComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+
+QRadioButton#settingsRadioButton {
+    color: #3b3128;
+    spacing: 8px;
+    background-color: transparent;
+}
+
+/* Alsó Bezárás gomb */
+
+QPushButton#settingsCloseButton {
+    background-color: #e8f6fb;
+    color: #12637a;
+    border: 1px solid #5bb9d6;
+    border-radius: 9px;
+    padding: 7px 16px;
+    font-weight: bold;
+}
+
+QPushButton#settingsCloseButton:hover {
+    background-color: #d9f0f7;
+}
+
+/* PROD / DEV műveletgombok */
+
+QPushButton#settingsDangerAwareButton {
+    background-color: #fbf4ea;
+    color: #3b3128;
+    border: 1px solid #d6bfa0;
+    border-radius: 9px;
+    padding: 7px 10px;
+    text-align: left;
+}
+
+QPushButton#settingsDangerAwareButton:hover {
+    background-color: #f1e6d6;
+    border: 1px solid #c99d5c;
+}
+
+QPushButton#settingsDangerButton {
+    background-color: #fff0f0;
+    color: #9c2f2f;
+    border: 1px solid #d98b8b;
+    border-radius: 9px;
+    padding: 7px 10px;
+    text-align: left;
+    font-weight: bold;
+}
+
+QPushButton#settingsDangerButton:hover {
+    background-color: #ffe4e4;
+}
+
+/* Fejlesztői mód gomb */
+
+QPushButton#settingsDevModeButton {
+    background-color: #fbf4ea;
+    color: #3b3128;
+    border: 1px solid #d6bfa0;
+    border-radius: 9px;
+    padding: 7px 10px;
+    text-align: left;
+}
+
+QPushButton#settingsDevModeButton:hover {
+    background-color: #f1e6d6;
+    border: 1px solid #c99d5c;
+}
+
+QPushButton#settingsDevModeButton:checked {
+    background-color: #fff4d6;
+    color: #8a5a00;
+    border: 1px solid #d6a84f;
+    font-weight: bold;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ========== Címek, szövegek ========== */
 

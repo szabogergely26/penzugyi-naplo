@@ -1,0 +1,1 @@
+"""Beállítások alrendszer a Pénzügyi Napló alkalmazáshoz."""
