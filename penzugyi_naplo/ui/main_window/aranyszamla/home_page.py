@@ -29,12 +29,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from penzugyi_naplo.db.gold_database import get_gold_summary
 
 class AranyszamlaHomePage(QWidget):
     """Az Aranyszámla modul kezdőoldala."""
 
-    def __init__(self, parent=None):
+    def __init__(self, db_path: str,  parent=None):
         super().__init__(parent)
+
+        self.db_path = db_path
 
         self.setObjectName("aranyszamlaHomePage")
 
@@ -122,3 +125,39 @@ class AranyszamlaHomePage(QWidget):
         main_layout.addWidget(title)
         main_layout.addWidget(subtitle)
         main_layout.addWidget(hero_card, 1)
+
+
+        self.refresh()
+
+
+
+    def refresh(self) -> None:
+        """
+        Aranyszámla kezdőoldali összesítő frissítése.
+        """
+
+        summary = get_gold_summary(self.db_path)
+
+        total_grams = float(summary.get("total_grams", 0))
+        total_huf = int(summary.get("total_huf", 0))
+
+        self.grams_value.setText(self._format_grams(total_grams))
+        self.estimated_value.setText(self._format_huf(total_huf))
+
+
+
+    def _format_grams(self, value: float) -> str:
+        """
+        Gramm érték magyaros megjelenítése.
+        """
+
+        return f"{value:,.3f} g".replace(",", " ").replace(".", ",")
+    
+
+
+    def _format_huf(self, value: int) -> str:
+        """
+        Forint érték magyaros megjelenítése.
+        """
+
+        return f"{value:,} Ft".replace(",", " ")

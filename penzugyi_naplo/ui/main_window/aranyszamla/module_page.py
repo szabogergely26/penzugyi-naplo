@@ -65,7 +65,10 @@ class AranyszamlaModulePage(QWidget):
         self.stack = QStackedWidget()
         self.stack.setObjectName("aranyszamlaInnerStack")
 
-        self.home_page = AranyszamlaHomePage(self.stack)
+        self.home_page = AranyszamlaHomePage(
+            db_path=self.db_path,
+            parent=self.stack,
+        )
         
         self.trading_page = GoldTradingPage(
             db_path=self.db_path,
@@ -103,6 +106,9 @@ class AranyszamlaModulePage(QWidget):
         """
         Frissíti az Aranyszámla modul belső oldalait.
         """
+
+        if hasattr(self.home_page, "refresh"):
+            self.home_page.refresh()
 
         if hasattr(self.trading_page, "refresh"):
             self.trading_page.refresh()

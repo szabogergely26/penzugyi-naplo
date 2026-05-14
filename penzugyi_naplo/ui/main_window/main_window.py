@@ -512,9 +512,25 @@ class MainWindow(QMainWindow):
             self.log.d("QSS load failed:", str(qss_path), e)
             qss = ""
 
-        self.setStyleSheet(qss)
-        self.log.d("Style mode set:", mode, "QSS:", str(qss_path))
+        # Aranyszámla modul saját kiegészítő stílusa.
+        # Ez nem teljes téma, csak ráül az aktuális app témára.
+        gold_qss_path = base / "styles" / "gold_style.qss"
 
+        try:
+            gold_qss = gold_qss_path.read_text(encoding="utf-8")
+        except Exception as e:
+            self.log.d("Gold QSS load failed:", str(gold_qss_path), e)
+            gold_qss = ""
+
+        self.setStyleSheet(qss + "\n\n" + gold_qss)
+        self.log.d(
+            "Style mode set:",
+            mode,
+            "QSS:",
+            str(qss_path),
+            "Gold QSS:",
+            str(gold_qss_path),
+        )
 
 
 
