@@ -57,11 +57,11 @@ from PySide6.QtWidgets import (
 
 
     QDialog,
-    
+
     QHBoxLayout,
     QLabel,
     QMainWindow,
-    
+
     QMessageBox,
     QStackedWidget,
     QVBoxLayout,
@@ -69,7 +69,7 @@ from PySide6.QtWidgets import (
 )
 
 from penzugyi_naplo.config import (
-    APP_NAME, 
+    APP_NAME,
     ORG_NAME,
     SETTINGS_KEY_STYLE_MODE,
     STYLE_CLASSIC,
@@ -161,7 +161,7 @@ class MainWindow(QMainWindow):
     ) -> None:
         super().__init__(parent)
 
-        
+
 
 
         # --- Core állapot ---
@@ -173,7 +173,7 @@ class MainWindow(QMainWindow):
             state=self.state,
             dev_mode=self.dev_mode,
         )
-        
+
 
         # --- Debug/log (csak dev módban aktív) ---
         self.log = Log(
@@ -183,7 +183,7 @@ class MainWindow(QMainWindow):
             )
         )
 
-        
+
         self.pages: dict[str, QWidget] = {}
 
         # --- UI gyökér ---
@@ -215,7 +215,7 @@ class MainWindow(QMainWindow):
         self._module_layout.setContentsMargins(8, 8, 8, 8)
         self._module_layout.setSpacing(12)
 
-    
+
         # Alapértelmezett induló modul: Likviditás.
         self.current_module = "likviditas"
 
@@ -237,7 +237,7 @@ class MainWindow(QMainWindow):
 
         # A hamburger mindig a modulpanel tetején legyen.
         self._module_layout.addWidget(self.sidebar_toggle_button, 0, Qt.AlignHCenter)
-        
+
         # Kis térköz a hamburger alatt.
         self._module_layout.addSpacing(40)
 
@@ -255,17 +255,17 @@ class MainWindow(QMainWindow):
         self.btn_module_aranyszamla.setObjectName("moduleButton")
         self.btn_module_aranyszamla.setMinimumHeight(54)
 
-        
+
 
         self.module_button_group = QButtonGroup(self)
         self.module_button_group.setExclusive(True)
         self.module_button_group.addButton(self.btn_module_likviditas)
         self.module_button_group.addButton(self.btn_module_aranyszamla)
 
-        
+
         self._module_layout.addWidget(self.btn_module_likviditas)
         self._module_layout.addWidget(self.btn_module_aranyszamla)
-        
+
 
         # A gombok alatt is legyen hely, így középen maradnak.
         self._module_layout.addStretch(1)
@@ -313,13 +313,13 @@ class MainWindow(QMainWindow):
         # --- Actions + menü ---
         self._create_actions()
 
-       
+
         self._build_menubar()
 
 
 
         # --- LEFT: Year tabs (EGYSZER) ---
-        
+
         years = self.db.get_transaction_years()
 
         if not years:
@@ -380,7 +380,7 @@ class MainWindow(QMainWindow):
             self.log.flags.trace_page_stack = True
 
 
-        
+
         # Hamburger menü események:
 
         # Egér ráhúzás / elhagyás figyelése az összecsukott oldalsávnál.
@@ -404,7 +404,7 @@ class MainWindow(QMainWindow):
             - ha csukott állapotban rámegy az egér, ideiglenesen kinyílik
             - ha az egér elhagyja, visszacsukódik
         """
-        
+
         self.module_sidebar_hover_expanded = False
         self.module_sidebar_expanded = not self.module_sidebar_expanded
 
@@ -413,7 +413,7 @@ class MainWindow(QMainWindow):
         else:
             self._set_module_sidebar_collapsed()
 
-    
+
     # segéd metódusok a sidebar-hoz:
 
     def _set_module_sidebar_expanded(self, persistent: bool = False) -> None:
@@ -426,7 +426,7 @@ class MainWindow(QMainWindow):
         persistent=False:
             ideiglenes, hover miatti kinyitás
         """
-    
+
         self._module_panel.setFixedWidth(150)
 
         self.btn_module_likviditas.setVisible(True)
@@ -447,7 +447,7 @@ class MainWindow(QMainWindow):
         """
         Modulválasztó oldalsáv összecsukása.
         """
-        
+
         self._module_panel.setFixedWidth(52)
 
         self.btn_module_likviditas.setVisible(False)
@@ -469,7 +469,7 @@ class MainWindow(QMainWindow):
             - egér belépésre ideiglenesen kinyitjuk
             - egér kilépésre visszacsukjuk
         """
-    
+
         if watched is self._module_panel:
             if event.type() == QEvent.Type.Enter:
                 if not self.module_sidebar_expanded:
@@ -598,7 +598,7 @@ class MainWindow(QMainWindow):
     def _build_navbar(self) -> None:
         self.navbar = NavBar(parent=self._right_panel)
 
-   
+
     def _register_core_pages(self) -> None:
         """
         Likviditás modul oldalainak regisztrálása.
@@ -611,8 +611,12 @@ class MainWindow(QMainWindow):
 
     def _connect_core_signals(self) -> None:
         """
-        Itt kötjük majd össze a topbar/sidebar/year tabs jelzéseket.
-        Most szándékosan üres.
+        A főablak központi UI-jeleinek bekötése.
+
+        Ide tartozik:
+            - évszűrő jelzései,
+            - felső navigáció oldalváltása,
+            - bal oldali modulválasztó gombok.
         """
         self.year_tabs.yearChanged.connect(self.on_year_selected)
         self.year_tabs.allYearsSelected.connect(self.on_all_years)
@@ -620,7 +624,7 @@ class MainWindow(QMainWindow):
         self.btn_module_likviditas.clicked.connect(self.switch_to_likviditas_module)
         self.btn_module_aranyszamla.clicked.connect(self.switch_to_aranyszamla_module)
 
-        return
+
 
     def add_page(self, key: str, page: QWidget) -> None:
         """Oldal regisztrálása a stackbe."""
@@ -679,12 +683,39 @@ class MainWindow(QMainWindow):
 
 
 
+    def _sync_module_buttons(self) -> None:
+        """
+        A bal oldali modulválasztó gombok vizuális állapotának frissítése.
+        """
+
+        is_likviditas = self.current_module == "likviditas"
+
+        self.btn_module_likviditas.setChecked(is_likviditas)
+        self.btn_module_aranyszamla.setChecked(not is_likviditas)
+
+        self.btn_module_likviditas.setObjectName(
+            "moduleButtonActive" if is_likviditas else "moduleButton"
+        )
+        self.btn_module_aranyszamla.setObjectName(
+            "moduleButtonActive" if not is_likviditas else "moduleButton"
+        )
+
+        self.btn_module_likviditas.style().unpolish(self.btn_module_likviditas)
+        self.btn_module_likviditas.style().polish(self.btn_module_likviditas)
+
+        self.btn_module_aranyszamla.style().unpolish(self.btn_module_aranyszamla)
+        self.btn_module_aranyszamla.style().polish(self.btn_module_aranyszamla)
+
+
+
+
     def switch_to_likviditas_module(self) -> None:
         """
         Likviditás modul aktiválása.
         """
 
         self.current_module = "likviditas"
+        self._sync_module_buttons()
 
         # Évszűrő panel láthatósága:
         self._left_panel.setVisible(True)
@@ -706,12 +737,13 @@ class MainWindow(QMainWindow):
         """
 
         self.current_module = "aranyszamla"
+        self._sync_module_buttons()
 
 
         # Évszűrő panel láthatósága:
         self._left_panel.setVisible(False)
 
-        
+
 
         # NavBar láthatósága    (Kezdő, Tranzakciók, stb.......)
         self.navbar.setVisible(False)
@@ -744,13 +776,13 @@ class MainWindow(QMainWindow):
     def _build_menubar(self) -> None:
         """Klasszikus menüsor felépítése."""
         build_likviditas_menubar(self)
-       
+
 
     def _build_ribbon(self) -> None:
         """Ribbon felépítése."""
         build_likviditas_ribbon(self)
 
-        
+
 
     def set_toolbar_mode(self, mode: str) -> None:
         """Toolbar mód beállítása."""
@@ -760,11 +792,11 @@ class MainWindow(QMainWindow):
         """Toolbar mód betöltése QSettings-ből."""
         load_likviditas_toolbar_mode(self)
 
-    
+
     def on_import(self) -> None:
         """ODS tranzakció import indítása."""
         handle_ods_import(self)
-        
+
 
 
     def on_export(self) -> None:
@@ -789,7 +821,7 @@ class MainWindow(QMainWindow):
     def on_restore_database(self) -> None:
         """Adatbázis betöltése"""
         handle_restore_database(self)
-        
+
 
 
     def on_new_transaction(self) -> None:
@@ -830,7 +862,7 @@ class MainWindow(QMainWindow):
                 page.refresh()
 
 
-                
+
 
     def _build_pages(self) -> None:
         """Oldal-stack felépítése és az alap oldalak regisztrálása."""
@@ -873,7 +905,7 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, "Számla részletek", f"Bill ID: {bill_id}")
 
 
-    
+
 
     def reload_all_pages(self) -> None:
         # ahol van bind_db: újra ráadjuk a DB-t (ha restore/reset miatt új példány lett)
