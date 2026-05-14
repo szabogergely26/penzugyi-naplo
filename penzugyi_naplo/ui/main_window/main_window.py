@@ -707,6 +707,27 @@ class MainWindow(QMainWindow):
         self.btn_module_aranyszamla.style().polish(self.btn_module_aranyszamla)
 
 
+    def _sync_module_ui(self) -> None:
+        """
+        Az aktív modulhoz tartozó főablak-UI állapot szinkronizálása.
+
+        Likviditás:
+            - évszűrő panel látszik,
+            - Likviditás NavBar látszik.
+
+        Aranyszámla:
+            - évszűrő panel nem látszik,
+            - Likviditás NavBar nem látszik.
+        """
+
+        is_likviditas = self.current_module == "likviditas"
+
+        self._sync_module_buttons()
+        self._left_panel.setVisible(is_likviditas)
+        self.navbar.setVisible(is_likviditas)
+
+
+
 
 
     def switch_to_likviditas_module(self) -> None:
@@ -715,16 +736,9 @@ class MainWindow(QMainWindow):
         """
 
         self.current_module = "likviditas"
-        self._sync_module_buttons()
+        self._sync_module_ui()
 
-        # Évszűrő panel láthatósága:
-        self._left_panel.setVisible(True)
-
-
-        # NavBar láthatósága    (Kezdő, Tranzakciók, stb......)
-        self.navbar.setVisible(True)
-
-         # Likviditás kezdőoldal visszaállítása:
+        # Likviditás kezdőoldal visszaállítása:
         self.set_page("home")
 
 
@@ -737,17 +751,11 @@ class MainWindow(QMainWindow):
         """
 
         self.current_module = "aranyszamla"
-        self._sync_module_buttons()
+        self._sync_module_ui()
 
 
-        # Évszűrő panel láthatósága:
-        self._left_panel.setVisible(False)
-
-
-
-        # NavBar láthatósága    (Kezdő, Tranzakciók, stb.......)
-        self.navbar.setVisible(False)
-        self.set_page("aranyszamla_home")
+        # Aranyszámla kezdőoldal visszaállítása:
+        self.set_page("aranyszamla_home")        
 
 
 
