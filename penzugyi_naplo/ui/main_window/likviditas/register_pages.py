@@ -20,7 +20,7 @@ from penzugyi_naplo.ui.shared.pages.coming_soon_page import ComingSoonPage
 from penzugyi_naplo.ui.likviditas.pages.home_page import HomePage
 from penzugyi_naplo.ui.likviditas.pages.statistics_page import StatisticsPage
 from penzugyi_naplo.ui.likviditas.pages.transactions_page import TransactionsPage
-from penzugyi_naplo.ui.likviditas.pages.settings_page import SettingsPage
+
 
 
 def register_likviditas_pages(window) -> None:
@@ -46,7 +46,7 @@ def register_likviditas_pages(window) -> None:
             ),
         )
 
-    window.add_page("settings", SettingsPage(window))
+    
 
     # --- Számlák ---
     window.bills_page = BillsPage(window, db=window.db)

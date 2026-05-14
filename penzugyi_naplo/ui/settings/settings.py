@@ -230,18 +230,7 @@ class SettingsDialog(QDialog):
         self.db_path_value.setWordWrap(True)
 
 
-        db_path_text = "Nincs elérhető adatbázis-útvonal."
-
-        if self.main_window is not None and hasattr(self.main_window, "db"):
-            db = self.main_window.db
-        if hasattr(db, "db_name"):
-            db_path_text = str(db.db_name)
-
-        db_path_value = QLabel(db_path_text)
-
-        db_path_value.setObjectName("settingsMutedLabel")
-        db_path_value.setWordWrap(True)
-
+        
         prod_dev_section = self._create_section_title("PROD / DEV adatbázis műveletek")
 
         prod_to_dev_btn = QPushButton("PROD → DEV másolás")
@@ -258,7 +247,7 @@ class SettingsDialog(QDialog):
 
         layout.addWidget(db_section)
         layout.addWidget(db_path_label)
-        layout.addWidget(db_path_value)
+        layout.addWidget(self.db_path_value)
         layout.addSpacing(12)
 
         layout.addWidget(prod_dev_section)
@@ -548,58 +537,7 @@ class SettingsDialog(QDialog):
             self.main_window.set_toolbar_mode(mode)
 
 
-    def _ask_restart_application(self) -> None:
-        """
-        Újraindítás felajánlása beállításmódosítás után.
-
-        A fejlesztői mód induláskor választ adatbázist,
-        ezért a változás teljesen csak újraindítás után lesz tiszta.
-        """
-        answer = QMessageBox.question(
-            self,
-            "Alkalmazás újraindítása",
-            (
-                "A fejlesztői mód beállítása megváltozott.\n\n"
-                "A módosítás teljes érvényesítéséhez az alkalmazást újra kell indítani.\n\n"
-                "Újraindítod most?"
-            ),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.Yes,
-        )
-
-        if answer == QMessageBox.StandardButton.Yes:
-            self._restart_application()
-
-
-
-    def _restart_application(self) -> None:
-        """
-        Az alkalmazás újraindítása.
-
-        Működés:
-            - ugyanazzal a Python futtatóval indul újra, amivel most is fut
-            - ugyanazokat az indítási argumentumokat kapja meg
-            - a jelenlegi QApplication bezáródik
-        """
-        program = sys.executable
-        arguments = sys.argv
-
-        started = QProcess.startDetached(program, arguments)
-
-        if not started:
-            QMessageBox.critical(
-                self,
-                "Újraindítás sikertelen",
-                "Nem sikerült újraindítani az alkalmazást.",
-            )
-            return
-
-        app = self.window().windowHandle()
-        _ = app  # csak hogy később se zavarjon, ha nem használjuk
-
-        from PySide6.QtWidgets import QApplication
-
-        QApplication.quit()
+    
 
 
 
@@ -618,63 +556,7 @@ class SettingsDialog(QDialog):
 
 
 
-    def _on_dev_mode_toggled(self, button: QPushButton, checked: bool) -> None:
-        """
-        Fejlesztői mód kapcsoló kezelése.
-
-        Bekapcsoláskor és kikapcsoláskor is megerősítést kérünk,
-        mert ez app-szintű működést befolyásol.
-        """
-        settings = QSettings(ORG_NAME, APP_NAME)
-
-        # A toggled jelzés közben visszaállításkor ne fusson bele végtelen logikába.
-        button.blockSignals(True)
-
-        if checked:
-            answer = QMessageBox.question(
-                self,
-                "Fejlesztői mód engedélyezése",
-                (
-                    "Fejlesztői mód engedélyezésére készülsz.\n\n"
-                    "Ez kísérleti vagy félkész funkciókat is elérhetővé tehet.\n\n"
-                    "Biztosan engedélyezed?"
-                ),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-
-            if answer == QMessageBox.StandardButton.Yes:
-                settings.setValue(SETTINGS_KEY_DEV_MODE, True)
-                button.setChecked(True)
-                button.setText("Fejlesztői mód engedélyezve")
-            else:
-                settings.setValue(SETTINGS_KEY_DEV_MODE, False)
-                button.setChecked(False)
-                button.setText("Fejlesztői mód engedélyezése")
-
-        else:
-            answer = QMessageBox.question(
-                self,
-                "Fejlesztői mód kikapcsolása",
-                (
-                    "A fejlesztői mód kikapcsolására készülsz.\n\n"
-                    "A kísérleti funkciók nem lesznek elérhetők.\n\n"
-                    "Folytatod?"
-                ),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-
-            if answer == QMessageBox.StandardButton.Yes:
-                settings.setValue(SETTINGS_KEY_DEV_MODE, False)
-                button.setChecked(False)
-                button.setText("Fejlesztői mód engedélyezése")
-            else:
-                settings.setValue(SETTINGS_KEY_DEV_MODE, True)
-                button.setChecked(True)
-                button.setText("Fejlesztői mód engedélyezve")
-
-        button.blockSignals(False)
+    
 
 
 
