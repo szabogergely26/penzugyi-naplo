@@ -65,7 +65,6 @@ import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any
 
 from penzugyi_naplo.ui.bills.bill_models import (
     BillCardModel,
@@ -74,11 +73,7 @@ from penzugyi_naplo.ui.bills.bill_models import (
 )
 
 from penzugyi_naplo.db.gold_database import ensure_gold_tables
-from penzugyi_naplo.ui.bills.bill_models import (
-    BillCardModel,
-    MonthlyAmount,
-    PeriodicAmount,
-)
+
 
 # ----------------------------
 # B modell:
@@ -668,6 +663,8 @@ class TransactionDatabase:
             "MVMNext - Gáz",
             "MVMNext – Villany",
             "MVMNext – Gáz",
+            "MVMNext Villany",
+            "MVMNext Gáz",
         }
 
         conn = self.get_db_connection()
@@ -849,6 +846,8 @@ class TransactionDatabase:
         cur = conn.cursor()
 
         self._ensure_payment_source_column(cur)
+        self._ensure_bill_transaction_columns(cur)
+
 
         cur.execute(
             """
@@ -2082,6 +2081,45 @@ class TransactionDatabase:
             return None
         return {"date": row[0], "value": row[1]}
     
+
+
+
+    def _ensure_bill_transaction_columns(self, cur) -> None:
+        """
+        Biztosítja a számlabefizetésekhez használt extra tranzakciós oszlopokat.
+
+        Ezek régebbi adatbázisokban még hiányozhatnak, ezért mentés előtt
+        ellenőrizzük, és szükség esetén hozzáadjuk őket.
+        """
+
+        cur.execute("PRAGMA table_info(transactions)")
+        columns = {row[1] for row in cur.fetchall()}
+
+        if "period_start" not in columns:
+            cur.execute("ALTER TABLE transactions ADD COLUMN period_start TEXT")
+
+        if "period_end" not in columns:
+            cur.execute("ALTER TABLE transactions ADD COLUMN period_end TEXT")
+
+        if "invoice_number" not in columns:
+            cur.execute("ALTER TABLE transactions ADD COLUMN invoice_number TEXT")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -2,45 +2,15 @@
 # --------------------------
 
 """
-Leírás a ui.bills.bills_page-hez:
+Számlák oldal.
 
-# - Számlák oldal (BillsPage)
-#
-# - Fő felelősség:
-#   - számla-kártyák megjelenítése (BillCard) görgethető, rugalmas elrendezésben
-#   - év / all_years szűrés kezelése MainWindow felől
-#
-# - UI felépítés:
-#   - QScrollArea + FlowLayout
-#   - kártya alapú megjelenítés
-
-
-
-    Számlák oldal a fő alkalmazásban.
-
-    - Állapot:
-        - _year / _all_years a MainWindow-tól érkezik
-
-    - Folyamat:
-        - set_filter() -> reload() -> _render()
-
-    - Adatforrás:
-        - jelenleg Normál módba nincs, dev-ben db.py -ből építkezik.
-        - később DB: bills + bill_entries év szerint
-
-    - Megjelenítés:
-        - Interakció:
-            - BillCard.clicked -> billRequested(bill_id)
-
-
-
-    Adatforrás: jelenleg demó; később DB: bills + bill_entries év szerint.
-
-
+Új elrendezési irány:
+- a számlák egymás alatt, széles kártyákban jelennek meg
+- egy számlán belül a hónapok egymás alatt vannak
+- ha egy hónapban több befizetés van, azok egymás mellett jelennek meg
+- havi számláknál nincs időszak mező
+- időszakos számláknál van időszak + összeg
 """
-
-
-# ------ Importok -------
 
 from __future__ import annotations
 
@@ -51,23 +21,274 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QLayoutItem,
+    QPushButton,
     QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
-from penzugyi_naplo.ui.bills.bill_card import BillCard
 from penzugyi_naplo.ui.bills.bill_models import (
     BillCardModel,
     MonthlyAmount,
     PeriodicAmount,
 )
-from penzugyi_naplo.ui.shared.widgets.flow_layout import FlowLayout
+
+
+MONTH_NAMES = {
+    1: "Január",
+    2: "Február",
+    3: "Március",
+    4: "Április",
+    5: "Május",
+    6: "Június",
+    7: "Július",
+    8: "Augusztus",
+    9: "Szeptember",
+    10: "Október",
+    11: "November",
+    12: "December",
+}
+
+
+class MonthlyPaymentChip(QFrame):
+    """Egyszerű havi számla befizetés-blokkja, például KalászNet."""
+
+    def __init__(self, item: MonthlyAmount, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("billPaymentChip")
+        
+        # Ne nyúljon túl szélesre a fizetési blokk,
+        # mert egy hónapon belül egymás mellett több ilyen is lehet.
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.setMinimumWidth(170)
+        self.setMaximumWidth(230)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(4)
+
+        title = QLabel("Befizetés")
+        title.setObjectName("billPaymentTitle")
+        layout.addWidget(title)
+
+        amount_label = QLabel("Összeg")
+        amount_label.setObjectName("billPaymentMetaLabel")
+        layout.addWidget(amount_label)
+
+        amount_value = QLabel(_format_huf(_get_attr(item, "amount", 0)))
+        amount_value.setObjectName("billPaymentAmount")
+        layout.addWidget(amount_value)
+
+
+class PeriodicPaymentChip(QFrame):
+    """Időszakos számla befizetés-blokkja, például MVMNext."""
+
+    def __init__(self, item: PeriodicAmount, index: int, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("billPaymentChip")
+        
+        # Ne nyúljon túl szélesre a fizetési blokk,
+        # mert egy hónapon belül egymás mellett több ilyen is lehet.
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.setMinimumWidth(170)
+        self.setMaximumWidth(230)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(4)
+
+        title = QLabel(f"{index}. fizetés")
+        title.setObjectName("billPaymentTitle")
+        layout.addWidget(title)
+
+
+        # A hónapsor a fizetés/rögzítés hónapja alapján csoportosít.
+        # Ezért a kártyán külön kiírjuk a fizetés/rögzítés dátumát is,
+        # hogy ne keveredjen az elszámolási időszakkal.
+        payment_date = _get_payment_date(item)
+
+        payment_date_label = QLabel("Rögzítve / fizetve")
+        payment_date_label.setObjectName("billPaymentMetaLabel")
+        layout.addWidget(payment_date_label)
+
+        payment_date_value = QLabel(payment_date)
+        payment_date_value.setObjectName("billPaymentValue")
+        layout.addWidget(payment_date_value)
+
+
+
+
+
+
+
+
+
+
+
+
+        period_label = QLabel("Időszak")
+        period_label.setObjectName("billPaymentMetaLabel")
+        layout.addWidget(period_label)
+
+        start = _get_attr(item, "start", "—")
+        end = _get_attr(item, "end", "—")
+
+        period_value = QLabel(f"{start} – {end}")
+        period_value.setObjectName("billPaymentValue")
+        layout.addWidget(period_value)
+
+        amount_label = QLabel("Összeg")
+        amount_label.setObjectName("billPaymentMetaLabel")
+        layout.addWidget(amount_label)
+
+        amount_value = QLabel(_format_huf(_get_attr(item, "amount", 0)))
+        amount_value.setObjectName("billPaymentAmount")
+        layout.addWidget(amount_value)
+
+        invoice_number = _get_attr(item, "invoice_number", "")
+        if invoice_number:
+            invoice_label = QLabel(f"Számla sorszáma: {invoice_number}")
+            invoice_label.setObjectName("billPaymentValue")
+            layout.addWidget(invoice_label)
+
+
+class BillMonthRow(QFrame):
+    """Egy hónap sora a számlakártyán belül."""
+
+    def __init__(
+        self,
+        month_number: int,
+        items: list[MonthlyAmount] | list[PeriodicAmount],
+        kind: str,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setObjectName("billMonthRow")
+
+        # Hónap sor:
+        row = QHBoxLayout(self)
+        row.setContentsMargins(12, 6, 12, 6)
+        row.setSpacing(12)
+
+        month_label = QLabel(MONTH_NAMES.get(month_number, str(month_number)))
+        month_label.setObjectName("billMonthName")
+        month_label.setFixedWidth(130)
+        month_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(month_label)
+
+        payments_row = QHBoxLayout()
+        payments_row.setContentsMargins(0, 0, 0, 0)
+        payments_row.setSpacing(12)
+
+        if not items:
+            empty = QLabel("—")
+            empty.setObjectName("billEmptyMonth")
+            payments_row.addWidget(empty)
+        else:
+            for index, item in enumerate(items, start=1):
+                if kind == "periodic":
+                    payments_row.addWidget(PeriodicPaymentChip(item, index))
+                else:
+                    payments_row.addWidget(MonthlyPaymentChip(item))
+
+        payments_row.addStretch(1)
+        row.addLayout(payments_row, stretch=1)
+
+
+class WideBillCard(QFrame):
+    """Egy teljes számla széles, vízszintes kártyája."""
+
+    clicked = Signal(int)
+
+    def __init__(self, model: BillCardModel, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("billCard")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+        self.model = model
+        self.bill_id = int(_get_attr(model, "id", 0))
+        self.kind = str(_get_attr(model, "kind", "monthly"))
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        header = QFrame()
+        header.setObjectName("billCardHeader")
+
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(14, 10, 14, 10)
+        header_layout.setSpacing(10)
+
+        icon = QLabel(_icon_for_model(model))
+        icon.setObjectName("billCardIcon")
+        icon.setFixedSize(28, 28)
+        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(icon)
+
+        title = QLabel(str(_get_attr(model, "name", "Számla")))
+        title.setObjectName("billCardTitle")
+        header_layout.addWidget(title)
+
+        header_layout.addStretch(1)
+
+        details_btn = QPushButton("Részletek")
+        details_btn.setObjectName("billDetailsButton")
+        details_btn.clicked.connect(lambda: self.clicked.emit(self.bill_id))
+        header_layout.addWidget(details_btn)
+
+        root.addWidget(header)
+
+        months_container = QWidget()
+        months_layout = QVBoxLayout(months_container)
+        months_layout.setContentsMargins(0, 0, 0, 0)
+        months_layout.setSpacing(0)
+
+        # A tételeket hónap szerint csoportosítjuk.
+        grouped = self._group_items_by_month(model)
+
+        # Első körben csak azokat a hónapokat jelenítjük meg,
+        # ahol ténylegesen van rögzített adat.
+        # Így nem lesz tele a kártya üres, nagy sorokkal.
+        for month_number in sorted(grouped):
+            items = grouped.get(month_number, [])
+
+            if not items:
+                continue
+
+            months_layout.addWidget(BillMonthRow(month_number, items, self.kind))
+
+        root.addWidget(months_container)
+
+    def mouseDoubleClickEvent(self, event) -> None:
+        self.clicked.emit(self.bill_id)
+        super().mouseDoubleClickEvent(event)
+
+    def _group_items_by_month(self, model: BillCardModel) -> dict[int, list]:
+        if self.kind == "periodic":
+            periodic_items = list(_get_attr(model, "periodic", []) or [])
+
+            grouped: dict[int, list] = {}
+            for item in periodic_items:
+                month = _get_periodic_month(item)
+                grouped.setdefault(month, []).append(item)
+
+            return grouped
+
+        monthly_items = list(_get_attr(model, "monthly", []) or [])
+
+        grouped = {}
+        for item in monthly_items:
+            month = int(_get_attr(item, "month", 0) or 0)
+            if month > 0:
+                grouped.setdefault(month, []).append(item)
+
+        return grouped
 
 
 class BillsPage(QWidget):
-    billRequested = Signal(int)  # bill_id
+    billRequested = Signal(int)
 
     def __init__(self, parent: QWidget | None = None, db=None) -> None:
         super().__init__(parent)
@@ -81,7 +302,7 @@ class BillsPage(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        self.scroll_area: QScrollArea = QScrollArea(self)
+        self.scroll_area = QScrollArea(self)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
@@ -92,7 +313,26 @@ class BillsPage(QWidget):
         self.content_layout.setContentsMargins(14, 14, 14, 14)
         self.content_layout.setSpacing(12)
 
-        # --- Empty state blokk (Statisztika-stílus) ---
+        self.header = QWidget(self.container)
+        self.header.setObjectName("billsPageHeader")
+
+        header_layout = QHBoxLayout(self.header)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(10)
+
+        self.page_title = QLabel("Számlák")
+        self.page_title.setObjectName("billsPageTitle")
+        header_layout.addWidget(self.page_title)
+
+        header_layout.addStretch(1)
+
+        self.year_label = QLabel("Aktív év: —")
+        self.year_label.setObjectName("billsPageYearLabel")
+        header_layout.addWidget(self.year_label)
+
+        self.subtitle = QLabel("Éves számlák havi bontásban")
+        self.subtitle.setObjectName("billsPageSubtitle")
+
         self.empty_state = QWidget(self.container)
         self.empty_state.setObjectName("billsEmptyState")
 
@@ -127,28 +367,26 @@ class BillsPage(QWidget):
         empty_layout.addWidget(hint_row)
         empty_layout.addStretch()
 
-        # --- Kártyák konténer ---
         self.cards_widget = QWidget(self.container)
         self.cards_widget.setObjectName("billsCardsWidget")
 
-        self.flow: FlowLayout = FlowLayout(self.cards_widget, margin=0, spacing=12)
-        self.cards_widget.setLayout(self.flow)
+        self.cards_layout = QVBoxLayout(self.cards_widget)
+        self.cards_layout.setContentsMargins(0, 0, 0, 0)
+        self.cards_layout.setSpacing(12)
 
+        self.content_layout.addWidget(self.header)
+        self.content_layout.addWidget(self.subtitle)
         self.content_layout.addWidget(self.empty_state)
         self.content_layout.addWidget(self.cards_widget)
+        self.content_layout.addStretch(1)
 
         self.scroll_area.setWidget(self.container)
         root.addWidget(self.scroll_area)
 
         self.log = getattr(parent, "log", None)
-        
+
         self.reload()
 
-
-
-
-
-    # --- MainWindow hívja ---
     def set_filter(self, *, year: int | None, all_years: bool) -> None:
         self._year = year
         self._all_years = all_years
@@ -157,14 +395,20 @@ class BillsPage(QWidget):
     def reload(self) -> None:
         year = self._year or date.today().year
 
+        if self._all_years:
+            self.year_label.setText("Aktív év: minden év")
+        else:
+            self.year_label.setText(f"Aktív év: {year}")
+
         models = self._load_models_from_db(year)
-        
-        
-        self.log.d(f"BillsPage.reload source=db year={year} models={len(models)}")
+
+        if self.log is not None:
+            self.log.d(f"BillsPage.reload source=db year={year} models={len(models)}")
+        else:
+            print(f"[BillsPage.reload] source=db year={year} models={len(models)}")
 
         self._render(models)
 
-    # --- UI ---
     def _render(self, models: list[BillCardModel]) -> None:
         self._clear_cards()
 
@@ -175,27 +419,21 @@ class BillsPage(QWidget):
         if not has_models:
             return
 
-        for m in models:
-            card = BillCard(m)
+        for model in models:
+            card = WideBillCard(model)
             card.clicked.connect(self.billRequested.emit)
-            self.flow.addWidget(card)
+            self.cards_layout.addWidget(card)
 
-
-
-
-
+        self.cards_layout.addStretch(1)
 
     def _clear_cards(self) -> None:
-        while self.flow.count():
-            it: QLayoutItem | None = self.flow.takeAt(0)
-            if it is None:
-                continue
+        while self.cards_layout.count():
+            item = self.cards_layout.takeAt(0)
+            widget = item.widget()
 
-            w: QWidget | None = it.widget()
-            if w is not None:
-                w.deleteLater()
+            if widget is not None:
+                widget.deleteLater()
 
-    # --- DEMÓ: ---
     def _load_demo_data_for_year(self, year: int) -> list[BillCardModel]:
         telekom = BillCardModel(
             id=1,
@@ -211,7 +449,7 @@ class BillsPage(QWidget):
 
         kalasznet = BillCardModel(
             id=2,
-            name="KalászNet (hónapos)",
+            name="KalászNet",
             kind="monthly",
             monthly=[
                 MonthlyAmount(1, 6900),
@@ -223,7 +461,7 @@ class BillsPage(QWidget):
 
         mvm_villany = BillCardModel(
             id=3,
-            name="MVM – Villany",
+            name="MVMNext – Villany",
             kind="periodic",
             periodic=[
                 PeriodicAmount(
@@ -234,24 +472,116 @@ class BillsPage(QWidget):
                     invoice_number="AA12345678",
                     is_paid=True,
                 ),
+                PeriodicAmount(
+                    month=4,
+                    start=f"{year}-03-16",
+                    end=f"{year}-04-15",
+                    amount=4722,
+                    invoice_number="AA12345679",
+                    is_paid=True,
+                ),
             ],
         )
-        
+
         mvm_gaz = BillCardModel(
             id=4,
-            name="MVM – Gáz (időszakos)",
+            name="MVMNext – Gáz",
             kind="periodic",
             periodic=[
-                PeriodicAmount(f"{year}-01-15", f"{year}-03-15", 24110),
-                PeriodicAmount(f"{year}-03-15", f"{year}-05-15", 0),
-                PeriodicAmount(f"{year}-05-15", f"{year}-07-15", 26300),
+                PeriodicAmount(
+                    month=1,
+                    start=f"{year}-01-15",
+                    end=f"{year}-03-15",
+                    amount=24110,
+                ),
+                PeriodicAmount(
+                    month=5,
+                    start=f"{year}-05-15",
+                    end=f"{year}-07-15",
+                    amount=26300,
+                ),
             ],
         )
 
-        return [telekom, kalasznet, mvm_villany, mvm_gaz]
-
+        return [mvm_villany, mvm_gaz, kalasznet, telekom]
 
     def _load_models_from_db(self, year: int) -> list[BillCardModel]:
         if self.db is None:
-            return []
+            return self._load_demo_data_for_year(year)
+
         return self.db.get_bill_card_models(year)
+
+
+
+
+
+
+
+# Segédfüggvények:
+
+def _format_huf(value: int | float | str | None) -> str:
+    try:
+        amount = int(float(value or 0))
+    except (TypeError, ValueError):
+        amount = 0
+
+    return f"{amount:,} Ft".replace(",", " ")
+
+
+def _get_attr(obj, name: str, default=None):
+    return getattr(obj, name, default)
+
+
+def _get_payment_date(item: PeriodicAmount) -> str:
+    """Visszaadja a fizetés/rögzítés dátumát megjelenítéshez.
+
+    Több lehetséges mezőnevet is megnézünk, mert a DB/model rétegben
+    később lehet, hogy más néven érkezik ugyanaz az adat.
+    """
+
+    for attr_name in ("payment_date", "paid_at", "date", "created_at", "recorded_at"):
+        value = _get_attr(item, attr_name, None)
+
+        if value:
+            return str(value)
+
+    return "—"
+
+
+def _get_periodic_month(item: PeriodicAmount) -> int:
+    month = _get_attr(item, "month", None)
+
+    if month:
+        try:
+            return int(month)
+        except (TypeError, ValueError):
+            pass
+
+    start = str(_get_attr(item, "start", "") or "")
+
+    try:
+        return int(start[5:7])
+    except (TypeError, ValueError):
+        return 0
+
+
+def _icon_for_model(model: BillCardModel) -> str:
+    name = str(_get_attr(model, "name", "")).lower()
+    kind = str(_get_attr(model, "kind", "monthly"))
+
+    if "villany" in name:
+        return "⚡"
+
+    if "gáz" in name or "gaz" in name:
+        return "🔥"
+
+    if "internet" in name or "kalász" in name or "kalasz" in name:
+        return "🌐"
+
+    if "telekom" in name or "domino" in name:
+        return "📱"
+
+    if kind == "periodic":
+        return "📄"
+
+    return "💳"

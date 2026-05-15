@@ -1024,3 +1024,122 @@ QFrame#odsImportSummaryBox {
 #sidebarToggleButton:pressed {
     background-color: rgba(0, 0, 0, 0.14);
 }
+
+
+
+
+
+
+/* --- Számlák oldal: széles, egymás alatti kártyás layout --- */
+
+#billsContainer {
+    background: transparent;
+}
+
+#billsPageTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+#billsPageYearLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    background: #eaf2ff;
+    border: 1px solid #cfe0f7;
+    border-radius: 10px;
+    padding: 6px 12px;
+}
+
+#billsPageSubtitle {
+    font-size: 13px;
+    color: #64748b;
+}
+
+#billsCardsWidget {
+    background: transparent;
+}
+
+#billCard {
+    background: #ffffff;
+    border: 1px solid #d8e1ec;
+    border-radius: 14px;
+}
+
+#billCardHeader {
+    background: #f8fbff;
+    border-bottom: 1px solid #e1e8f0;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+#billCardIcon {
+    background: #eaf2ff;
+    border: 1px solid #cfe0f7;
+    border-radius: 14px;
+    font-size: 15px;
+}
+
+#billCardTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+#billDetailsButton {
+    background: #eef5ff;
+    border: 1px solid #cdddf2;
+    border-radius: 8px;
+    padding: 5px 12px;
+    color: #334155;
+    font-weight: 600;
+}
+
+#billDetailsButton:hover {
+    background: #dfeeff;
+}
+
+#billMonthRow {
+    background: #ffffff;
+    border-bottom: 1px solid #edf1f5;
+}
+
+#billMonthName {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+#billEmptyMonth {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+#billPaymentChip {
+    background: #fbfdff;
+    border: 1px solid #dbe5f0;
+    border-radius: 10px;
+}
+
+#billPaymentTitle {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+#billPaymentMetaLabel {
+    font-size: 11px;
+    color: #64748b;
+}
+
+#billPaymentValue {
+    font-size: 12px;
+    color: #334155;
+}
+
+#billPaymentAmount {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}

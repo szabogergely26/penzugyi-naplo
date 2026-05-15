@@ -798,7 +798,15 @@ class TransactionWizard(QWizard):
             period_end,
         )
         
-        tx_id = self.db.save_transaction(data)
+        print("BILL SAVE DATA:", data)
+        print("BILL SAVE DB:", getattr(self.db, "db_name", None))
+
+        try:
+            tx_id = self.db.save_transaction(data)
+            print("BILL SAVED TX_ID:", tx_id)
+        except Exception as e:
+            print("BILL SAVE ERROR:", repr(e))
+            raise
 
         # Részletek mentése csak a nem-bill ágban, ha has_details=True
         if (mode != "bill") and has_details:
