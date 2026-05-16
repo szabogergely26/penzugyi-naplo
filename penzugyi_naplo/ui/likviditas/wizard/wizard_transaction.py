@@ -841,7 +841,18 @@ class TransactionWizard(QWizard):
         )
         
         QMessageBox.information(self, "Siker", msg)
-        self.main_window.set_page("transactions")
+
+        # Mentés után frissítjük az érintett oldalakat,
+        # de nem váltunk automatikusan másik oldalra.
+        #
+        # Így ha a felhasználó a Számlák oldalról indított számlabefizetést,
+        # akkor mentés után ott is marad, csak a lista frissül.
+        if hasattr(self.main_window, "transactions_page"):
+            self.main_window.transactions_page.reload()
+
+        if hasattr(self.main_window, "bills_page"):
+            self.main_window.bills_page.reload()
+
         super().accept()
 
 
@@ -906,6 +917,14 @@ class PageDetails(QWizardPage):
     def _sync_hidden_text(self) -> None:
         self._hidden_text.setText(self.txt.toPlainText())
 
+    def _format_total_label(self, total: float) -> str:
+        """A részletek összegének magyaros megjelenítése."""
+        rounded_total = int(round(total))
+        formatted_total = f"{rounded_total:,}".replace(",", " ")
+        return f"Összesen: {formatted_total} Ft"
+
+
+
     def _recalc_total(self) -> None:
         total = 0.0
         lines = self.txt.toPlainText().splitlines()
@@ -922,7 +941,7 @@ class PageDetails(QWizardPage):
                 pass
 
         self._details_total = float(total)
-        self.lbl_sum.setText(f"Összesen: {int(round(total))} HUF")
+        self.lbl_sum.setText(self._format_total_label(total))
 
         self._hidden_total.setText(str(self._details_total))
 

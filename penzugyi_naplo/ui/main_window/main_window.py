@@ -858,12 +858,14 @@ class MainWindow(QMainWindow):
         wiz = TransactionWizard(self.db, self, parent=self)
 
         if wiz.exec() == QDialog.DialogCode.Accepted:
-            # Likviditás modul: mentés után a tranzakciós oldalra váltunk.
-            self.set_page("transactions")
+            # Nem váltunk automatikusan a Tranzakciók oldalra.
+            # A wizard maga frissíti az érintett oldalakat
+            # (pl. Tranzakciók, Számlák), így a felhasználó
+            # azon az oldalon marad, ahonnan a műveletet indította.
 
-            page = self.pages.get("transactions")
-            if page and hasattr(page, "reload"):
-                page.reload()
+            current_page = getattr(self, "current_page", None)
+            if current_page is not None and hasattr(current_page, "reload"):
+                current_page.reload()
 
 
 

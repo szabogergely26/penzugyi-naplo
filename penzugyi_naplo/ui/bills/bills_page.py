@@ -235,7 +235,7 @@ class WideBillCard(QFrame):
 
         details_btn = QPushButton("Részletek")
         details_btn.setObjectName("billDetailsButton")
-        details_btn.clicked.connect(lambda: self.clicked.emit(self.bill_id))
+        details_btn.clicked.connect(self._open_details)
         header_layout.addWidget(details_btn)
 
         root.addWidget(header)
@@ -261,9 +261,51 @@ class WideBillCard(QFrame):
 
         root.addWidget(months_container)
 
+
+    def _open_details(self) -> None:
+        """
+        Megnyitja a számla részletező ablakát a kártya saját modelljével.
+
+        A dialog a BillCardModel alapján építi fel a táblázatot,
+        ezért itt nem elég csak bill_id-t átadni.
+        """
+        from penzugyi_naplo.ui.bills.bill_details_dialog import BillDetailsDialog
+
+        dlg = BillDetailsDialog(
+            self.model,
+            parent=self,
+            db=getattr(self.window(), "db", None),
+        )
+
+        bills_page = self.parent()
+        while bills_page is not None and not hasattr(bills_page, "reload"):
+            bills_page = bills_page.parent()
+
+        if bills_page is not None:
+            dlg.billDeleted.connect(bills_page.reload)
+
+        dlg.exec()
+
+
+
+
     def mouseDoubleClickEvent(self, event) -> None:
-        self.clicked.emit(self.bill_id)
-        super().mouseDoubleClickEvent(event)
+        """
+        Duplakattintásra ugyanazt a részletező ablakot nyitjuk,
+        mint a fejlécben lévő Részletek gombbal.
+
+        Fontos:
+        törlés után a BillsPage.reload() újraépítheti a kártyákat,
+        ezért itt nem hívunk super().mouseDoubleClickEvent(event)-et
+        a dialog bezárása után.
+        """
+        if event.button() != Qt.MouseButton.LeftButton:
+            event.ignore()
+            return
+
+        event.accept()
+        self._open_details()
+
 
     def _group_items_by_month(self, model: BillCardModel) -> dict[int, list]:
         if self.kind == "periodic":

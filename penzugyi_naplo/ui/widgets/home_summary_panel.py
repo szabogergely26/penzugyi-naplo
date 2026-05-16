@@ -180,15 +180,16 @@ class HomeSummaryPanel(QWidget):
     def _make_value_row(
         self, grid: QGridLayout, row: int, label: str, big: bool = False
     ) -> QLabel:
-        l = QLabel(label)
-        l.setObjectName("sumLabelBig" if big else "sumLabel")
-        v = QLabel("—")
-        v.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        v.setObjectName("sumValueBig" if big else "sumValue")
+        label_widget = QLabel(label)
+        label_widget.setObjectName("sumLabelBig" if big else "sumLabel")
 
-        grid.addWidget(l, row, 0)
-        grid.addWidget(v, row, 1)
-        return v
+        value_widget = QLabel("—")
+        value_widget.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        value_widget.setObjectName("sumValueBig" if big else "sumValue")
+
+        grid.addWidget(label_widget, row, 0)
+        grid.addWidget(value_widget, row, 1)
+        return value_widget
 
     def _on_any_change(self) -> None:
         # opcionális auto-save később; most csak jelzünk
