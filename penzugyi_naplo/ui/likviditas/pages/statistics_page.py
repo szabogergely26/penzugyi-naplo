@@ -29,7 +29,7 @@ from __future__ import annotations
 import sqlite3
 from typing import Any, Optional
 
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -50,8 +50,12 @@ from PySide6.QtCharts import (
     QChartView,
     QLineSeries,
     QValueAxis,
+    QPieSeries
 )
 from PySide6.QtGui import QColor, QPainter
+
+
+
 
 # ----- Importok vége ----
 
@@ -142,6 +146,17 @@ class StatisticsPage(QWidget):
         super().__init__(parent)
 
         self.ctx = ctx
+
+        # A statisztikai kártyák több fülön is megjelenhetnek.
+        # Ezért listában tároljuk a kártyacsoportokat, hogy refreshkor mind frissüljön.
+        self.summary_card_sets: list[tuple[
+            StatisticSummaryCard,
+            StatisticSummaryCard,
+            StatisticSummaryCard,
+            StatisticSummaryCard,
+        ]] = []
+
+
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -167,8 +182,12 @@ class StatisticsPage(QWidget):
 
 
     def _build_summary_cards(self) -> QWidget:
+        
         """
-        Felső összegző kártyasor létrehozása az Általános fülre.
+        Felső összegző kártyasor létrehozása.
+
+        Ugyanezt használhatja az Általános és a Diagramok fül is.
+        A létrehozott kártyákat eltesszük, hogy refreshkor egyszerre frissüljenek.
         """
 
         container = QWidget()
@@ -177,25 +196,59 @@ class StatisticsPage(QWidget):
         layout.setHorizontalSpacing(10)
         layout.setVerticalSpacing(10)
 
-        self.income_card = StatisticSummaryCard("Összes bevétel", "#16a34a", symbol="↗")
-        self.expense_card = StatisticSummaryCard("Összes kiadás", "#dc2626", symbol="↘")
-        self.saving_card = StatisticSummaryCard("Megtakarítás", "#2563eb", symbol="◆")
-        self.saving_rate_card = StatisticSummaryCard("Megtakarítási arány", "#7c3aed", symbol="%")
+        income_card = StatisticSummaryCard("Összes bevétel", "#16a34a", symbol="↗")
+        expense_card = StatisticSummaryCard("Összes kiadás", "#dc2626", symbol="↘")
+        saving_card = StatisticSummaryCard("Megtakarítás", "#2563eb", symbol="◆")
+        saving_rate_card = StatisticSummaryCard("Megtakarítási arány", "#7c3aed", symbol="%")
 
         for card in (
-            self.income_card,
-            self.expense_card,
-            self.saving_card,
-            self.saving_rate_card,
+            income_card,
+            expense_card,
+            saving_card,
+            saving_rate_card,
         ):
             card.setMinimumHeight(92)
 
-        layout.addWidget(self.income_card, 0, 0)
-        layout.addWidget(self.expense_card, 0, 1)
-        layout.addWidget(self.saving_card, 0, 2)
-        layout.addWidget(self.saving_rate_card, 0, 3)
+        layout.addWidget(income_card, 0, 0)
+        layout.addWidget(expense_card, 0, 1)
+        layout.addWidget(saving_card, 0, 2)
+        layout.addWidget(saving_rate_card, 0, 3)
+
+        self.summary_card_sets.append(
+            (
+                income_card,
+                expense_card,
+                saving_card,
+                saving_rate_card,
+            )
+        )
 
         return container
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -290,22 +343,9 @@ class StatisticsPage(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(14)
 
-        yearly_card = QFrame()
-        yearly_card.setObjectName("statisticsChartCard")
-
-        yearly_layout = QVBoxLayout(yearly_card)
-        yearly_layout.setContentsMargins(16, 14, 16, 14)
-        yearly_layout.setSpacing(8)
-
-        yearly_title = QLabel("Éves bevétel / éves kiadás")
-        yearly_title.setObjectName("cardTitleStrong")
-
-        yearly_placeholder = QLabel("Ide kerül majd a zöld / piros éves oszlopdiagram.")
-        yearly_placeholder.setObjectName("chartPlaceholder")
-        yearly_placeholder.setAlignment(Qt.AlignCenter)
-
-        yearly_layout.addWidget(yearly_title)
-        yearly_layout.addWidget(yearly_placeholder, 1)
+        # Diagramok fül tetejére is jöhetnek az összesítő kártyák.
+        self.charts_summary_cards = self._build_summary_cards()
+        layout.addWidget(self.charts_summary_cards)
 
         monthly_card = QFrame()
         monthly_card.setObjectName("statisticsChartCard")
@@ -314,21 +354,35 @@ class StatisticsPage(QWidget):
         monthly_layout.setContentsMargins(16, 14, 16, 14)
         monthly_layout.setSpacing(8)
 
-        monthly_title = QLabel("Havi bontás")
+        monthly_title = QLabel("Havi bevétel / kiadás / megtakarítás")
         monthly_title.setObjectName("cardTitleStrong")
 
-        monthly_placeholder = QLabel(
-            "Ide kerül majd a havi bontás:\n"
-            "Terv bevétel / valós bevétel / kiadás / megtakarítás."
-        )
-        monthly_placeholder.setObjectName("chartPlaceholder")
-        monthly_placeholder.setAlignment(Qt.AlignCenter)
+        self.monthly_bar_chart_view = QChartView()
+        self.monthly_bar_chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.monthly_bar_chart_view.setMinimumHeight(320)
 
         monthly_layout.addWidget(monthly_title)
-        monthly_layout.addWidget(monthly_placeholder, 1)
+        monthly_layout.addWidget(self.monthly_bar_chart_view, 1)
 
-        layout.addWidget(yearly_card, 1)
+        category_card = QFrame()
+        category_card.setObjectName("statisticsChartCard")
+
+        category_layout = QVBoxLayout(category_card)
+        category_layout.setContentsMargins(16, 14, 16, 14)
+        category_layout.setSpacing(8)
+
+        category_title = QLabel("Kiadások kategóriák szerint")
+        category_title.setObjectName("cardTitleStrong")
+
+        self.category_pie_chart_view = QChartView()
+        self.category_pie_chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.category_pie_chart_view.setMinimumHeight(320)
+
+        category_layout.addWidget(category_title)
+        category_layout.addWidget(self.category_pie_chart_view, 1)
+
         layout.addWidget(monthly_card, 1)
+        layout.addWidget(category_card, 1)
 
         return page
     
@@ -369,6 +423,11 @@ class StatisticsPage(QWidget):
         self.summary_text.setText(summary)
 
         income_total, expense_total = self._load_year_totals(int(active_year))
+
+
+
+
+        # Az összegző kártyák több helyen is megjelennek, ezért mindegyiket frissíteni kell.
         self._update_summary_cards(
             year=int(active_year),
             income_total=income_total,
@@ -378,13 +437,21 @@ class StatisticsPage(QWidget):
         income_values, expense_values, saving_values = self._load_monthly_totals(
             int(active_year)
         )
-
+        # A havi bontású diagramok is csak akkor értelmezhetők, ha van aktív év, ezért ezt a részt is csak akkor futtatjuk le.
         self._update_trend_chart(
             income_values=income_values,
             expense_values=expense_values,
             saving_values=saving_values,
         )
 
+        self._update_monthly_bar_chart(
+            income_values=income_values,
+            expense_values=expense_values,
+            saving_values=saving_values,
+        )
+
+        category_values = self._load_expenses_by_category(int(active_year))
+        self._update_category_pie_chart(category_values)
 
 
 
@@ -437,6 +504,10 @@ class StatisticsPage(QWidget):
     ) -> None:
         """
         Felső statisztikai kártyák frissítése.
+
+        Minden regisztrált kártyasort frissít:
+            - Általános fül
+            - Diagramok fül
         """
         saving = income_total - expense_total
 
@@ -445,22 +516,28 @@ class StatisticsPage(QWidget):
         else:
             saving_rate = 0.0
 
-        self.income_card.set_values(
-            self._format_money(income_total),
-            f"{year} összes bevétele",
-        )
-        self.expense_card.set_values(
-            self._format_money(expense_total),
-            f"{year} összes kiadása",
-        )
-        self.saving_card.set_values(
-            self._format_money(saving),
-            "Bevétel - kiadás",
-        )
-        self.saving_rate_card.set_values(
-            f"{saving_rate:.1f}%",
-            "Megtakarítás / bevétel",
-        )
+        for (
+            income_card,
+            expense_card,
+            saving_card,
+            saving_rate_card,
+        ) in self.summary_card_sets:
+            income_card.set_values(
+                self._format_money(income_total),
+                f"{year} összes bevétele",
+            )
+            expense_card.set_values(
+                self._format_money(expense_total),
+                f"{year} összes kiadása",
+            )
+            saving_card.set_values(
+                self._format_money(saving),
+                f"{year} megtakarítása",
+            )
+            saving_rate_card.set_values(
+                f"{saving_rate:.1f}%",
+                "Megtakarítás / bevétel",
+            )
 
 
 
@@ -471,7 +548,8 @@ class StatisticsPage(QWidget):
         Visszatérés:
             tuple[income_total, expense_total]
         """
-        db_path = self.ctx.db.db_name
+        
+        database_path = self.ctx.db.db_name
 
       
         sql = """
@@ -482,7 +560,7 @@ class StatisticsPage(QWidget):
             WHERE year = ?
         """
 
-        with sqlite3.connect(db_path) as conn:
+        with sqlite3.connect(database_path) as conn:
             cursor = conn.cursor()
             cursor.execute(sql, (year,))
             row = cursor.fetchone()
@@ -516,7 +594,7 @@ class StatisticsPage(QWidget):
             tuple[income_values, expense_values, saving_values]
         """
         
-        db_path = self.ctx.db.db_name
+        database_path = self.ctx.db.db_name
 
         income_values = [0.0] * 12
         expense_values = [0.0] * 12
@@ -532,7 +610,7 @@ class StatisticsPage(QWidget):
             ORDER BY month
         """
 
-        with sqlite3.connect(db_path) as conn:
+        with sqlite3.connect(database_path) as conn:
             cursor = conn.cursor()
             cursor.execute(sql, (year,))
             rows = cursor.fetchall()
@@ -622,6 +700,186 @@ class StatisticsPage(QWidget):
         chart.legend().setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.trend_chart_view.setChart(chart)
+
+
+    def _update_monthly_bar_chart(
+        self,
+        *,
+        income_values: list[float],
+        expense_values: list[float],
+        saving_values: list[float],
+    ) -> None:
+        """
+        Diagramok fül havi oszlopdiagramjának frissítése.
+
+        Megjelenítés:
+            - Bevétel: zöld oszlop
+            - Kiadás: piros oszlop
+            - Megtakarítás: kék oszlop
+        """
+
+        income_set = QBarSet("Bevétel")
+        expense_set = QBarSet("Kiadás")
+        saving_set = QBarSet("Megtakarítás")
+
+        income_set.setColor(QColor("#22c55e"))
+        expense_set.setColor(QColor("#ef4444"))
+        saving_set.setColor(QColor("#2563eb"))
+
+        income_set.append(income_values)
+        expense_set.append(expense_values)
+        saving_set.append(saving_values)
+
+        series = QBarSeries()
+        series.append(income_set)
+        series.append(expense_set)
+        series.append(saving_set)
+
+        chart = QChart()
+        chart.setTitle("")
+        chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
+        chart.addSeries(series)
+
+        axis_x = QBarCategoryAxis()
+        axis_x.append(MONTH_LABELS)
+
+        all_values = income_values + expense_values + saving_values
+        max_value = max(all_values) if all_values else 0
+        min_value = min(all_values) if all_values else 0
+
+        if max_value <= 0:
+            max_value = 1
+
+        axis_y = QValueAxis()
+        axis_y.setRange(min(0, min_value * 1.15), max_value * 1.15)
+        axis_y.setLabelFormat("%.0f Ft")
+
+        chart.addAxis(axis_x, Qt.AlignmentFlag.AlignBottom)
+        chart.addAxis(axis_y, Qt.AlignmentFlag.AlignLeft)
+
+        series.attachAxis(axis_x)
+        series.attachAxis(axis_y)
+
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        self.monthly_bar_chart_view.setChart(chart)
+
+
+
+    def _update_category_pie_chart(
+        self,
+        category_values: list[tuple[str, float]],
+    ) -> None:
+        """
+        Diagramok fül kategória szerinti kiadás kördiagramjának frissítése.
+        """
+
+        chart = QChart()
+        chart.setTitle("")
+        chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
+
+        if not category_values:
+            chart.setTitle("Nincs megjeleníthető kiadási adat.")
+            self.category_pie_chart_view.setChart(chart)
+            return
+
+        total = sum(amount for _, amount in category_values)
+
+        series = QPieSeries()
+        series.setHoleSize(0.35)
+
+        colors = [
+            QColor("#2563eb"),
+            QColor("#ef4444"),
+            QColor("#22c55e"),
+            QColor("#a855f7"),
+            QColor("#f59e0b"),
+            QColor("#64748b"),
+            QColor("#14b8a6"),
+            QColor("#ec4899"),
+        ]
+
+        for index, (category_name, amount) in enumerate(category_values):
+            percent = (amount / total * 100) if total > 0 else 0.0
+
+            label = (
+                f"{category_name}\n"
+                f"{self._format_money(amount)} · {percent:.1f}%"
+            )
+
+            slice_item = series.append(label, amount)
+            slice_item.setLabelVisible(True)
+            slice_item.setColor(colors[index % len(colors)])
+
+        chart.addSeries(series)
+
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(Qt.AlignmentFlag.AlignRight)
+
+        self.category_pie_chart_view.setChart(chart)
+
+
+
+
+
+
+
+
+    def _load_expenses_by_category(self, year: int) -> list[tuple[str, float]]:
+        """
+        Kiadások összesítése kategória szerint.
+
+        Első verzió:
+            - transactions táblából olvas
+            - categories táblával LEFT JOIN
+            - csak expense típusú tranzakciókat számol
+        """
+
+        database_path = self.ctx.db.db_name
+
+
+        sql = """
+            SELECT
+                COALESCE(c.name, 'Nincs kategória') AS category_name,
+                COALESCE(SUM(t.amount), 0) AS total_amount
+            FROM transactions t
+            LEFT JOIN categories c ON c.id = t.category_id
+            WHERE t.year = ?
+                AND t.tx_type = 'expense'
+            GROUP BY c.name
+            HAVING total_amount > 0
+            ORDER BY total_amount DESC
+        """
+
+        with sqlite3.connect(database_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql, (year,))
+            rows = cursor.fetchall()
+
+        return [
+            (str(category_name), float(total_amount or 0))
+            for category_name, total_amount in rows
+        ]
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     # --- Külső frissítési hookok
