@@ -51,3 +51,9 @@ penzugyi_naplo_importfix_bak/
 # Data
 *.bak
 data/
+
+# Helyi Kate/KDE fejlesztői segédfájlok
+start.sh
+config
+logging
+sys
