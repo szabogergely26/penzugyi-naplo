@@ -60,8 +60,8 @@ from PySide6.QtGui import QColor, QPainter
 # ----- Importok vége ----
 
 MONTH_LABELS = [
-    "Jan", "Feb", "Márc", "Ápr", "Máj", "Jún",
-    "Júl", "Aug", "Szept", "Okt", "Nov", "Dec",
+    "Január", "Február", "Március", "Április", "Május", "Június",
+    "Július", "Augusztus", "Szeptember", "Október", "November", "December",
 ]
 
 
@@ -359,7 +359,7 @@ class StatisticsPage(QWidget):
 
         self.monthly_bar_chart_view = QChartView()
         self.monthly_bar_chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.monthly_bar_chart_view.setMinimumHeight(320)
+        self.monthly_bar_chart_view.setMinimumHeight(200)
 
         monthly_layout.addWidget(monthly_title)
         monthly_layout.addWidget(self.monthly_bar_chart_view, 1)
@@ -376,7 +376,7 @@ class StatisticsPage(QWidget):
 
         self.category_pie_chart_view = QChartView()
         self.category_pie_chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.category_pie_chart_view.setMinimumHeight(320)
+        self.category_pie_chart_view.setMinimumHeight(200)
 
         category_layout.addWidget(category_title)
         category_layout.addWidget(self.category_pie_chart_view, 1)

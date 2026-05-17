@@ -75,7 +75,8 @@ _MULT_RE = re.compile(r"\s*[xX×\*]\s*")
 
 
 def parse_details_line(line: str, *, loc: QLocale) -> tuple[str, float, float, float]:
-    """Egy details sor parszolása.
+    """
+    Egy details sor parszolása.
 
     Returns: (item_name, unit_price, quantity, amount)
     Raises: ValueError, ha nem parszolható.
