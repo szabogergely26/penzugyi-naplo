@@ -66,6 +66,10 @@ def main() -> int:
     app.setApplicationName(config.APP_NAME)
     app.setOrganizationName(config.ORG_NAME)
 
+    
+
+
+
     # 1) DEV állapot a beállításból
     dev_mode = config.is_dev_mode()
 
@@ -92,7 +96,7 @@ def main() -> int:
 
     db = TransactionDatabase(str(path))
     win = MainWindow(db=db, dev_mode=dev_mode)
-    win.show()
+    win.showMaximized()
 
     log.info("APP EXEC START")
     rc = app.exec()
