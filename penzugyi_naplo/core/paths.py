@@ -9,7 +9,7 @@ from typing import Final
 
 from PySide6.QtCore import QStandardPaths
 
-from penzugyi_naplo.config import is_dev_mode
+from penzugyi_naplo.config import DB_FILENAME_DEV, DB_FILENAME_PROD, is_dev_mode
 
 APP_NAME: Final[str] = "PenzugyiNaplo"
 
@@ -46,7 +46,17 @@ def app_data_dir(dev: bool) -> Path:
 
 
 def db_path(dev: bool) -> Path:
-    return app_data_dir(dev) / "transactions.sqlite3"
+    """
+    Az aktuális adatbázisfájl útvonala.
+
+    DEV módban:
+        <project>/data/transactions_dev.sqlite3
+
+    PROD módban:
+        <AppDataLocation>/transactions.sqlite3
+    """
+    filename = DB_FILENAME_DEV if dev else DB_FILENAME_PROD
+    return app_data_dir(dev) / filename
 
 
 def backups_dir(dev: bool) -> Path:
