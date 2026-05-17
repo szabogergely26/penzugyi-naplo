@@ -29,7 +29,7 @@ from __future__ import annotations
 import sqlite3
 from typing import Any, Optional
 
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,

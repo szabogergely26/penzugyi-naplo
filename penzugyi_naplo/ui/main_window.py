@@ -217,11 +217,13 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Pénzügyi Napló")
         self.setWindowIcon(QIcon("icons/app_icon.png"))
 
-        # --  Induló ablakméret:   (szélesség, magasság)
-        self.resize(1650, 1000)
+        # -- Induláskor teljes méretű ablakot kérünk.
+        #    Nem teljes képernyő, tehát a tálca és az ablakkeret megmarad.
+        self.showMaximized()
 
-        # - Minimum ablakméret:  (szélesség, magasság)
-        self.setMinimumSize(1440, 900)
+        #    A jelenlegi széles UI ezen a Windows tesztgépen 1920x1080 mellett néz ki jól.
+        # -- Minimum ablakméret: (szélesség, magasság)
+        self.setMinimumSize(1920, 1080)
 
 
         self.load_style_mode()

@@ -180,13 +180,13 @@ class HomeSummaryPanel(QWidget):
     def _make_value_row(
         self, grid: QGridLayout, row: int, label: str, big: bool = False
     ) -> QLabel:
-        l = QLabel(label)
-        l.setObjectName("sumLabelBig" if big else "sumLabel")
+        label_widget = QLabel(label)
+        label_widget.setObjectName("sumLabelBig" if big else "sumLabel")
         v = QLabel("—")
         v.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         v.setObjectName("sumValueBig" if big else "sumValue")
 
-        grid.addWidget(l, row, 0)
+        grid.addWidget(label_widget, row, 0)
         grid.addWidget(v, row, 1)
         return v
 
