@@ -1,0 +1,161 @@
+/* -  /ui/styles/gold_style.qss    - */
+/* ----------------------------------*/
+
+
+/* penzugyi_naplo/ui/styles/gold_style.qss */
+/* --------------------------------------- */
+
+/* =================================
+   = Aranyszámla modul             =
+   ================================= */
+
+QWidget#aranyszamlaModulePage {
+    background: transparent;
+}
+
+QFrame#aranyszamlaNavBar {
+    background: rgba(255, 248, 220, 0.72);
+    border: 1px solid rgba(202, 138, 4, 0.24);
+    border-radius: 14px;
+    padding: 4px;
+}
+
+QPushButton#aranyszamlaNavButton {
+    min-width: 120px;
+    min-height: 34px;
+    border: 1px solid rgba(202, 138, 4, 0.18);
+    border-radius: 10px;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.52);
+}
+
+QPushButton#aranyszamlaNavButton:hover {
+    background: rgba(254, 240, 138, 0.46);
+}
+
+QPushButton#aranyszamlaNavButton:checked {
+    background: rgba(250, 204, 21, 0.78);
+    border: 1px solid rgba(180, 83, 9, 0.34);
+    font-weight: bold;
+}
+
+
+/* ==================================
+   = Aranyszámla közös oldalelemek  =
+   ================================== */
+
+QWidget#aranyszamlaHomePage {
+    background: transparent;
+}
+
+QLabel#aranyszamlaPageTitle {
+    font-size: 28px;
+    font-weight: bold;
+    color: #3f2f08;
+}
+
+QLabel#aranyszamlaPageSubtitle {
+    font-size: 14px;
+    color: #78612a;
+}
+
+QLabel#aranyszamlaSectionTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #3f2f08;
+}
+
+
+/* ==================
+   = Kezdő oldal    =
+   ================== */
+
+QFrame#aranyszamlaHeroCard {
+    background: qlineargradient(
+        x1: 0, y1: 0,
+        x2: 1, y2: 1,
+        stop: 0 #fff7d6,
+        stop: 0.48 #f6d66f,
+        stop: 1 #9a6a12
+    );
+    border: 1px solid rgba(120, 83, 12, 0.30);
+    border-radius: 24px;
+    padding: 24px;
+}
+
+QFrame#aranyszamlaVisualBox {
+    background: rgba(255, 255, 255, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    border-radius: 22px;
+}
+
+QFrame#aranyszamlaInfoBox {
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(120, 83, 12, 0.18);
+    border-radius: 18px;
+}
+
+QLabel#aranyszamlaGoldIcon {
+    font-size: 104px;
+    color: #7c4a03;
+}
+
+QLabel#aranyszamlaGoldCaption {
+    font-size: 18px;
+    font-weight: bold;
+    color: #4a3407;
+}
+
+QLabel#aranyszamlaInfoLabel {
+    font-size: 13px;
+    color: #7a6429;
+}
+
+QLabel#aranyszamlaMainValue {
+    font-size: 38px;
+    font-weight: bold;
+    color: #3f2f08;
+}
+
+QLabel#aranyszamlaSecondaryValue {
+    font-size: 26px;
+    font-weight: bold;
+    color: #7c4a03;
+}
+
+QLabel#aranyszamlaHintText {
+    font-size: 13px;
+    color: #80692e;
+}
+
+
+/* ======================
+   = Kereskedés oldal   =
+   ====================== */
+
+QFrame#aranyszamlaTableCard {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(202, 138, 4, 0.18);
+    border-radius: 20px;
+}
+
+QTableWidget#aranyszamlaTradingTable {
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(202, 138, 4, 0.16);
+    border-radius: 12px;
+    gridline-color: transparent;
+}
+
+QTableWidget#aranyszamlaTradingTable::item {
+    padding: 6px;
+}
+
+QHeaderView::section {
+    padding: 7px 8px;
+    font-weight: bold;
+}
+
+QLabel#aranyszamlaEmptyText {
+    font-size: 13px;
+    color: #80692e;
+}

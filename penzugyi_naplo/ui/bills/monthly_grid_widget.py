@@ -72,30 +72,25 @@ class MonthlyGridWidget(QWidget):
         lay.setVerticalSpacing(6)
 
         # fejléc
-        lay.addWidget(self._cell("Hónap", header=True), 0, 0)
-        lay.addWidget(
-            self._cell(
-                "Fizetett",
-                header=True,
-                align=Qt.AlignmentFlag.AlignRight,
-            ),
-            0,
-            1,
-        )
+        
 
         # 12 hónap
         for idx, month_name in enumerate(HU_MONTHS, start=1):
-            r = idx
+            r = idx - 1
 
             lay.addWidget(self._cell(month_name, month=idx), r, 0)
 
             amt_item = self._items_by_month.get(idx)
             amt = amt_item.amount if amt_item else 0.0
-            txt = "—" if amt <= 0 else self._fmt_huf(amt)
+            
+            has_value = amt_item is not None and amt > 0
+            status_icon = "✔" if has_value else "○"
+            amount_text = self._fmt_huf(amt) if has_value else "—"
+            right_text = f"{amount_text}   {status_icon}"
 
             lay.addWidget(
                 self._cell(
-                    txt,
+                    right_text,
                     align=Qt.AlignmentFlag.AlignRight,
                     month=idx,
                 ),
@@ -103,22 +98,23 @@ class MonthlyGridWidget(QWidget):
                 1,
             )
 
+            lay.setColumnStretch(0, 1)
+            lay.setColumnStretch(1, 0)
+
+
+
     def _cell(
         self,
         text: str,
         *,
-        header: bool = False,
         align: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft,
         month: int | None = None,
     ) -> QLabel:
         lab = QLabel(text)
         lab.setProperty("cell", True)
-
-        if header:
-            lab.setProperty("cellHeader", True)
-
         lab.setAlignment(align | Qt.AlignmentFlag.AlignVCenter)
         lab.setWordWrap(False)
+
 
         if month is not None:
             item = self._items_by_month.get(month)

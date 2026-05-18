@@ -13,32 +13,29 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-
 APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "4.8"
-APP_CHANNEL = "Stabil kiadás verzió"
-BUILD_INFO = "2025. november – 2026. április"
+APP_VERSION = "-"
+APP_CHANNEL = "Fejlesztői verzió"
+BUILD_INFO = "2025. novembertől"
+
 
 VERSION_DESCRIPTION = """
+<b>Fejlesztői verzió</b><br><br>
+
+<b>Normál / PROD mód:</b><br>
+Készre csiszolt funkciók, de még hosszabb távú tesztelés alatt állnak.<br><br>
+
+<b>Fejlesztői mód:</b><br>
+Friss újdonságok, kísérleti vagy félkész funkciók.
+Hibák előfordulhatnak. Érzékeny adatok kezelésére nem ajánlott.<br><br>
+
 <b>Stabil verzió</b><br><br>
 
 <b>Normál / PROD mód:</b><br>
-Normál mód: Készre csiszolt, hosszabb távú használatra szánt funkciók.
-A stabil ág célja a megbízható napi használat.<br><br>
-
-PROD mód: Fejlesztés alatt álló funkciók kipróbálása.
-Fejlesztés alatt álló funkciók stabilizálása.<br><br>
+Hibátlan funkciók, hosszú távú használatra javasolt. Stabil.<br><br>
 
 <b>Fejlesztői mód:</b><br>
-Tesztelésre és jövőbeni funkciók kipróbálására szolgál.
-Éles vagy érzékeny adatok kezelésére továbbra is a normál mód javasolt.<br><br><br>
-
-
-<b>Modern Home téma:</b><br>
-A stabil kiadásban is elérhető az új, kártyásabb kezdőoldali megjelenés.
-A téma a Beállítások oldalon választható ki.<br><br>
-
-
+Jövőbeni funkciók, még előfordulhatnak hibák.
 """
 
 

@@ -93,7 +93,7 @@ class PeriodicListWidget(QWidget):
             if item and item.is_paid:
                 period = f"Időszak: {self._fmt_period(item.start, item.end)}"
                 amount = f"Összeg: {self._fmt_huf(item.amount)}"
-                invoice = "Számla sorszám: -"
+                invoice = f"Számla sorszáma: {item.invoice_number}" if item.invoice_number else "Számla sorszáma: —"
 
                 lay.addWidget(self._meta_cell(period), row, 0, 1, 2)
                 row += 1
