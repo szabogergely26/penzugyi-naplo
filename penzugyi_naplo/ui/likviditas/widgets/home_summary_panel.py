@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QVBoxLayout,
     QWidget,
+    QAbstractSpinBox
 )
 
 # --- importok vége ----
@@ -48,6 +49,8 @@ class _Card(QFrame):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(12, 10, 12, 12)
         lay.setSpacing(8)
+
+        
 
         self.title_lbl = QLabel(title)
 
@@ -88,15 +91,11 @@ class HomeSummaryPanel(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(12)
 
-        # -------- Bal: Fix bevételek --------
         
+
+        # -------- Bal: Fix bevételek --------
         self.card_fixed = _Card("Állandó (aktuális bevételek)", self)
-
-        # A QSS innen tudja felismerni, hogy ez a szerkeszthető/fix bevételi kártya.
-        # Ehhez tartozik a modern_style_home.qss-ben:
-        # QFrame#summaryFixedCard { ... }
         self.card_fixed.setObjectName("summaryFixedCard")
-
         root.addWidget(self.card_fixed, 1)
 
         form = QFormLayout()
@@ -110,10 +109,21 @@ class HomeSummaryPanel(QWidget):
         self.sp_salary = self._make_money_spinbox("income_fixed/salary")
         self.sp_szep = self._make_money_spinbox("income_fixed/szep_card")
 
-        form.addRow("Családi támogatás:", self.sp_family)
-        form.addRow("Rehabilitációs ellátás:", self.sp_rehab)
-        form.addRow("Munkabér:", self.sp_salary)
-        form.addRow("OTP Szép kártya:", self.sp_szep)
+        lbl_family = QLabel("Családi támogatás:")
+        lbl_family.setObjectName("summaryEditLabel")
+        form.addRow(lbl_family, self.sp_family)
+
+        lbl_rehab = QLabel("Rehabilitációs ellátás:")
+        lbl_rehab.setObjectName("summaryEditLabel")
+        form.addRow(lbl_rehab, self.sp_rehab)
+
+        lbl_salary = QLabel("Munkabér:")
+        lbl_salary.setObjectName("summaryEditLabel")
+        form.addRow(lbl_salary, self.sp_salary)
+
+        lbl_szep = QLabel("OTP Szép kártya:")
+        lbl_szep.setObjectName("summaryEditLabel")
+        form.addRow(lbl_szep, self.sp_szep)
 
         self.btn_save = QPushButton("Mentés")
         self.btn_save.clicked.connect(self.save_fixed_incomes)
@@ -148,12 +158,7 @@ class HomeSummaryPanel(QWidget):
 
         # -------- Jobb: Egyenlegek --------
         self.card_bal = _Card("Számított értékek", self)
-
-        # A QSS innen tudja felismerni, hogy ez a számított egyenlegek kártyája.
-        # Ehhez tartozik a modern_style_home.qss-ben:
-        # QFrame#summaryCalcCard { ... }
         self.card_bal.setObjectName("summaryCalcCard")
-
         root.addWidget(self.card_bal, 1)
 
         grid = QGridLayout()
@@ -197,6 +202,7 @@ class HomeSummaryPanel(QWidget):
         sp.setGroupSeparatorShown(True)
         sp.setSuffix(" Ft")
         sp.setObjectName("moneySpin")
+        sp.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         sp.valueChanged.connect(lambda _v: self._on_any_change())
         sp.setProperty("settings_key", key)
         return sp

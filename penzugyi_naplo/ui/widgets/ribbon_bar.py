@@ -101,7 +101,12 @@ class RibbonBar(QWidget):
         self.stack.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
         self._expanded_height = 128
-        self._collapsed_height = self.tabbar.sizeHint().height() + 18
+        self._collapsed_extra_height = 45
+        self._collapsed_height = (
+            self.tabbar.sizeHint().height() + self._collapsed_extra_height
+        )
+
+
         self._expanded = True
         self.setFixedHeight(self._expanded_height)
 
@@ -141,12 +146,25 @@ class RibbonBar(QWidget):
         return btn
 
     def _toggle_collapse(self, index: int) -> None:
+        """
+        A ribbon tartalmi részének összecsukása / kinyitása.
+
+        Összecsukott állapotban a felső fülsor látható marad,
+        csak a gombokat tartalmazó stack tűnik el.
+        """
+    
         self._expanded = not self._expanded
-        self.setFixedHeight(
-            self._expanded_height if self._expanded else self._collapsed_height
-        )
+
         self.stack.setVisible(self._expanded)
+
+        if self._expanded:
+            self.setFixedHeight(self._expanded_height)
+        else:
+            self.setFixedHeight(self._collapsed_height)
+
         self.toggled.emit(self._expanded)
+
+
 
     def add_separator(self, tab_page: QWidget, *, spacing: int = 16) -> None:
         lay = tab_page.layout()

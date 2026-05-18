@@ -40,7 +40,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QSettings
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QDialog,
@@ -54,6 +54,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
+    QComboBox,
 )
 
 from penzugyi_naplo.ui.likviditas.dialogs.transaction_details_dialog import (
@@ -62,6 +63,8 @@ from penzugyi_naplo.ui.likviditas.dialogs.transaction_details_dialog import (
 from penzugyi_naplo.ui.likviditas.dialogs.transaction_edit_dialog import (
     TransactionEditDialog,
 )
+
+from penzugyi_naplo.config import APP_NAME, ORG_NAME
 
 # -Importok vége -
 
@@ -156,6 +159,25 @@ class TransactionsPage(QWidget):
         self.search_edit = QLineEdit(self)
         self.search_edit.setPlaceholderText("Keresés (kategória / leírás)...")
 
+        # A keresés aktuális hatóköre.
+        # Induláskor a Beállításokban megadott alapértéket olvassa vissza,
+        # de itt a keresősáv mellett gyorsan felülírható.
+        self.cmb_search_scope = QComboBox(self)
+        self.cmb_search_scope.addItem("Aktuális év", "active_year")
+        self.cmb_search_scope.addItem("Minden év", "all_years")
+        self.cmb_search_scope.setMinimumWidth(140)
+
+        settings = QSettings(ORG_NAME, APP_NAME)
+        search_scope = str(settings.value("ui/search_scope", "active_year"))
+
+        if search_scope not in ("active_year", "all_years"):
+            search_scope = "active_year"
+
+        for i in range(self.cmb_search_scope.count()):
+            if self.cmb_search_scope.itemData(i) == search_scope:
+                self.cmb_search_scope.setCurrentIndex(i)
+                break
+
         self.btn_search = QPushButton("Keresés", self)
         self.btn_clear = QPushButton("Törlés", self)
 
@@ -164,6 +186,7 @@ class TransactionsPage(QWidget):
         top.addWidget(self.search_edit, 1)
         top.addWidget(self.btn_search)
         top.addWidget(self.btn_clear)
+        top.addWidget(self.cmb_search_scope)
 
         # --- UI: táblázat: Oszlopok láthatósága ---
         self.table = QTableWidget(self)
@@ -194,17 +217,28 @@ class TransactionsPage(QWidget):
         # header ELŐBB
         header = self.table.horizontalHeader()
 
-        # méretezések (autómatikus)
-        header.setSectionResizeMode(0, QHeaderView.Fixed)  # Jelzés - manuális
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Dátum
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Név
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Kategória
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # Egységár
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Db
-        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Összesen
-        header.setSectionResizeMode(7, QHeaderView.Stretch)  # Leírás
-        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Típus
-        header.setSectionResizeMode(9, QHeaderView.ResizeToContents)  # Műveletek
+        # méretezések – importált régi adatokhoz is stabil
+        header.setSectionResizeMode(0, QHeaderView.Fixed)        # Jelzés
+        header.setSectionResizeMode(1, QHeaderView.Fixed)        # Dátum
+        header.setSectionResizeMode(2, QHeaderView.Interactive)  # Név
+        header.setSectionResizeMode(3, QHeaderView.Fixed)        # Kategória
+        header.setSectionResizeMode(4, QHeaderView.Fixed)        # Egységár
+        header.setSectionResizeMode(5, QHeaderView.Fixed)        # Db
+        header.setSectionResizeMode(6, QHeaderView.Fixed)        # Összesen
+        header.setSectionResizeMode(7, QHeaderView.Interactive)  # Leírás
+        header.setSectionResizeMode(8, QHeaderView.Fixed)        # Típus
+        header.setSectionResizeMode(9, QHeaderView.Fixed)        # Műveletek
+
+        self.table.setColumnWidth(0, 28)     # Jelzés
+        self.table.setColumnWidth(1, 105)    # Dátum
+        self.table.setColumnWidth(2, 260)    # Név
+        self.table.setColumnWidth(3, 120)    # Kategória
+        self.table.setColumnWidth(4, 90)     # Egységár
+        self.table.setColumnWidth(5, 55)     # Db
+        self.table.setColumnWidth(6, 115)    # Összesen
+        self.table.setColumnWidth(7, 330)    # Leírás
+        self.table.setColumnWidth(8, 125)     # Típus
+        self.table.setColumnWidth(9, 200)    # Műveletek
 
         # --- Rendezés (fejléc-katt) ---
         header.setSectionsClickable(True)
@@ -233,6 +267,9 @@ class TransactionsPage(QWidget):
 
         # --- Signals ---
         self.search_edit.textChanged.connect(self._schedule_search)
+        self.cmb_search_scope.currentIndexChanged.connect(
+            lambda _index: self.reload()
+        )
         self.btn_clear.clicked.connect(self.on_clear)
 
         # első töltés
@@ -291,11 +328,17 @@ class TransactionsPage(QWidget):
         q = self.search_edit.text().strip()
         query = q if q else None
 
+        # A keresési hatókört a keresősáv melletti lenyílóból olvassuk.
+        # - Aktuális év: csak self._year
+        # - Minden év: évszűrő nélkül keres
+        search_scope = self._current_search_scope()
+        search_all_years = search_scope == "all_years"
+
         # 1) Lekérdezés
         try:
             rows = self.db.get_transactions_filtered(
                 year=self._year,
-                all_years=self._filter_all_years,
+                all_years=search_all_years,
                 query=query,
             )
         except Exception:
@@ -425,11 +468,63 @@ class TransactionsPage(QWidget):
 
     def set_year(self, year: int) -> None:
         self._year = int(year)
-        self._filter_all_years = False
         self.reload()
+
+
+
+
+    # Ssegédfüggvények osztályon belül:
+
+    def set_search_scope(self, scope: str) -> None:
+        """
+        A keresősáv melletti hatókör-váltó programozott beállítása.
+
+        Ezt a MainWindow használja, amikor bal oldalt a "Minden év"
+        vagy egy konkrét év kerül kiválasztásra.
+        """
+        if scope not in ("active_year", "all_years"):
+            scope = "active_year"
+
+        for i in range(self.cmb_search_scope.count()):
+            if self.cmb_search_scope.itemData(i) == scope:
+                self.cmb_search_scope.setCurrentIndex(i)
+                break
+
+
+
+
+
+
+
+
+
+
+
+
+    def _current_search_scope(self) -> str:
+        """
+        A keresősáv mellett kiválasztott aktuális keresési hatókör.
+
+        Visszatérés:
+            - "active_year": csak az aktív év tranzakcióiban keresünk
+            - "all_years": minden év tranzakcióiban keresünk
+        """
+        scope = self.cmb_search_scope.currentData()
+
+        if scope not in ("active_year", "all_years"):
+            return "active_year"
+
+        return str(scope)
 
     def _schedule_search(self, _text: str) -> None:
         self._search_timer.start()
+
+    # Segédfüggvények vége
+
+
+
+
+
 
     def _make_action_cell(self, tx_id: int) -> QWidget:
         w = QWidget(self.table)

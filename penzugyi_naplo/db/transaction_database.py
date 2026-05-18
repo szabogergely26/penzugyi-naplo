@@ -58,19 +58,22 @@ Tudatosan NEM UI-függő:
 """
 
 from __future__ import annotations
+from typing import Any
 
 import os
 import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any
 
 from penzugyi_naplo.ui.bills.bill_models import (
     BillCardModel,
     MonthlyAmount,
     PeriodicAmount,
 )
+
+from penzugyi_naplo.db.gold_database import ensure_gold_tables
+
 
 # ----------------------------
 # B modell:
@@ -329,6 +332,16 @@ class TransactionDatabase:
             )
             """
         )
+
+
+        ensure_gold_tables(conn)
+
+
+
+
+
+
+
 
         # detect old/new transactions table, mindig lefut
         cur.execute(
@@ -650,6 +663,8 @@ class TransactionDatabase:
             "MVMNext - Gáz",
             "MVMNext – Villany",
             "MVMNext – Gáz",
+            "MVMNext Villany",
+            "MVMNext Gáz",
         }
 
         conn = self.get_db_connection()
@@ -662,6 +677,7 @@ class TransactionDatabase:
                     t.tx_date,
                     t.period_start,
                     t.period_end,
+                    invoice_number,
                     t.amount,
                     t.description,
                     t.name,
@@ -690,6 +706,7 @@ class TransactionDatabase:
             tx_date = str(row["tx_date"] or "").strip()
             period_start = str(row["period_start"] or "").strip()
             period_end = str(row["period_end"] or "").strip()
+            invoice_number = str(row["invoice_number"] or "").strip() or None
             amount = int(round(float(row["amount"] or 0)))
             month = int(row["month"] or 0)
 
@@ -709,7 +726,7 @@ class TransactionDatabase:
                             start=period_start or tx_date,
                             end=period_end or tx_date,
                             amount=amount,
-                            invoice_number=None,
+                            invoice_number=invoice_number,
                             is_paid=True,
                         )
                     )
@@ -815,24 +832,30 @@ class TransactionDatabase:
         period_start = _iso_date(raw_period_start) if raw_period_start else None
         period_end = _iso_date(raw_period_end) if raw_period_end else None
 
+        invoice_number = (data.get("invoice_number") or "").strip() or None
+
         if (period_start and not period_end) or (period_end and not period_start):
             raise ValueError("Az időszak kezdete és vége együtt adandó meg.")
 
         if period_start and period_end and period_start > period_end:
             raise ValueError("Az időszak kezdete nem lehet későbbi, mint a vége.")
+        
+        
 
         conn = self.get_db_connection()
         cur = conn.cursor()
 
         self._ensure_payment_source_column(cur)
+        self._ensure_bill_transaction_columns(cur)
+
 
         cur.execute(
             """
             INSERT INTO transactions (
                 tx_date, tx_type, amount, category_id, name, description,
-                created_at, year, month, payment_source, period_start, period_end
+                created_at, year, month, payment_source, period_start, period_end, invoice_number
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 iso,
@@ -847,6 +870,7 @@ class TransactionDatabase:
                 payment_source,
                 period_start,
                 period_end,
+                invoice_number
             ),
         )
 
@@ -1711,6 +1735,8 @@ class TransactionDatabase:
         if "period_end" not in cols:
             cur.execute("ALTER TABLE transactions ADD COLUMN period_end TEXT")
      
+        if "invoice_number" not in cols:
+            cur.execute("ALTER TABLE transactions ADD COLUMN invoice_number TEXT")
      
      
      
@@ -2058,6 +2084,45 @@ class TransactionDatabase:
 
 
 
+    def _ensure_bill_transaction_columns(self, cur) -> None:
+        """
+        Biztosítja a számlabefizetésekhez használt extra tranzakciós oszlopokat.
+
+        Ezek régebbi adatbázisokban még hiányozhatnak, ezért mentés előtt
+        ellenőrizzük, és szükség esetén hozzáadjuk őket.
+        """
+
+        cur.execute("PRAGMA table_info(transactions)")
+        columns = {row[1] for row in cur.fetchall()}
+
+        if "period_start" not in columns:
+            cur.execute("ALTER TABLE transactions ADD COLUMN period_start TEXT")
+
+        if "period_end" not in columns:
+            cur.execute("ALTER TABLE transactions ADD COLUMN period_end TEXT")
+
+        if "invoice_number" not in columns:
+            cur.execute("ALTER TABLE transactions ADD COLUMN invoice_number TEXT")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def _ensure_account_valuations(self, cur: sqlite3.Cursor) -> None:
         cur.execute("""
@@ -2135,3 +2200,29 @@ class TransactionDatabase:
             conn.commit()
         finally:
             conn.close()
+
+
+    def get_transaction_years(self) -> list[int]:
+        """
+        Visszaadja az adatbázisban szereplő tranzakciós éveket.
+
+        A year oszlopból dolgozik, mert a transactions tábla ezt már
+        külön tárolja a gyorsabb szűréshez.
+        """
+
+        conn = self.get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            SELECT DISTINCT year
+            FROM transactions
+            WHERE year IS NOT NULL
+            ORDER BY year DESC
+            """
+        )
+
+        rows = cur.fetchall()
+        conn.close()
+
+        return [int(row[0]) for row in rows]

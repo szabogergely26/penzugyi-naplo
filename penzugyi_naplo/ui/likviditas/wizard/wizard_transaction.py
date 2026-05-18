@@ -1,5 +1,9 @@
-# penzugyi_naplo/ui/likviditas/dialogs/wizard_transaction.py
+# penzugyi_naplo/ui/likviditas/wizard/wizard_transaction.py
 # --------------------------------------------------------------
+# Likviditás / Tranzakciórögzítő varázsló
+# --------------------------------------------------------------
+
+
 
 """
 Új tranzakció rögzítésére szolgáló varázsló (QWizard).
@@ -71,7 +75,8 @@ _MULT_RE = re.compile(r"\s*[xX×\*]\s*")
 
 
 def parse_details_line(line: str, *, loc: QLocale) -> tuple[str, float, float, float]:
-    """Egy details sor parszolása.
+    """
+    Egy details sor parszolása.
 
     Returns: (item_name, unit_price, quantity, amount)
     Raises: ValueError, ha nem parszolható.
@@ -415,6 +420,16 @@ class PageAmount(QWizardPage):
         self.input_period_end = QLineEdit()
         self.input_period_end.setPlaceholderText("Pl.: 2025-04-15")
 
+        self.lbl_invoice_number = QLabel("Számla sorszáma:")
+        self.input_invoice_number = QLineEdit()
+        self.input_invoice_number.setPlaceholderText("Pl.: 1234567890")
+
+
+
+
+        layout.addWidget(self.lbl_invoice_number)
+        layout.addWidget(self.input_invoice_number)
+
         layout.addWidget(self.lbl_date)
         layout.addWidget(self.input_date)
         layout.addWidget(self.lbl_period_start)
@@ -460,9 +475,13 @@ class PageAmount(QWizardPage):
         self.lbl_period_end.setVisible(needs_period)
         self.input_period_end.setVisible(needs_period)
 
+        self.lbl_invoice_number.setVisible(needs_period)
+        self.input_invoice_number.setVisible(needs_period)
+
         if is_bill:
             self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
             self.input_amount.clear()
+            self.input_invoice_number.clear()
 
             if needs_period:
                 self.input_period_start.clear()
@@ -474,6 +493,7 @@ class PageAmount(QWizardPage):
 
 
     def reset_bill_fields(self) -> None:
+        self.input_invoice_number.clear()
         self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
         self.input_period_start.clear()
         self.input_period_end.clear()
@@ -574,6 +594,9 @@ class PageAmount(QWizardPage):
 
     def nextId(self) -> int:
         return -1
+    
+    def get_invoice_number_raw(self) -> str:
+        return self.input_invoice_number.text().strip()
 
 # Itt már a core.utils.is_valid_date-et használjuk.
 # Fontos: ez az osztály feltételezi, hogy ugyanabban a fájlban már létezik:
@@ -627,6 +650,7 @@ class TransactionWizard(QWizard):
         amount = 0.0
         period_start = None
         period_end = None
+        invoice_number = ""
 
         # -------------------------------------------------
         # BILL ÁG
@@ -669,6 +693,8 @@ class TransactionWizard(QWizard):
             amount = amount_page.get_amount()
 
             if bill_requires_period(provider):
+                invoice_number = amount_page.get_invoice_number_raw()
+
                 period_start_raw = amount_page.get_period_start_raw()
                 period_end_raw = amount_page.get_period_end_raw()
 
@@ -690,10 +716,7 @@ class TransactionWizard(QWizard):
                         "Az időszak kezdete nem lehet későbbi, mint az időszak vége.",
                     )
                     return
-                else:
-                    period_start = None
-                    period_end = None
-
+                
 
 
         # -------------------------------------------------
@@ -763,11 +786,28 @@ class TransactionWizard(QWizard):
             "has_details": int(bool(has_details)),
             "period_start": period_start,
             "period_end": period_end,
+            "invoice_number": invoice_number,
         }
 
 
-        print("BILL SAVE DEBUG:", provider, target_name, period_start, period_end)
-        tx_id = self.db.save_transaction(data)
+        print(
+            "BILL SAVE DEBUG:",
+            provider,
+            target_name,
+            invoice_number,
+            period_start,
+            period_end,
+        )
+        
+        print("BILL SAVE DATA:", data)
+        print("BILL SAVE DB:", getattr(self.db, "db_name", None))
+
+        try:
+            tx_id = self.db.save_transaction(data)
+            print("BILL SAVED TX_ID:", tx_id)
+        except Exception as e:
+            print("BILL SAVE ERROR:", repr(e))
+            raise
 
         # Részletek mentése csak a nem-bill ágban, ha has_details=True
         if (mode != "bill") and has_details:
@@ -802,7 +842,18 @@ class TransactionWizard(QWizard):
         )
         
         QMessageBox.information(self, "Siker", msg)
-        self.main_window.set_page("transactions")
+
+        # Mentés után frissítjük az érintett oldalakat,
+        # de nem váltunk automatikusan másik oldalra.
+        #
+        # Így ha a felhasználó a Számlák oldalról indított számlabefizetést,
+        # akkor mentés után ott is marad, csak a lista frissül.
+        if hasattr(self.main_window, "transactions_page"):
+            self.main_window.transactions_page.reload()
+
+        if hasattr(self.main_window, "bills_page"):
+            self.main_window.bills_page.reload()
+
         super().accept()
 
 
@@ -867,6 +918,14 @@ class PageDetails(QWizardPage):
     def _sync_hidden_text(self) -> None:
         self._hidden_text.setText(self.txt.toPlainText())
 
+    def _format_total_label(self, total: float) -> str:
+        """A részletek összegének magyaros megjelenítése."""
+        rounded_total = int(round(total))
+        formatted_total = f"{rounded_total:,}".replace(",", " ")
+        return f"Összesen: {formatted_total} Ft"
+
+
+
     def _recalc_total(self) -> None:
         total = 0.0
         lines = self.txt.toPlainText().splitlines()
@@ -883,7 +942,7 @@ class PageDetails(QWizardPage):
                 pass
 
         self._details_total = float(total)
-        self.lbl_sum.setText(f"Összesen: {int(round(total))} HUF")
+        self.lbl_sum.setText(self._format_total_label(total))
 
         self._hidden_total.setText(str(self._details_total))
 

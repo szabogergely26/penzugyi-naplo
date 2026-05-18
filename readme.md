@@ -1,70 +1,177 @@
---- README for
+# - Pénzügyi Napló - Fejlesztői kézikönyv
 
+Utoljára frissítve: 2026.május 08.
+
+
+Ez a dokumentum nem felhasználói kézikönyv, hanem fejlesztői térkép.
+Célja, hogy hónapok múlva is gyorsan megtalálható legyen:
+    - melyik modul hol van,
+    - melyik fájl miért felel,
+    - milyen adatútvonalon megy végig egy funkció,
+    - milyen döntéseket hoztunk korábban.
+
+
+
+
+
+## Projekt fő részei
+
+- /core/ – közös alkalmazáslogika
+- /db/ – adatbázisréteg
+- /ui/main_window/ – főablak és kiszervezett MainWindow-logika
+- /ui/likviditas/ – Likviditás modul
+- /ui/bills/ – Számlák modul
+- /ui/importers/ – import varázslók
+- /importers/ – import feldolgozó logika
+- /ui/styles/ – QSS témák
+
+
+
+
+
+
+
+
+# Adatbázis
+
+
+Állapot dátuma: 2026-05-08
 
 /db/data/transactions.sqlite3:
 ------------------------------
 
+A /data/transactions.sqlite3 állomány jelenleg a Pénzügyi Napló fő SQLite adatbázisa.
 
-    A /data/transactions.sqlite3 állományban jelenleg egy letisztult, működő alap-séma van (5 tábla, releváns indexekkel), és a “B-modell” elv 
-    (amount mindig nemnegatív, külön tx_type) már érvényesül a transactions táblában.
+Az adatmodellben már a B-modell érvényesül:
+
+    - amount mindig nemnegatív
+    - tx_type külön jelöli a típust:
+        - income
+        - expense
+    - a tranzakció év/hónap mezői külön tárolódnak:
+        - year
+        - month
+
+Fő alkalmazástáblák:
+--------------------
+
+    - transactions
+        Tranzakciók fő táblája.
+
+    - categories
+        Kategóriák, tx_type és is_bill jelöléssel.
+
+    - transaction_items
+        Részletezett tranzakciók tételei.
+
+    - plans
+        Havi tervek.
+
+    - settings
+        Kulcs-érték beállítások.
+
+    - schema_version
+        Egyszerű séma-verziózás.
+
+    - wallet_balances
+        Készpénz / folyószámla jellegű egyenlegek.
+
+    - account_valuations
+        Értékpapír / nemesfém jellegű account értékelések.
+
+    - bills
+        Számlák külön adatmodelljének előkészített táblája.
+
+    - bill_monthly_amounts
+        Havi számlaösszegek előkészített táblája.
+
+    - bill_periodic_amounts
+        Időszakos számlaösszegek előkészített táblája.
+
+Fontos transactions mezők:
+--------------------------
+
+    - id
+    - tx_date
+    - tx_type
+    - amount
+    - category_id
+    - name
+    - description
+    - created_at
+    - year
+    - month
+    - quantity
+    - unit_price
+    - has_details
+    - payment_source
+    - period_start
+    - period_end
+    - invoice_number
+
+Számlákhoz kapcsolódó mezők:
+----------------------------
+
+    - categories.is_bill
+        Jelzi, hogy az adott kategória számlakategória-e.
+
+    - transactions.period_start
+        Időszakos számla kezdete, például MVMNext esetén.
+
+    - transactions.period_end
+        Időszakos számla vége.
+
+    - transactions.invoice_number
+        Számla sorszáma. Nem a description / Megjegyzés mezőbe kerül.
+
+    - transactions.payment_source
+        Fizetési forrás, jelenleg jellemzően:
+            - bank
+            - cash
+
+Fontos indexek:
+---------------
+
+    - transactions(year, month)
+    - transactions(tx_date)
+    - transactions(tx_type)
+    - categories(tx_type)
+    - plans(year, month)
+    - transaction_items(transaction_id)
+    - wallet_balances(wallet_type, date)
+    - account_valuations(account_type, date)
+    - bills(kind)
+    - bill_monthly_amounts(year)
+    - bill_periodic_amounts(bill_id)
+
+Megjegyzés:
+-----------
+
+A transaction_database.py idempotens CREATE / ALTER logikát használ, tehát régebbi adatbázis megnyitásakor a hiányzó oszlopokat fokozatosan pótolja.
+
+Fontos: ha egy adatbázist még nem nyitott meg az app az új séma után, akkor abban átmenetileg hiányozhatnak újabb oszlopok, például:
+
+    - invoice_number
+
+Ez főleg dev/prod adatbázisok eltérő állapotánál fordulhat elő.
 
 
 
-   / Tartalma:
-    ----------
-
-        / Táblák
-        ---------
-
-            - transactions: tranzakciók (bevétel/kiadás) + név + mennyiség/egységár opció
-
-            - categories: kategóriák (tx_type, is_bill)
-
-            - plans: havi terv (year+month PK)
-
-            - settings: kulcs-érték beállítások
-
-            - schema_version: verziózás (most version = 1)
-
-            - Fontosabb mezők és constraint-ek (transactions)
-
-            - tx_date TEXT NOT NULL (komment szerint YYYY-MM-DD)
-
-            - tx_type TEXT NOT NULL CHECK (income|expense)
-
-            - amount REAL NOT NULL CHECK (amount >= 0)
-
-            - year INTEGER NOT NULL, month INTEGER NOT NULL CHECK (1..12)
-
-            - name TEXT NOT NULL DEFAULT ''
-
-            - quantity INTEGER DEFAULT 1
-
-            - unit_price REAL
-
-            - FK: category_id -> categories(id)
 
 
-        Indexek (jók, célzottak)
+## /core/
 
-            - transactions(tx_date), transactions(tx_type), transactions(year, month)
+Közös alkalmazáslogika.
 
-            - categories(tx_type)
+Fájlok:
+    - app_context.py: alkalmazáskörnyezet / közös állapot
+    - logging_utils.py: naplózás, session start, log fájl
+    - paths.py: alkalmazás útvonalak, adat/log/config helyek
+    - utils.py: közös validálás és formázás, például dátum / összeg
 
-            - plans(year, month)
-
-
-
-    / Javasolt további fejlesztések:
-    -------------------------------
-
-        1. Konkrét, rövid “következő lépés” javaslat a te mostani irányodhoz
-
-        2. Új kategória: “Ebéd” (expense) – és a meglévő “Ebéd” tranzakciót át lehet majd sorolni.
-
-        3. DB bővítés: transaction_items tábla (a részletek ablak miatt).
-
-        4. Pénzmezők jövőállóvá tétele (REAL → INTEGER) – ez lehet későbbi migráció is, de érdemes tervbe venni.
+Fontos:
+    - UI-független segédfüggvények ide kerüljenek.
+    - Ne legyen benne konkrét widget / PySide6 UI-logika, ha nem muszáj.
 
 
 
@@ -74,18 +181,195 @@
 
 
 
+# Likviditás
+## MainWindow
+-----------------
+
+/ui/main_window/likviditas/:
 
 
-/db/transaction_database.py:
--------------------------------
+A MainWindow Likviditás-specifikus logikájának kiszervezett részei.
 
-A transaction_database.py már most is egy használható, “központi DB-réteg” 
-(jó separation: UI nem SQL-ezik; FK-k bekapcsolva; idempotens CREATE/ALTER; B-modell logika; bill/has_details/transaction_items előkészítve). 
+Fájlok:
+    - actions.py: QAction-ok létrehozása / bekötése
+    - menus.py: Fájl menü és menüpontok
+    - register_pages.py: Likviditás oldalak regisztrálása
+    - import_handlers.py: import funkciók indítása
+    - backup_restore_handlers.py: mentés / betöltés kezelése
+    - toolbar_mode.py: toolbar/ribbon mód kezelése
+
+Cél:
+    - main_window.py rövidítése
+    - MainWindow ne legyen újra 2000+ soros
+    - funkciócsoportok könnyebb megtalálása
 
 
 
 
-/ui/bills/bill_card.py:
+### Import / ODS import
+
+Logikai importer:
+    - /importers/ods_transaction_importer.py
+
+UI wizard:
+    - /ui/importers/ods_transaction_import_wizard.py
+    - /ui/importers/ods_import_pages.py
+
+Felelősség:
+    - ODS fájl kiválasztása
+    - munkalap kiválasztása
+    - fejlécsor / adatsor kezdete
+    - előnézet
+    - importálás
+
+Fontos döntés:
+    - Ez vezetett import varázsló, nem sima fájlmegnyitás.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A Likviditás modul saját UI-területe:
+
+
+
+## Mappák:
+    - pages/: fő oldalak
+        - home_page.py
+        - transactions_page.py
+        - statistics_page.py
+        - accounts_page.py
+        - settings_page.py
+
+    - dialogs/: egyszerű párbeszédablakok
+        - home_table_dialog.py
+        - month_details_dialog.py
+        - transaction_details_dialog.py
+        - transaction_edit_dialog.py
+
+    - widgets/: beágyazott kisebb UI elemek
+        - home_summary_panel.py
+        - transactions_filter_bar.py
+
+    - wizard/: többoldalas QWizard folyamatok
+        - wizard_transaction.py
+
+
+
+
+## /ui/likviditas/wizard/wizard_transaction.py:
+--------------------------------------------
+
+Likviditás tranzakciórögzítő varázsló.
+
+
+Korábbi helye:
+    /ui/likviditas/dialogs/wizard_transaction.py
+
+Új helye:
+    /ui/likviditas/wizard/wizard_transaction.py
+
+Feladata:
+    - normál bevétel / kiadás rögzítése
+    - részletezett tételek kezelése
+    - számlabefizetéses flow kezelése
+    - MVMNext esetén fizetési dátum, időszak kezdete/vége, számla sorszáma
+
+Fontos döntés:
+    - dialogs mappa = egyszerű párbeszédablakok
+    - wizard mappa = többoldalas QWizard folyamatok
+
+Későbbi Aranyszámla irány:
+    /ui/aranyszamla/wizard/gold_wizard_transaction.py
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Számlák modul (bills):
+---------------------------
+
+Számlák modul adatút:
+
+- /ui/bills/ – Számlák modul
+- Számlák modul adatút
+- /ui/bills/bill_card.py
+- /ui/bills/bill_models.py
+- /ui/bills/bills_page.py
+- /ui/bills/monthly_grid_widget.py
+- /ui/bills/periodic_list_widget.py
+- /ui/bills/bill_details_dialog.py
+- MVMNext számlák
+
+
+
+
+
+
+
+
+
+
+
+wizard_transaction.py
+    -> TransactionDatabase.save_transaction()
+    -> transactions tábla
+    -> TransactionDatabase.get_bill_card_models(year)
+    -> BillCardModel / MonthlyAmount / PeriodicAmount
+    -> BillsPage
+    -> BillCard
+    -> MonthlyGridWidget vagy PeriodicListWidget
+    -> BillDetailsDialog
+
+Felelősségek:
+    - BillsPage: Számlák oldal, kártyák betöltése, reload
+    - BillCard: kártya kerete, cím, belső widget kiválasztása
+    - MonthlyGridWidget: havi számlák, pl. Telekom / KalászNet
+    - PeriodicListWidget: időszakos számlák, pl. MVMNext
+    - BillDetailsDialog: részletező / törlő ablak
+    - bill_models.py: UI-only dataclass modellek
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### /ui/bills/bill_card.py:
 --------------------------
  nagyon rendben van: tiszta, UI-only komponens, jó separation (nincs DB/logika), és a “kártya” viselkedés (kattintás, inaktív stílus) korrektül meg van oldva. 
 
@@ -107,7 +391,7 @@ Ami kifejezetten jó:
 
 
 
-/ui/bills/bill_model.py:
+### /ui/bills/bill_model.py:
 --------------------------
 A /ui/bills/bill_models.py jó, tiszta UI-adatmodell réteg: “frozen” dataclass, egyszerű típusok, és a BillKind literal miatt a kódbázis többi része 
 (pl. BillCard) jól típusoztatva marad.
@@ -132,7 +416,7 @@ bill_models
 
 
 
-/ui/bills/bills_page.py:
+### /ui/bills/bills_page.py:
 --------------------------
 jelenlegi állapotában stabil, tiszta “oldal-komponens”, és jó alapot ad a későbbi DB-rákötéshez. A szerkezet (QScrollArea + FlowLayout + BillCard) ergonomikus, a szűrőállapot (_year, _all_years) pedig helyesen a MainWindow felől vezérelt. 
 
@@ -154,7 +438,7 @@ Ami most kifejezetten jó
 
 
 
-/ui/bills/monthly_grid_widget.py:
+### /ui/bills/monthly_grid_widget.py:
 -------------------------------------
 összességében rendben van: egyszerű, stabil widget, jó QSS-hook (objectName="monthlyGrid", property-k a cellákon), és a 12 hónapos fix táblázatos 
 megjelenítés a számlák kártyáján UX-ben korrekt.
@@ -178,30 +462,16 @@ Ami jó és maradhat
 
 
 
-Javasolt további fejlesztések:
--------------------------------
-
-Rövid, konkrét teendőlista (kis munka, nagy konzisztencia):
--------------------------------------------------------------
-
-    - MonthlyAmount.amount → int (vagy legalább itt kezeld intként).
-
-    - _fmt_huf() helyett központi util használata.
-
-    - Duplikált hónapok: vagy assert, vagy aggregálás (attól függ, DB-ből hogyan fogod adni).
 
 
 
-
-
-
-/ui/bills/periodic_list_widget.py:
--------------------------------------
+### /ui/bills/periodic_list_widget.py:
+---------------------------------------
 Ugyanolyan “jó alap, de érdemes egységesíteni” kategória, mint a MonthlyGridWidget: tiszta, kicsi widget, QSS-hookokkal, és a periodikus tételeket jól listázza.
 
 
 Ami jó:
---------
+
 
 
     - Letisztult felelősség: csak megjelenít, semmi logika/DB. 
@@ -218,7 +488,7 @@ Ami jó:
 
 
 Kockázatok / finomítandó pontok:
-----------------------------------
+
 
     1) Pénz float + duplikált formázó
 
@@ -265,7 +535,7 @@ Kockázatok / finomítandó pontok:
 
 
 Javasolt további fejlesztések:
-----------------------------------
+
 
         Rövid teendő a monthly_grid_widget.py + periodic_list_widget.py pároshoz:
 
@@ -279,7 +549,37 @@ Javasolt további fejlesztések:
 
 
 
-Összefoglaló:
+
+
+
+
+### MVMNext számlák:
+----------------
+
+A wizardban rögzített mezők:
+    - Fizetés dátuma
+    - Időszak kezdete
+    - Időszak vége
+    - Összeg
+    - Számla sorszáma
+
+Megjelenítés:
+    - A számla sorszáma a kártyán jelenjen meg.
+    - A BillDetailsDialog Megjegyzés oszlopában csak a státusz legyen:
+        Fizetve / Nincs fizetve
+
+Fontos:
+    - A számla sorszáma nem a description / Megjegyzés mezőbe kerül.
+    - Külön transactions.invoice_number mezőként kezeljük.
+
+
+
+
+
+
+
+
+### Összefoglaló:
 --------------------------
 
 
@@ -290,7 +590,19 @@ Ezzel a Bills UI-rész gyakorlatilag kész arra, hogy DB-ből jövő valós adat
 
 
 
-/ui/dialogs/transaction_edit_dialog.py:
+
+
+
+
+
+
+
+
+
+
+
+## Dialógok:
+### /ui/dialogs/transaction_edit_dialog.py:
 -------------------------------------------
 
 Az a hely, ahol minden eddigi döntésed találkozik (DB-modell, HU/EN típus, dátum- és pénzkezelés)
@@ -321,7 +633,7 @@ Ez így UI-szinten korrekt.
 
 
 
-/ui/pages/base_page.py:
+### /ui/pages/base_page.py:
 ------------------------
 
 teljesen rendben van: egy minimál, tiszta “kontraktus” osztály az oldalakhoz, és pont azt a célt szolgálja, amit korábban is terveztél 
@@ -338,14 +650,14 @@ Ami jó (és maradjon):
 
 
 
-/ui/pages/home_page.py:
+### /ui/pages/home_page.py:
 ------------------------
 
 funkcionálisan jó, és a “Terv–Tény dashboard” logikád már most is koherens. Viszont ebben a fájlban van a legtöbb olyan pont, ami később “kicsi, de idegesítő” hibákhoz és inkonzisztenciához vezethet (pénzformátum, float, itemChanged rekurzió, évkezelés). Érdemes most rendbe tenni, mert ez lesz a napi használt képernyő.
 
 
 
-/ui/widgets/nav_bar.py
+### /ui/widgets/nav_bar.py
 -------------------------
 
 jó, egyszerű, célszerű – és pont olyan, amire egy ilyen appnál szükség van. Két apró korrekciót és egy ajánlott bővítést látok, hogy később se legyen “miért nem jelölődik ki rendesen?” típusú kellemetlenség
@@ -364,7 +676,7 @@ Ami jó (maradhat):
 
 
 
-Összegzés:
+### Összegzés:
 
     Ez a NavBar rendben van, nem kell túlgondolni. A három “életszagú” fejlesztés:
 
@@ -376,9 +688,20 @@ Ami jó (maradhat):
 
 
 
+## Widgetek
 
-/ui/widgets/ribbon_bar.py:
---------------------------
+### Közös widgetek
+
+Fájlok
+
+ - `/ui/widgets/nav_bar.py`
+ - `/ui/widgets/ribbon_bar.py`
+ - `/ui/widgets/year_tabs_bar.py`
+ - `/ui/widgets/transactions_filter_bar.py`
+
+
+### /ui/widgets/ribbon_bar.py:
+--------------------------------
 
 jó alap, egyszerű és érthető, és pontosan arra való, amire neked kell (Office-szerű “szalag”, tabok, QAction-gombok, collapse). Viszont van benne 2 konkrét technikai kockázat, amit érdemes most javítani, plusz 2 finomítás, amitől “késztermék”
 
@@ -403,8 +726,8 @@ jó alap, egyszerű és érthető, és pontosan arra való, amire neked kell (Of
 
 
 
-/ui/widgets/transactions_filter_bar.py
------------------------------------------
+### /ui/widgets/transactions_filter_bar.py
+--------------------------------------------
 kifejezetten jó irány: egy kicsi, újrahasznosítható, UI-only komponens, tiszta signal-kontraktussal. Ez pont az, ami később segít abban, hogy a TransactionsPage ne legyen tele “vezérlő UI” kóddal. 
 
 
@@ -435,8 +758,8 @@ Kapcsolat a TransactionsPage-el:
 
 
 
-/ui/widgets/year_tabs_bar.py
--------------------------------
+### /ui/widgets/year_tabs_bar.py
+-----------------------------------
 
     Ami kifejezetten jó:
 
@@ -459,7 +782,7 @@ Kapcsolat a TransactionsPage-el:
 
 
 
-/ui/charts.py
+## /ui/charts.py
 ----------------
 A szándékod (diagram-rajzolás kiszervezése a MainWindow-ból) teljesen helyes, és a ChartManager + ChartsContext felépítés jó alap. Ugyanakkor ebben a fájlban van néhány konkrét technikai/arch kockázat, amit érdemes most megfogni, különben később nehéz lesz konzisztensen karbantartani.
 
@@ -477,5 +800,4 @@ A szándékod (diagram-rajzolás kiszervezése a MainWindow-ból) teljesen helye
 
 
 
-ui/dialog_transaction_editor.py
-------------------------------------
+

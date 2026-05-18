@@ -4,7 +4,7 @@
 
 """
 Kezdőoldal / Dashboard oldal
-(penzugyi_naplo/ui/likviditas/pages/home_page.py).
+(ui/pages/home_page.py).
 
 Felelősség:
     - havi bontású pénzügyi összesítések megjelenítése
@@ -19,14 +19,14 @@ Adatforrás:
 
 UI:
     - havi táblázatos nézet (Jan–Dec fix sorrend)
-    - belső tabok: "Kezdőoldal" / "Számlák"
+
 
 Topology (UI):
     MainWindow
       └─ HomePage  ← this
            ├─ HomeSummaryPanel (ui/home_summary_panel.py)
-           └─ QTableWidget (havi dashboard)
-
+           ├─ monthly cards view
+           └─ HomeTableDialog (táblázatos nézet)
 """
 
 
@@ -50,7 +50,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
-    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -182,34 +181,18 @@ class HomePage(QWidget):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(10)
 
-
-        
-
-
-        # --- Belső tabok a Kezdőoldalon ---
-        self.tabs = QTabWidget(content)
-        self.tabs.setObjectName("homeTabs")
-
-
-       
-
-
-
-
-
-        # 1) Kezdőoldal TAB
-        tab_dashboard = QWidget()
-        dash_layout = QVBoxLayout(tab_dashboard)
-        dash_layout.setContentsMargins(0, 0, 0, 0)
-        dash_layout.setSpacing(12)
-
         self.summary = HomeSummaryPanel(self)
-        dash_layout.addWidget(self.summary)
-        dash_layout.addSpacing(8)
+        content_layout.addWidget(self.summary)
+        content_layout.addSpacing(8)
 
-        btn = QPushButton("Táblázatos nézet")   
+        btn = QPushButton("Táblázatos nézet")
+        btn.setObjectName("secondaryButton")
+        btn.setMaximumWidth(180)
+        btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         btn.clicked.connect(self.open_table_dialog)
-        dash_layout.addWidget(btn)
+
+        content_layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignRight)
+        print("HOME PAGE: Tablázatos nézet gomb letrehozva")
 
         self.dashboard_body = QFrame()
         self.dashboard_body.setObjectName("homeDashboardBody")
@@ -221,42 +204,15 @@ class HomePage(QWidget):
         self.cards_container = self._build_cards_view()
         self.dashboard_body_layout.addWidget(self.cards_container)
 
-        dash_layout.addWidget(self.dashboard_body, 1)
-        
-        # kis térköz
-        dash_layout.addSpacing(8)
+        content_layout.addWidget(self.dashboard_body, 1)
 
-
-
-
-
-       
-
-
-
-    
-      
-
-        # Tabok felvétele
-        self.tabs.addTab(tab_dashboard, "Kezdőoldal")
-        
-
-        # TabWidget a content-be
-        content_layout.addWidget(self.tabs)
-
-        # --- összerakás ---
         root.addWidget(title)
         root.addWidget(subtitle)
         root.addWidget(content, 1)
 
-        
-
         self.reload()
-
-      
         self._updating = False
 
-        
 
 
   
@@ -572,28 +528,10 @@ class HomePage(QWidget):
 
 
 
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-  
-
     def set_year(self, year: int) -> None:
         self._year = int(year)
         self.reload()
 
-    
-    
     
     
     
