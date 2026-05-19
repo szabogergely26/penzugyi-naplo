@@ -30,6 +30,8 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication 
 
 import penzugyi_naplo.config.config as config
@@ -63,6 +65,15 @@ def main() -> int:
 
     app = QApplication(sys.argv)
 
+    app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon.png"
+    app_icon = QIcon(str(app_icon_path))
+
+    print("APP ICON PATH:", app_icon_path)
+    print("APP ICON EXISTS:", app_icon_path.exists())
+    print("APP ICON NULL:", app_icon.isNull())
+
+    app.setWindowIcon(app_icon)
+
     app.setApplicationName(config.APP_NAME)
     app.setOrganizationName(config.ORG_NAME)
 
@@ -92,7 +103,9 @@ def main() -> int:
 
     db = TransactionDatabase(str(path))
     win = MainWindow(db=db, dev_mode=dev_mode)
-    win.show()
+    win.setWindowIcon(app_icon)
+    win.showMaximized()
+    
 
     log.info("APP EXEC START")
     rc = app.exec()

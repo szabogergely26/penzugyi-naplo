@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from PySide6.QtGui import QAction, QActionGroup
 
+from penzugyi_naplo.config.action_icons import apply_action_icons
 
 def create_likviditas_actions(window) -> None:
     """Likviditás nézethez tartozó actionök létrehozása."""
@@ -75,3 +76,7 @@ def create_likviditas_actions(window) -> None:
 
     window.act_version_history = QAction("Verziótörténet", window)
     window.act_version_history.triggered.connect(window._show_version_history)
+
+
+    # Központi ikonbeállítás a Likviditás actionökhöz.
+    apply_action_icons(window)

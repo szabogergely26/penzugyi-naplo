@@ -369,7 +369,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1440, 900)
 
         # Indításkor teljes méretű / maximalizált ablak.
-        self.showMaximized()
+        #self.showMaximized()
 
 
         self.load_style_mode()
