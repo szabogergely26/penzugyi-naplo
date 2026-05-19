@@ -78,7 +78,7 @@ def create_likviditas_standard_toolbar(window) -> QToolBar:
     toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 
     # Ikonméret.
-    toolbar.setIconSize(QSize(30, 30))
+    toolbar.setIconSize(QSize(25, 25))
 
     # A toolbar minimum / maximum magassága.
     toolbar.setMinimumHeight(90)
@@ -107,5 +107,40 @@ def create_likviditas_standard_toolbar(window) -> QToolBar:
     new_transaction_action.triggered.connect(window.on_new_transaction)
 
     toolbar.addAction(new_transaction_action)
+
+
+    # Vizuális elválasztó: új tranzakció | adatbázis műveletek
+    toolbar.addSeparator()
+
+    backup_action = QAction(
+        QIcon.fromTheme("document-save"),
+        "Mentés",
+        window,
+    )
+    backup_action.setObjectName("actionBackupDatabaseToolbar")
+    backup_action.setToolTip("Adatbázis biztonsági mentése")
+    backup_action.triggered.connect(window.on_backup_database)
+    toolbar.addAction(backup_action)
+
+    restore_action = QAction(
+        QIcon.fromTheme("document-open"),
+        "Betöltés",
+        window,
+    )
+    restore_action.setObjectName("actionRestoreDatabaseToolbar")
+    restore_action.setToolTip("Adatbázis betöltése mentésből")
+    restore_action.triggered.connect(window.on_restore_database)
+    toolbar.addAction(restore_action)
+
+
+
+
+
+
+
+
+
+
+
 
     return toolbar
