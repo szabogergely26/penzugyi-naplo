@@ -9,7 +9,7 @@ from typing import Final
 
 from PySide6.QtCore import QStandardPaths
 
-from penzugyi_naplo.config import is_dev_mode
+from penzugyi_naplo.config.config import is_dev_mode
 
 APP_NAME: Final[str] = "PenzugyiNaplo"
 

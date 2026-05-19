@@ -32,7 +32,7 @@ import sys
 from pathlib import Path
 from PySide6.QtWidgets import QApplication 
 
-import penzugyi_naplo.config as config
+import penzugyi_naplo.config.config as config
 
 from penzugyi_naplo.core.logging_utils import Log, DebugFlags
 

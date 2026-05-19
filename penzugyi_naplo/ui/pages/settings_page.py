@@ -40,7 +40,7 @@ from PySide6.QtWidgets import (
     QDialog,
 )
 
-from penzugyi_naplo.config import (
+from penzugyi_naplo.config.config import (
     APP_NAME, 
     ORG_NAME,
     SETTINGS_KEY_STYLE_MODE,

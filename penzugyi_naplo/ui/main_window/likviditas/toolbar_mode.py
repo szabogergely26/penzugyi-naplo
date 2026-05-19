@@ -24,7 +24,7 @@ from PySide6.QtCore import Qt, QSize, QSettings, QTimer
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar
 
-from penzugyi_naplo.config import APP_NAME, ORG_NAME
+from penzugyi_naplo.config.config import APP_NAME, ORG_NAME
 
 
 def set_likviditas_toolbar_mode(window, mode: str) -> None:
