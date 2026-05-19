@@ -20,9 +20,8 @@ Fontos:
 
 from __future__ import annotations
 
-from PySide6.QtCore import QSettings, QTimer
-from PySide6.QtGui import QAction
-
+from PySide6.QtCore import Qt, QSize, QSettings, QTimer
+from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar
 
 from penzugyi_naplo.config import APP_NAME, ORG_NAME
@@ -75,7 +74,35 @@ def create_likviditas_standard_toolbar(window) -> QToolBar:
     toolbar.setMovable(False)
     toolbar.setFloatable(False)
 
-    new_transaction_action = QAction("Tranzakció Varázsló", window)
+   # Ikon felül, szöveg alatta.
+    toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+
+    # Ikonméret.
+    toolbar.setIconSize(QSize(30, 30))
+
+    # A toolbar minimum / maximum magassága.
+    toolbar.setMinimumHeight(90)
+    toolbar.setMaximumHeight(90)
+
+    # A gombok saját mérete/paddingje is számít, nem csak a toolbar magassága.
+    toolbar.setStyleSheet("""
+    QToolBar#likviditasStandardToolbar {
+        spacing: 4px;
+        padding: 4px 8px;
+    }
+
+    QToolBar#likviditasStandardToolbar QToolButton {
+        min-width: 92px;
+        min-height: 58px;
+        padding: 4px 6px;
+    }
+    """)
+
+    new_transaction_action = QAction(
+        QIcon.fromTheme("document-new"),
+        "Tranzakció Varázsló",
+        window,
+    )
     new_transaction_action.setObjectName("actionTransactionWizardToolbar")
     new_transaction_action.triggered.connect(window.on_new_transaction)
 
