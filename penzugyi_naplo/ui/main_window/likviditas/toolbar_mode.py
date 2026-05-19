@@ -13,9 +13,17 @@ Fontos:
     - Ez a modul csak a már létrehozott UI elemek láthatóságát kezeli.
 """
 
+
+
+
+
+
 from __future__ import annotations
 
 from PySide6.QtCore import QSettings, QTimer
+from PySide6.QtGui import QAction
+
+from PySide6.QtWidgets import QToolBar
 
 from penzugyi_naplo.config import APP_NAME, ORG_NAME
 
@@ -32,6 +40,9 @@ def set_likviditas_toolbar_mode(window, mode: str) -> None:
 
     if hasattr(window, "ribbon") and window.ribbon:
         window.ribbon.setVisible(is_ribbon)
+
+    if hasattr(window, "likviditas_standard_toolbar"):
+        window.likviditas_standard_toolbar.setVisible(not is_ribbon)
 
     window.act_toolbar_menubar.setChecked(not is_ribbon)
     window.act_toolbar_ribbon.setChecked(is_ribbon)
@@ -50,3 +61,24 @@ def load_likviditas_toolbar_mode(window) -> None:
         mode = "menubar"
 
     set_likviditas_toolbar_mode(window, mode)
+
+
+def create_likviditas_standard_toolbar(window) -> QToolBar:
+    """
+    Menüsoros / standard nézet alatti egyszerű eszköztár létrehozása.
+
+    Ide kerülnek azok a gyakori műveletek, amelyekhez nem akarunk
+    külön Fájl menübe bemenni.
+    """
+    toolbar = QToolBar("Likviditás eszköztár", window)
+    toolbar.setObjectName("likviditasStandardToolbar")
+    toolbar.setMovable(False)
+    toolbar.setFloatable(False)
+
+    new_transaction_action = QAction("Tranzakció Varázsló", window)
+    new_transaction_action.setObjectName("actionTransactionWizardToolbar")
+    new_transaction_action.triggered.connect(window.on_new_transaction)
+
+    toolbar.addAction(new_transaction_action)
+
+    return toolbar

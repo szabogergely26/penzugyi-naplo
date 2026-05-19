@@ -112,6 +112,7 @@ from penzugyi_naplo.ui.main_window.likviditas.actions import (
 )
 
 from penzugyi_naplo.ui.main_window.likviditas.toolbar_mode import (
+    create_likviditas_standard_toolbar,
     load_likviditas_toolbar_mode,
     set_likviditas_toolbar_mode,
 )
@@ -316,6 +317,12 @@ class MainWindow(QMainWindow):
 
         self._build_menubar()
 
+        # --- Standard / menüsoros eszköztár ---
+        self.likviditas_standard_toolbar = create_likviditas_standard_toolbar(self)
+        self.addToolBar(
+            Qt.ToolBarArea.TopToolBarArea,
+            self.likviditas_standard_toolbar,
+        )
 
 
         # --- LEFT: Year tabs (EGYSZER) ---
