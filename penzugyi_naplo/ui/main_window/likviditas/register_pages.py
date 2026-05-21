@@ -35,16 +35,8 @@ def register_likviditas_pages(window) -> None:
     window.add_page("transactions", TransactionsPage(window, db=window.db))
 
     # --- Statisztika ---
-    if window.dev_mode:
-        window.add_page("statistics", StatisticsPage(window.ctx, parent=window))
-    else:
-        window.add_page(
-            "statistics",
-            ComingSoonPage(
-                title="Statisztika",
-                msg="Diagrammok és kimutatások (fejlesztés alatt).",
-            ),
-        )
+    window.add_page("statistics", StatisticsPage(window.ctx, parent=window))
+    
 
     
 
