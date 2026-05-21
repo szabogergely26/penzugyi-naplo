@@ -869,13 +869,8 @@ class MainWindow(QMainWindow):
 
         if wiz.exec() == QDialog.DialogCode.Accepted:
             # Nem váltunk automatikusan a Tranzakciók oldalra.
-            # A wizard maga frissíti az érintett oldalakat
-            # (pl. Tranzakciók, Számlák), így a felhasználó
-            # azon az oldalon marad, ahonnan a műveletet indította.
-
-            current_page = getattr(self, "current_page", None)
-            if current_page is not None and hasattr(current_page, "reload"):
-                current_page.reload()
+            # Minden regisztrált oldal frissül, amely támogatja a reload() függvényt.
+            self.reload_all_pages()
 
 
 
@@ -944,22 +939,23 @@ class MainWindow(QMainWindow):
 
 
     def reload_all_pages(self) -> None:
-        # ahol van bind_db: újra ráadjuk a DB-t (ha restore/reset miatt új példány lett)
+        """
+        Az összes regisztrált oldal újrakötése és frissítése.
+
+        Új oldalnál elég reload() metódust adni az oldalnak,
+        és automatikusan részt vesz a központi frissítésben.
+        """
+
+
         for page in self.pages.values():
-            if hasattr(page, "bind_db"):
-                page.bind_db(self.db)
+            bind_db = getattr(page, "bind_db", None)
+            if callable(bind_db):
+                bind_db(self.db)
 
-        # ahol van reload: meghívjuk
         for page in self.pages.values():
-            if hasattr(page, "reload"):
-                page.reload()
-
-        # extra: ha van “aktuális oldal” specifikus frissítés (nem kötelező)
-        w = self.page_stack.currentWidget() if hasattr(self, "page_stack") else None
-
-        if w is not None and hasattr(w, "reload"):
-            w.reload()
-
+            reload_method = getattr(page, "reload", None)
+            if callable(reload_method):
+                reload_method()
 
 
     def show_settings_dialog(self) -> None:
