@@ -186,8 +186,8 @@ class StatisticsPage(QWidget):
         """
         Felső összegző kártyasor létrehozása.
 
-        Ugyanezt használhatja az Általános és a Diagramok fül is.
-        A létrehozott kártyákat eltesszük, hogy refreshkor egyszerre frissüljenek.
+        Az Általános fül felső összegző kártyasorát hozza létre.
+        A létrehozott kártyákat eltesszük, hogy refreshkor frissíthetők legyenek.
         """
 
         container = QWidget()
@@ -343,9 +343,8 @@ class StatisticsPage(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(14)
 
-        # Diagramok fül tetejére is jöhetnek az összesítő kártyák.
-        self.charts_summary_cards = self._build_summary_cards()
-        layout.addWidget(self.charts_summary_cards)
+
+        
 
         monthly_card = QFrame()
         monthly_card.setObjectName("statisticsChartCard")
