@@ -147,8 +147,8 @@ class StatisticsPage(QWidget):
 
         self.ctx = ctx
 
-        # A statisztikai kártyák több fülön is megjelenhetnek.
-        # Ezért listában tároljuk a kártyacsoportokat, hogy refreshkor mind frissüljön.
+        # A statisztikai kártyákat listában tároljuk,
+        # hogy refreshkor egységesen frissíthetők legyenek.
         self.summary_card_sets: list[tuple[
             StatisticSummaryCard,
             StatisticSummaryCard,
@@ -504,9 +504,8 @@ class StatisticsPage(QWidget):
         """
         Felső statisztikai kártyák frissítése.
 
-        Minden regisztrált kártyasort frissít:
-            - Általános fül
-            - Diagramok fül
+        Minden regisztrált összegző kártyasort frissít.
+        Jelenleg az Általános fül kártyáit kezeli.
         """
         saving = income_total - expense_total
 
@@ -808,7 +807,7 @@ class StatisticsPage(QWidget):
             )
 
             slice_item = series.append(label, amount)
-            slice_item.setLabelVisible(True)
+            slice_item.setLabelVisible(False)
             slice_item.setColor(colors[index % len(colors)])
 
         chart.addSeries(series)
