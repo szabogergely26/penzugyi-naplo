@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QToolTip,
     
 )
 
@@ -763,6 +764,22 @@ class StatisticsPage(QWidget):
             slice_item = series.append(label, amount)
             slice_item.setLabelVisible(False)
             slice_item.setColor(colors[index % len(colors)])
+
+            tooltip_text = (
+                f"{category_name}\n"
+                f"{self._format_money(amount)}\n"
+                f"{percent:.1f}%"
+            )
+
+            slice_item.hovered.connect(
+                lambda hovered, text=tooltip_text: QToolTip.showText(
+                    self.category_pie_chart_view.cursor().pos(),
+                    text,
+                    self.category_pie_chart_view,
+                )
+                if hovered
+                    else QToolTip.hideText()
+            )
 
         chart.addSeries(series)
 
