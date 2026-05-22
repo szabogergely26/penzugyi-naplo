@@ -1,5 +1,5 @@
-# - penzugyi_naplo/ui/pages/statistics_page.py
-# -----------------------------------------------
+# - penzugyi_naplo/ui/likviditas/pages/statistics_page.py
+# ---------------------------------------------------------
 
 """
 Statisztika oldal a fő alkalmazásban
@@ -122,25 +122,6 @@ class StatisticSummaryCard(QFrame):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class StatisticsPage(QWidget):
     def __init__(self, ctx:Any = None, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -224,33 +205,6 @@ class StatisticsPage(QWidget):
         )
 
         return container
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
