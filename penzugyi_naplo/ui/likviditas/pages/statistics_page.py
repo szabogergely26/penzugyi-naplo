@@ -1,5 +1,5 @@
-# - penzugyi_naplo/ui/pages/statistics_page.py
-# -----------------------------------------------
+# - penzugyi_naplo/ui/likviditas/pages/statistics_page.py
+# ---------------------------------------------------------
 
 """
 Statisztika oldal a fő alkalmazásban
@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QToolTip,
     
 )
 
@@ -122,33 +123,14 @@ class StatisticSummaryCard(QFrame):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class StatisticsPage(QWidget):
     def __init__(self, ctx:Any = None, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
         self.ctx = ctx
 
-        # A statisztikai kártyák több fülön is megjelenhetnek.
-        # Ezért listában tároljuk a kártyacsoportokat, hogy refreshkor mind frissüljön.
+        # A statisztikai kártyákat listában tároljuk,
+        # hogy refreshkor egységesen frissíthetők legyenek.
         self.summary_card_sets: list[tuple[
             StatisticSummaryCard,
             StatisticSummaryCard,
@@ -186,8 +168,8 @@ class StatisticsPage(QWidget):
         """
         Felső összegző kártyasor létrehozása.
 
-        Ugyanezt használhatja az Általános és a Diagramok fül is.
-        A létrehozott kártyákat eltesszük, hogy refreshkor egyszerre frissüljenek.
+        Az Általános fül felső összegző kártyasorát hozza létre.
+        A létrehozott kártyákat eltesszük, hogy refreshkor frissíthetők legyenek.
         """
 
         container = QWidget()
@@ -224,33 +206,6 @@ class StatisticsPage(QWidget):
         )
 
         return container
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -343,9 +298,8 @@ class StatisticsPage(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(14)
 
-        # Diagramok fül tetejére is jöhetnek az összesítő kártyák.
-        self.charts_summary_cards = self._build_summary_cards()
-        layout.addWidget(self.charts_summary_cards)
+
+        
 
         monthly_card = QFrame()
         monthly_card.setObjectName("statisticsChartCard")
@@ -505,9 +459,8 @@ class StatisticsPage(QWidget):
         """
         Felső statisztikai kártyák frissítése.
 
-        Minden regisztrált kártyasort frissít:
-            - Általános fül
-            - Diagramok fül
+        Minden regisztrált összegző kártyasort frissít.
+        Jelenleg az Általános fül kártyáit kezeli.
         """
         saving = income_total - expense_total
 
@@ -809,8 +762,24 @@ class StatisticsPage(QWidget):
             )
 
             slice_item = series.append(label, amount)
-            slice_item.setLabelVisible(True)
+            slice_item.setLabelVisible(False)
             slice_item.setColor(colors[index % len(colors)])
+
+            tooltip_text = (
+                f"{category_name}\n"
+                f"{self._format_money(amount)}\n"
+                f"{percent:.1f}%"
+            )
+
+            slice_item.hovered.connect(
+                lambda hovered, text=tooltip_text: QToolTip.showText(
+                    self.category_pie_chart_view.cursor().pos(),
+                    text,
+                    self.category_pie_chart_view,
+                )
+                if hovered
+                    else QToolTip.hideText()
+            )
 
         chart.addSeries(series)
 
