@@ -46,23 +46,18 @@ Fontos:
 
 from __future__ import annotations
 
-
 from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import QEvent, QSettings, Qt, QTimer
 from PySide6.QtWidgets import (
-    QPushButton,
     QButtonGroup,
-
-
     QDialog,
-
     QHBoxLayout,
     QLabel,
     QMainWindow,
-
     QMessageBox,
+    QPushButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -70,72 +65,52 @@ from PySide6.QtWidgets import (
 
 from penzugyi_naplo.config import (
     APP_NAME,
+    AVAILABLE_STYLE_MODES,
+    DEFAULT_STYLE_MODE,
     ORG_NAME,
     SETTINGS_KEY_STYLE_MODE,
     STYLE_CLASSIC,
     STYLE_MODERN,
     STYLE_MODERN_HOME,
-    DEFAULT_STYLE_MODE,
-    AVAILABLE_STYLE_MODES,
 )
-
 from penzugyi_naplo.core.app_context import AppContext, AppState
 from penzugyi_naplo.core.logging_utils import DebugFlags, Log
 from penzugyi_naplo.db.transaction_database import TransactionDatabase
-
 from penzugyi_naplo.ui.dialogs.about_dialog import AboutDialog
+from penzugyi_naplo.ui.dialogs.log_viewer_dialog import LogViewerDialog
+from penzugyi_naplo.ui.dialogs.version_history_dialog import VersionHistoryDialog
 from penzugyi_naplo.ui.dialogs.version_info import VersionInfoDialog
 from penzugyi_naplo.ui.likviditas.wizard.wizard_transaction import TransactionWizard
 
-from penzugyi_naplo.ui.settings.settings import SettingsDialog
-
-from penzugyi_naplo.ui.shared.nav_bar import NavBar
-
-
-from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
-from penzugyi_naplo.ui.dialogs.log_viewer_dialog import LogViewerDialog
-from penzugyi_naplo.ui.dialogs.version_history_dialog import VersionHistoryDialog
-
-
-
-from penzugyi_naplo.ui.main_window.likviditas.register_pages import (
-    register_likviditas_pages,
+# - Aranyszámla importok:
+from penzugyi_naplo.ui.main_window.aranyszamla.register_pages import (
+    register_aranyszamla_pages,
 )
-
-from penzugyi_naplo.ui.main_window.likviditas.menus import (
-    build_likviditas_menubar,
-    build_likviditas_ribbon,
+from penzugyi_naplo.ui.main_window.aranyszamla.wizard.gold_trade_wizard import (
+    GoldTradeWizard,
 )
-
 from penzugyi_naplo.ui.main_window.likviditas.actions import (
     create_likviditas_actions,
 )
-
-from penzugyi_naplo.ui.main_window.likviditas.toolbar_mode import (
-    load_likviditas_toolbar_mode,
-    set_likviditas_toolbar_mode,
-)
-
-
-from penzugyi_naplo.ui.main_window.likviditas.import_handlers import handle_ods_import
-
-
 from penzugyi_naplo.ui.main_window.likviditas.backup_restore_handlers import (
     handle_backup_database,
     handle_restore_database,
 )
-
-
-
-# - Aranyszámla importok:
-
-from penzugyi_naplo.ui.main_window.aranyszamla.register_pages import (
-    register_aranyszamla_pages,
+from penzugyi_naplo.ui.main_window.likviditas.import_handlers import handle_ods_import
+from penzugyi_naplo.ui.main_window.likviditas.menus import (
+    build_likviditas_menubar,
+    build_likviditas_ribbon,
 )
-
-from penzugyi_naplo.ui.main_window.aranyszamla.wizard.gold_trade_wizard import (
-    GoldTradeWizard,
+from penzugyi_naplo.ui.main_window.likviditas.register_pages import (
+    register_likviditas_pages,
 )
+from penzugyi_naplo.ui.main_window.likviditas.toolbar_mode import (
+    load_likviditas_toolbar_mode,
+    set_likviditas_toolbar_mode,
+)
+from penzugyi_naplo.ui.settings.settings import SettingsDialog
+from penzugyi_naplo.ui.shared.nav_bar import NavBar
+from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
 
 # ------- Importok vége -------
 
@@ -866,9 +841,7 @@ class MainWindow(QMainWindow):
             # (pl. Tranzakciók, Számlák), így a felhasználó
             # azon az oldalon marad, ahonnan a műveletet indította.
 
-            current_page = getattr(self, "current_page", None)
-            if current_page is not None and hasattr(current_page, "reload"):
-                current_page.reload()
+            self.reload_all_pages()
 
 
 
