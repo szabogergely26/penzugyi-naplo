@@ -2,7 +2,7 @@
 # ---------------------------------------------------------
 
 """
-Aranyszámla modul konténeroldal.
+Aranyszámla modul konténeroldal / főoldal.
 
 Feladata:
 - saját belső nav_bar biztosítása

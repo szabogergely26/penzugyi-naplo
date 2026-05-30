@@ -8,11 +8,15 @@ Aranyszámla kezdőoldal.
 
 Feladata:
 - az Aranyszámla modul nyitóképernyőjének megjelenítése
+- füles nézet biztosítása:
+  - Aranyszámla: összesített aranyszámla, fizikai termékek nélkül
+  - Fizikai termékek: megvásárolt fizikai termékek diagramjai
 - aranykupac / aranytartalék jellegű vizuális blokk
 - összes gramm és becsült érték megjelenítése
 
 Később:
 - valós adatok bekötése adatbázisból
+- fizikai termékek külön adatmodellje
 - érték számítása aktuális árfolyam alapján
 - finom animáció / látványelemek
 """
@@ -20,8 +24,12 @@ Később:
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
+
+
 from PySide6.QtWidgets import (
     QFrame,
+ 
+    QTabWidget,
     QHBoxLayout,
     QLabel,
     QSizePolicy,
@@ -31,16 +39,30 @@ from PySide6.QtWidgets import (
 
 from penzugyi_naplo.db.gold_database import get_gold_summary
 
-class AranyszamlaHomePage(QWidget):
-    """Az Aranyszámla modul kezdőoldala."""
 
-    def __init__(self, db_path: str,  parent=None):
+
+
+class AranyszamlaHomePage(QWidget):
+    """
+    Az Aranyszámla modul kezdőoldala.
+    
+    Fülek:
+        - Aranyszámla: teljes aranyszámla, fizikai termékek nélkül
+        - Fizikai termékek: fizikai aranytermékek diagramjai
+    """
+
+    def __init__(self, db_path: str, parent=None):
         super().__init__(parent)
 
         self.db_path = db_path
 
         self.setObjectName("aranyszamlaHomePage")
+        self._build_ui()
+        self.refresh()
 
+    
+
+    def _build_ui(self) -> None:
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(32, 28, 32, 32)
         main_layout.setSpacing(24)
@@ -50,6 +72,28 @@ class AranyszamlaHomePage(QWidget):
 
         subtitle = QLabel("Arany megtakarításod egyszerű áttekintése")
         subtitle.setObjectName("aranyszamlaPageSubtitle")
+
+        self.tabs = QTabWidget()
+        self.tabs.setObjectName("aranyszamlaHomeTabs")
+
+        self.account_tab = self._create_account_tab()
+        self.physical_products_tab = self._create_physical_products_tab()
+
+        self.tabs.addTab(self.account_tab, "Aranyszámla")
+        self.tabs.addTab(self.physical_products_tab, "Fizikai termékek")
+
+        main_layout.addWidget(title)
+        main_layout.addWidget(subtitle)
+        main_layout.addWidget(self.tabs, 1)
+
+
+
+    def _create_account_tab(self) -> QWidget:
+        page = QWidget()
+
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(24)
 
         hero_card = QFrame()
         hero_card.setObjectName("aranyszamlaHeroCard")
@@ -122,12 +166,50 @@ class AranyszamlaHomePage(QWidget):
         hero_layout.addWidget(visual_box, 2)
         hero_layout.addWidget(info_box, 3)
 
-        main_layout.addWidget(title)
-        main_layout.addWidget(subtitle)
-        main_layout.addWidget(hero_card, 1)
+        layout.addWidget(hero_card, 1)
+
+        return page
 
 
-        self.refresh()
+
+
+
+    def _create_physical_products_tab(self) -> QWidget:
+        page = QWidget()
+
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(16)
+
+        placeholder_card = QFrame()
+        placeholder_card.setObjectName("aranyszamlaHeroCard")
+
+        placeholder_layout = QVBoxLayout(placeholder_card)
+        placeholder_layout.setContentsMargins(32, 32, 32, 32)
+        placeholder_layout.setSpacing(12)
+
+        title = QLabel("Fizikai termékek")
+        title.setObjectName("aranyszamlaSectionTitle")
+
+        text = QLabel(
+            "Itt jelennek majd meg a megvásárolt fizikai aranytermékek diagramjai.\n\n"
+            "Például:\n"
+            "- érmék / rudak megoszlása\n"
+            "- termékenkénti gramm mennyiség\n"
+            "- bekerülési érték terméktípus szerint"
+        )
+        text.setObjectName("aranyszamlaHintText")
+        text.setWordWrap(True)
+
+        placeholder_layout.addWidget(title)
+        placeholder_layout.addWidget(text)
+        placeholder_layout.addStretch(1)
+
+        layout.addWidget(placeholder_card, 1)
+
+        return page
+
+
 
 
 
