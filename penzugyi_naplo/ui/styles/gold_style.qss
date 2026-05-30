@@ -159,3 +159,35 @@ QLabel#aranyszamlaEmptyText {
     font-size: 13px;
     color: #80692e;
 }
+
+
+
+
+/* QWizard + Image */
+
+#goldWizardImagePanel {
+    border-radius: 18px;
+    background-color: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+#goldWizardImagePlaceholder {
+    font-size: 64px;
+}
+
+#goldWizardImageTitle {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#goldWizardImageSubtitle {
+    font-size: 13px;
+}
+
+#goldWizardFieldLabel {
+    font-weight: 700;
+}
+
+#goldWizardHint {
+    opacity: 0.82;
+}

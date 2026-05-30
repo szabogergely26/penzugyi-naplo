@@ -309,6 +309,14 @@ class GoldTradingPage(QWidget):
         self.load_transactions()
 
 
+        parent = self.parent()
+        while parent is not None:
+            if hasattr(parent, "refresh"):
+                parent.refresh()
+                break
+
+            parent = parent.parent()
+
 
 
 
