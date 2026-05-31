@@ -30,6 +30,7 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication 
 
 import penzugyi_naplo.config as config
@@ -62,6 +63,13 @@ def main() -> int:
 
 
     app = QApplication(sys.argv)
+    BASE_DIR = Path(__file__).resolve().parent
+    APP_ICON_PATH = BASE_DIR / "icons" / "app_icon_main.png"
+
+    if APP_ICON_PATH.exists():
+        app.setWindowIcon(QIcon(str(APP_ICON_PATH)))
+    else:
+        print(f"APP ICON NOT FOUND: {APP_ICON_PATH}")
 
     app.setApplicationName(config.APP_NAME)
     app.setOrganizationName(config.ORG_NAME)
