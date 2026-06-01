@@ -31,6 +31,10 @@ cp "$SCRIPT_DIR/control" "$DEBIAN_DIR/control"
 rsync -a \
   --exclude ".git" \
   --exclude ".gitignore" \
+  --exclude ".env" \
+  --exclude "*.env" \
+  --exclude ".github" \
+  --exclude ".vscode" \
   --exclude ".venv" \
   --exclude "__pycache__" \
   --exclude ".ruff_cache" \
@@ -42,14 +46,22 @@ rsync -a \
   --exclude "*.deb" \
   --exclude "packaging" \
   --exclude "menubejegyzes" \
+  --exclude "Mentes" \
+  --exclude "Mentes/***" \
   --exclude "build-venv.sh" \
   --exclude "start.sh" \
   --exclude "penzugyi_naplo.sh" \
   --exclude "/icons/hicolor/***" \
   --exclude "/data/***" \
+  --exclude "data/***" \
+  --exclude "*/data/***" \
+  --exclude "logs/***" \
+  --exclude "*/logs/***" \
+  --exclude "*.log" \
   --exclude "*.db" \
   --exclude "*.sqlite" \
   --exclude "*.sqlite3" \
+  --exclude "*.bak" \
   "$PROJECT_ROOT/" "$BUILD_DIR/usr/share/$PACKAGE_NAME/"
 
 # Futtató wrapper: ez lesz az Exec=penzugyi-naplo célja.
