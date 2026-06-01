@@ -106,7 +106,7 @@ def dev_project_data_dir() -> Path:
 
 
 def active_data_dir() -> Path:
-    return dev_project_data_dir() if is_dev_project() else stable_data_dir()
+    return dev_project_data_dir() if is_dev_mode() else stable_data_dir()
 
 
 # -----------------------------
