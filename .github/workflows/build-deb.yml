@@ -1,0 +1,40 @@
+name: Build DEB package
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev fakeroot rsync desktop-file-utils
+
+      - name: Make build script executable
+        run: |
+          chmod +x packaging/deb/build_deb.sh
+
+      - name: Build deb package
+        run: |
+          ./packaging/deb/build_deb.sh
+
+      - name: Collect deb artifact
+        run: |
+          mkdir -p artifacts
+          find . -type f -name "*.deb" -print -exec cp {} artifacts/ \;
+          test -n "$(find artifacts -type f -name '*.deb' -print -quit)"
+
+      - name: Upload deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: penzugyi-naplo-deb
+          path: artifacts/*.deb
