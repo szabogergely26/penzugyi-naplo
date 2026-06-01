@@ -47,6 +47,9 @@ rsync -a \
   --exclude "penzugyi_naplo.sh" \
   --exclude "/icons/hicolor/***" \
   --exclude "/data/***" \
+  --exclude "*.db" \
+  --exclude "*.sqlite" \
+  --exclude "*.sqlite3" \
   "$PROJECT_ROOT/" "$BUILD_DIR/usr/share/$PACKAGE_NAME/"
 
 # Futtató wrapper: ez lesz az Exec=penzugyi-naplo célja.
