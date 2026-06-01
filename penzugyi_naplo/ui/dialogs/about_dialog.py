@@ -13,10 +13,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "4.5-dev"
-BUILD_INFO = "Fejlesztés alatt...\n2025. novembertől"
-DEV_STATE = "Aktuális fejlesztési állapot:\n4.6"
+from penzugyi_naplo.app_version import (
+    APP_NAME,
+    APP_VERSION,
+    BUILD_INFO,
+    DEV_STATE,
+)
 
 
 class AboutDialog(QDialog):
