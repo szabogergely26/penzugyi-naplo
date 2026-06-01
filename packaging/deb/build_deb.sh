@@ -105,6 +105,8 @@ Copyright: 2026 Gergely Szabó
 License: proprietary
  All rights reserved.
 EOF
+# README dokumentáció
+cp "$PROJECT_ROOT/readme.md" "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/README.md"
 
 # Jogosultságok rendezése.
 find "$BUILD_DIR" -type d -exec chmod 755 {} \;
