@@ -10,8 +10,27 @@ Célja, hogy hónapok múlva is gyorsan megtalálható legyen:
     - milyen adatútvonalon megy végig egy funkció,
     - milyen döntéseket hoztunk korábban.
 
+    - Kitűzött célok tisztázása
 
 
+## - Kitűzött célok:
+    Likviditás/Tranzakciók:
+        - Jobb gomb: oszlopszűrő lista az oszlopra kattintva
+        - Bal gomb: növekvő/ csökkenő sorrend
+        -  Részletes tételhez utólag lehessen új sort hozzáadni
+        
+    Tranzakciós lista frissítése a Varázsló bezárása után
+
+    Pénztárcák:
+        - Bank szekcióba Hitelkártya
+        - Előzmények lista törlésének lehetősége (vagy mindig az utolsó 30 nap mutatása)
+        - Kézi rögzítés típusához lenyíló nyíl
+
+
+    Számlák:
+        - Hónapok jelzése számmal
+
+       
 
 
 ## Projekt fő részei
