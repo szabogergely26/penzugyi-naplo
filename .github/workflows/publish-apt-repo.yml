@@ -31,7 +31,7 @@ jobs:
 
       # A projekt .deb csomagjának elkészítése.
       # A build_deb.sh jelenleg ezt hozza létre:
-      # build/penzugyi-naplo_0.1.1_all.deb
+      # build/penzugyi-naplo_0.1.2_all.deb
       - name: Build deb package
         run: |
           ./packaging/deb/build_deb.sh

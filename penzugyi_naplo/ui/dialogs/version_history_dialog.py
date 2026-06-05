@@ -14,6 +14,13 @@ class VersionHistoryDialog(QDialog):
         browser = QTextBrowser(self)
         browser.setHtml("""
         <h1>Verziótörténet – Pénzügyi Napló</h1>
+
+        <h2>0.1.2 – 2026-06-05</h2>
+        <ul>
+            <li>Tranzakciólista frissítése wizard befejezése után.</li>
+            <li>Évszűrő kezelés javítása a Tranzakciók oldalon.</li>
+        </ul>                
+        
                         
         <h2>0.1.1 – 2026-06-05</h2>
         <ul>

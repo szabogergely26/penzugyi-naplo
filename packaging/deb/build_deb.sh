@@ -2,7 +2,7 @@
 set -e
 
 PACKAGE_NAME="penzugyi-naplo"
-VERSION="0.1.1"
+VERSION="0.1.2"
 ARCH="all"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -83,7 +83,7 @@ cp -r "$PROJECT_ROOT/packaging/icons/hicolor/"* \
 
 # Debian changelog.
 cat > "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/changelog" <<EOF
-penzugyi-naplo (0.1.1) stable; urgency=low
+penzugyi-naplo (0.1.2) stable; urgency=low
 
   * Aláírt APT szoftverforrás hozzáadása GitHub Pages alapon.
   * InRelease és Release.gpg fájlok generálása GPG aláírással.
