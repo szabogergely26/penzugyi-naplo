@@ -287,6 +287,15 @@ class TransactionsPage(QWidget):
         self._filter_year = year
         self._filter_all_years = all_years
 
+        # kompatibilitás a reload() jelenlegi logikájával
+        self._year = int(year) if year is not None else None
+
+        self.set_search_scope("all_years" if all_years else "active_year")
+        self.reload()
+
+
+
+
     def _on_table_double_clicked(self, row: int, col: int) -> None:
         if col == 9:
             return
@@ -465,6 +474,15 @@ class TransactionsPage(QWidget):
         # Alap rendezés: Dátum ↓ (0. oszlop)
         self.table.sortItems(1, Qt.SortOrder.DescendingOrder)
         self.table.horizontalHeader().setSortIndicator(1, Qt.SortOrder.DescendingOrder)
+
+
+
+    def refresh(self) -> None:
+        """MainWindow-kompatibilis frissítés."""
+        self.reload()
+
+
+
 
     def set_year(self, year: int) -> None:
         self._year = int(year)
