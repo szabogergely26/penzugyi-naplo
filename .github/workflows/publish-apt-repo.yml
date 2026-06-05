@@ -1,0 +1,112 @@
+name: Publish APT repository
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-apt-repo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install repository build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev fakeroot rsync gzip coreutils
+
+      - name: Make build script executable
+        run: |
+          chmod +x packaging/deb/build_deb.sh
+
+      - name: Build deb package
+        run: |
+          ./packaging/deb/build_deb.sh
+
+      - name: Create APT repository structure
+        run: |
+          set -e
+
+          PACKAGE_NAME="penzugyi-naplo"
+          REPO_DIR="apt-repo"
+          POOL_DIR="$REPO_DIR/pool/main/p/$PACKAGE_NAME"
+          DIST_DIR="$REPO_DIR/dists/stable"
+          BINARY_DIR="$DIST_DIR/main/binary-all"
+
+          DEB_FILE="$(find build -maxdepth 1 -type f -name "${PACKAGE_NAME}_*_all.deb" -print -quit)"
+
+          if [ -z "$DEB_FILE" ]; then
+            echo "Nem található .deb fájl a build mappában."
+            exit 1
+          fi
+
+          rm -rf "$REPO_DIR"
+
+          mkdir -p "$POOL_DIR"
+          mkdir -p "$BINARY_DIR"
+
+          cp "$DEB_FILE" "$POOL_DIR/"
+
+          cd "$REPO_DIR"
+
+          dpkg-scanpackages --arch all pool /dev/null > dists/stable/main/binary-all/Packages
+          gzip -9 -k -f dists/stable/main/binary-all/Packages
+
+          cd dists/stable
+
+          cat > Release <<EOF
+          Origin: Penzugyi Naplo
+          Label: Penzugyi Naplo
+          Suite: stable
+          Codename: stable
+          Architectures: all
+          Components: main
+          Description: APT repository for Penzugyi Naplo
+          Date: $(date -Ru)
+          EOF
+
+          echo "MD5Sum:" >> Release
+          for file in main/binary-all/Packages main/binary-all/Packages.gz; do
+            printf " %s %16s %s\n" "$(md5sum "$file" | cut -d' ' -f1)" "$(stat -c%s "$file")" "$file" >> Release
+          done
+
+          echo "SHA1:" >> Release
+          for file in main/binary-all/Packages main/binary-all/Packages.gz; do
+            printf " %s %16s %s\n" "$(sha1sum "$file" | cut -d' ' -f1)" "$(stat -c%s "$file")" "$file" >> Release
+          done
+
+          echo "SHA256:" >> Release
+          for file in main/binary-all/Packages main/binary-all/Packages.gz; do
+            printf " %s %16s %s\n" "$(sha256sum "$file" | cut -d' ' -f1)" "$(stat -c%s "$file")" "$file" >> Release
+          done
+
+      - name: Deploy APT repository to gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          mkdir gh-pages
+          cp -a apt-repo/. gh-pages/
+
+          cd gh-pages
+
+          touch .nojekyll
+
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b gh-pages
+          git add -A
+          git commit -m "Publish APT repository"
+
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin gh-pages
