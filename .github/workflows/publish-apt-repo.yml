@@ -77,9 +77,13 @@ jobs:
 
           # Packages index generálása.
           # Ez mondja meg az APT-nek, milyen csomagok vannak a repository-ban.
+
+          echo "==> Packages index generálása"
           dpkg-scanpackages --arch all pool /dev/null > dists/stable/main/binary-all/Packages
 
           # Tömörített Packages index generálása.
+
+          echo "==> Packages.gz generálása"
           gzip -9 -k -f dists/stable/main/binary-all/Packages
 
           # Innentől a stable disztribúció mappájában dolgozunk.
@@ -89,6 +93,8 @@ jobs:
           # Ez a repository metaadatait és az indexfájlok ellenőrzőösszegeit fogja tartalmazni.
           # Release metaadat-fájl létrehozása.
           # Ezt olvassa az APT, amikor a repository adatait ellenőrzi.
+          
+          echo "==> Release fájl létrehozása"
             {
               printf '%s\n' "Origin: Penzugyi Naplo"
               printf '%s\n' "Label: Penzugyi Naplo"
