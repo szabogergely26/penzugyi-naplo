@@ -5,7 +5,7 @@
 Az alkalmazás célja, hogy helyben, átlátható módon lehessen kezelni a mindennapi pénzügyi adatokat: bevételeket, kiadásokat, számlákat, likviditási adatokat és aranyszámla jellegű nyilvántartásokat.
 
 > Állapot: GitHub `.deb` tesztverzió előkészítés alatt  
-> Verzió: `0.1.0`  
+> Verzió: `0.1.1`  
 > Platform: Linux, később Windows és Android irány
 
 ---
@@ -45,7 +45,7 @@ Ez még nem végleges stabil kiadás, hanem tesztelésre és saját használatra
 A projektből készített Debian csomag például így telepíthető:
 
 ```bash
-sudo apt install ./penzugyi-naplo_0.1.0_all.deb
+sudo apt install ./penzugyi-naplo_0.1.1_all.deb
 ```
 
 Eltávolítás:
@@ -79,7 +79,7 @@ bash packaging/deb/build_deb.sh
 A kész csomag a `build/` mappába kerül:
 
 ```text
-build/penzugyi-naplo_0.1.0_all.deb
+build/penzugyi-naplo_0.1.1_all.deb
 ```
 
 ---
@@ -171,7 +171,7 @@ A cél az, hogy a verziószámot csak egy helyen kelljen növelni, és innen has
 Jelenlegi verzió:
 
 ```text
-0.1.0
+0.1.1
 ```
 
 ---

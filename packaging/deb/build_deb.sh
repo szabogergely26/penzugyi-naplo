@@ -2,7 +2,7 @@
 set -e
 
 PACKAGE_NAME="penzugyi-naplo"
-VERSION="0.1.0"
+VERSION="0.1.1"
 ARCH="all"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -83,13 +83,15 @@ cp -r "$PROJECT_ROOT/packaging/icons/hicolor/"* \
 
 # Debian changelog.
 cat > "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/changelog" <<EOF
-penzugyi-naplo (0.1.0) unstable; urgency=low
+penzugyi-naplo (0.1.1) stable; urgency=low
 
-  * Első helyi tesztelésre szánt deb csomag.
-  * Alkalmazásikon, desktop bejegyzés és alap telepítési struktúra hozzáadva.
-  * Függőségek és csomagtartalom tisztítása.
+  * Aláírt APT szoftverforrás hozzáadása GitHub Pages alapon.
+  * InRelease és Release.gpg fájlok generálása GPG aláírással.
+  * Publikus APT keyring hozzáadása.
+  * Signed-By alapú .sources telepítési forrás támogatása.
+  * GitHub Actions workflow hozzáadása az APT repository publikálásához.
 
- -- Gergely Szabó <local@example.com>  Mon, 01 Jun 2026 12:00:00 +0200
+ -- Gergely Szabó <local@example.com>  Fri, 05 Jun 2026 10:00:00 +0200
 EOF
 
 gzip -9 "$BUILD_DIR/usr/share/doc/$PACKAGE_NAME/changelog"
