@@ -866,10 +866,12 @@ class MainWindow(QMainWindow):
             # (pl. Tranzakciók, Számlák), így a felhasználó
             # azon az oldalon marad, ahonnan a műveletet indította.
 
-            current_page = getattr(self, "current_page", None)
-            if current_page is not None and hasattr(current_page, "reload"):
-                current_page.reload()
+            current_page = self.page_stack.currentWidget()
 
+            if current_page is not None and hasattr(current_page, "refresh"):
+                current_page.refresh()
+            elif current_page is not None and hasattr(current_page, "reload"):
+                current_page.reload()
 
 
     def on_new_gold_trade(self) -> None:
