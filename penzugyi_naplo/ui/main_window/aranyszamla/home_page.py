@@ -24,20 +24,25 @@ Később:
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-
+from PySide6.QtGui import QPixmap
 
 from PySide6.QtWidgets import (
     QFrame,
- 
-    QTabWidget,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
+    QScrollArea,
     QSizePolicy,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
-from penzugyi_naplo.db.gold_database import get_gold_summary
+from penzugyi_naplo.db.gold_database import (
+    get_gold_physical_summary,
+    get_gold_summary,
+    list_gold_physical_items,
+)
 
 
 
@@ -45,7 +50,7 @@ from penzugyi_naplo.db.gold_database import get_gold_summary
 class AranyszamlaHomePage(QWidget):
     """
     Az Aranyszámla modul kezdőoldala.
-    
+
     Fülek:
         - Aranyszámla: teljes aranyszámla, fizikai termékek nélkül
         - Fizikai termékek: fizikai aranytermékek diagramjai
@@ -60,7 +65,7 @@ class AranyszamlaHomePage(QWidget):
         self._build_ui()
         self.refresh()
 
-    
+
 
     def _build_ui(self) -> None:
         main_layout = QVBoxLayout(self)
@@ -134,7 +139,7 @@ class AranyszamlaHomePage(QWidget):
         section_title = QLabel("Jelenlegi állapot")
         section_title.setObjectName("aranyszamlaSectionTitle")
 
-        grams_label = QLabel("Összes arany")
+        grams_label = QLabel("Aranyszámla")
         grams_label.setObjectName("aranyszamlaInfoLabel")
 
         self.grams_value = QLabel("0,000 g")
@@ -175,37 +180,58 @@ class AranyszamlaHomePage(QWidget):
 
 
     def _create_physical_products_tab(self) -> QWidget:
+        """
+        Fizikai aranytermékek fül létrehozása.
+
+        Ez a fül a gold_physical_items táblában tárolt fizikai
+        aranytermékeket jeleníti meg kártyás nézetben.
+
+        Első körben:
+        - összesítő információk
+        - görgethető termékkártyák
+        """
+
         page = QWidget()
 
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(16)
 
-        placeholder_card = QFrame()
-        placeholder_card.setObjectName("aranyszamlaHeroCard")
+        card = QFrame()
+        card.setObjectName("aranyszamlaHeroCard")
 
-        placeholder_layout = QVBoxLayout(placeholder_card)
-        placeholder_layout.setContentsMargins(32, 32, 32, 32)
-        placeholder_layout.setSpacing(12)
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(32, 32, 32, 32)
+        card_layout.setSpacing(16)
 
         title = QLabel("Fizikai termékek")
         title.setObjectName("aranyszamlaSectionTitle")
 
-        text = QLabel(
-            "Itt jelennek majd meg a megvásárolt fizikai aranytermékek diagramjai.\n\n"
-            "Például:\n"
-            "- érmék / rudak megoszlása\n"
-            "- termékenkénti gramm mennyiség\n"
-            "- bekerülési érték terméktípus szerint"
-        )
-        text.setObjectName("aranyszamlaHintText")
-        text.setWordWrap(True)
+        self.physical_summary_label = QLabel("Összes fizikai arany: 0,000 g")
+        self.physical_summary_label.setObjectName("aranyszamlaInfoLabel")
 
-        placeholder_layout.addWidget(title)
-        placeholder_layout.addWidget(text)
-        placeholder_layout.addStretch(1)
+        self.physical_value_label = QLabel("Nyilvántartott bekerülési érték: 0 Ft")
+        self.physical_value_label.setObjectName("aranyszamlaInfoLabel")
 
-        layout.addWidget(placeholder_card, 1)
+        # Görgethető terület a termékkártyákhoz
+        self.physical_scroll = QScrollArea()
+        self.physical_scroll.setWidgetResizable(True)
+        self.physical_scroll.setFrameShape(QFrame.Shape.NoFrame)
+
+        self.physical_cards_container = QWidget()
+        self.physical_cards_layout = QGridLayout(self.physical_cards_container)
+        self.physical_cards_layout.setContentsMargins(0, 0, 0, 0)
+        self.physical_cards_layout.setHorizontalSpacing(16)
+        self.physical_cards_layout.setVerticalSpacing(16)
+
+        self.physical_scroll.setWidget(self.physical_cards_container)
+
+        card_layout.addWidget(title)
+        card_layout.addWidget(self.physical_summary_label)
+        card_layout.addWidget(self.physical_value_label)
+        card_layout.addWidget(self.physical_scroll, 1)
+
+        layout.addWidget(card, 1)
 
         return page
 
@@ -215,7 +241,11 @@ class AranyszamlaHomePage(QWidget):
 
     def refresh(self) -> None:
         """
-        Aranyszámla kezdőoldali összesítő frissítése.
+        Aranyszámla kezdőoldali összesítők frissítése.
+
+        Frissíti:
+        - az Aranyszámla fül gramm / forint összesítőjét
+        - a Fizikai termékek fül összesítőjét és kártyáit
         """
 
         summary = get_gold_summary(self.db_path)
@@ -226,6 +256,225 @@ class AranyszamlaHomePage(QWidget):
         self.grams_value.setText(self._format_grams(total_grams))
         self.estimated_value.setText(self._format_huf(total_huf))
 
+        self._refresh_physical_products()
+
+
+
+
+    # Segédfüggvények:
+
+    def _refresh_physical_products(self) -> None:
+        """
+        Fizikai aranytermékek fül frissítése.
+
+        Betölti:
+        - a fizikai aranytermékek összesítőjét
+        - a termékkártyákat a gold_physical_items táblából
+        """
+
+        summary = get_gold_physical_summary(self.db_path)
+
+        total_grams = float(summary.get("total_grams", 0))
+        total_huf = int(summary.get("total_huf", 0))
+
+        self.physical_summary_label.setText(
+            f"Összes fizikai arany: {self._format_grams(total_grams)}"
+        )
+        self.physical_value_label.setText(
+            f"Nyilvántartott bekerülési érték: {self._format_huf(total_huf)}"
+        )
+
+        items = list_gold_physical_items(self.db_path)
+
+        self._clear_layout(self.physical_cards_layout)
+
+        if not items:
+            empty_label = QLabel("Még nincs rögzített fizikai aranytermék.")
+            empty_label.setObjectName("aranyszamlaHintText")
+            empty_label.setWordWrap(True)
+            self.physical_cards_layout.addWidget(empty_label)
+            self.physical_cards_layout.addStretch(1)
+            return
+
+        columns = 4
+
+        for index, item in enumerate(items):
+            row = index // columns
+            column = index % columns
+
+            card = self._create_physical_item_card(item)
+            self.physical_cards_layout.addWidget(card, row, column)
+
+
+
+    def _create_physical_item_card(self, item: dict) -> QFrame:
+        """
+        Egy fizikai aranytermék megjelenítő kártya létrehozása.
+
+        A kártya tartalma:
+        - kép
+        - terméknév
+        - gyártó
+        - darabszám + gramm
+        - tárolási hely
+        - érték
+        """
+
+        card = QFrame()
+        card.setObjectName("aranyszamlaPhysicalItemCard")
+        card.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        card.setMinimumWidth(220)
+        card.setMaximumWidth(280)
+
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(18)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # ---------------------------------------------------------
+        # Bal oldal: termékkép
+        # ---------------------------------------------------------
+        image_label = QLabel("Nincs kép")
+        image_label.setObjectName("aranyszamlaPhysicalImage")
+        image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        image_label.setFixedSize(110, 99)
+
+        image_path = str(item.get("image_path", "")).strip()
+        if image_path:
+            pixmap = QPixmap(image_path)
+            if not pixmap.isNull():
+                image_label.setPixmap(
+                    pixmap.scaled(
+                        110,
+                        90,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
+                    )
+                )
+                image_label.setText("")
+
+        # ---------------------------------------------------------
+        # Jobb oldal: szöveges adatok
+        # ---------------------------------------------------------
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(6)
+
+        title = QLabel(str(item.get("product_name", "")))
+        title.setObjectName("aranyszamlaSectionTitle")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        manufacturer = QLabel(str(item.get("manufacturer", "")))
+        manufacturer.setObjectName("aranyszamlaInfoLabel")
+        manufacturer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        quantity = str(item.get("quantity", 1))
+        total_weight = self._format_grams(float(item.get("total_weight_grams", 0)))
+        quantity_line = QLabel(f"{quantity} db · {total_weight}")
+        quantity_line.setObjectName("aranyszamlaInfoLabel")
+        quantity_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        storage = str(item.get("storage_location", "")).strip()
+        storage_line = QLabel(
+            f"Tárolás: {storage if storage else '—'}"
+        )
+        storage_line.setObjectName("aranyszamlaInfoLabel")
+        storage_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        source_text = self._format_physical_source(str(item.get("source", "")))
+        source_line = QLabel(f"Forrás: {source_text if source_text else '—'}")
+        source_line.setObjectName("aranyszamlaInfoLabel")
+        source_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        value_line = QLabel(
+            f"Értéke: {self._format_optional_huf(item.get('total_huf')) or '—'}"
+        )
+        value_line.setObjectName("aranyszamlaInfoLabel")
+        value_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        note_text = str(item.get("note", "")).strip()
+        note_line = QLabel(f"Megjegyzés: {note_text if note_text else '—'}")
+        note_line.setObjectName("aranyszamlaHintText")
+        note_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        note_line.setWordWrap(True)     # sortördelés
+
+        info_layout.addWidget(title)
+        info_layout.addWidget(manufacturer)
+        info_layout.addWidget(quantity_line)
+        info_layout.addWidget(storage_line)
+        info_layout.addWidget(source_line)
+        info_layout.addWidget(value_line)
+        info_layout.addWidget(note_line)
+        info_layout.addStretch(1)
+
+        layout.addWidget(image_label, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addLayout(info_layout)
+
+        return card
+
+
+
+
+    def _clear_layout(self, layout: QVBoxLayout) -> None:
+        """
+        Egy layout összes elemének eltávolítása.
+
+        Erre azért van szükség, mert refresh közben újraépítjük
+        a fizikai termékek kártyalistáját.
+        """
+
+        while layout.count():
+            item = layout.takeAt(0)
+
+            widget = item.widget()
+            child_layout = item.layout()
+
+            if widget is not None:
+                widget.deleteLater()
+            elif child_layout is not None:
+                self._clear_layout(child_layout)
+
+
+
+
+
+
+    def _format_optional_huf(self, value) -> str:
+        """
+        Opcionális forint érték megjelenítése.
+
+        Ha az adatbázisban nincs megadva érték, üres szöveget ad vissza.
+        """
+
+        if value is None:
+            return ""
+
+        try:
+            return self._format_huf(int(value))
+        except (TypeError, ValueError):
+            return ""
+
+
+
+    def _format_physical_source(self, value: str) -> str:
+        """
+        Fizikai termék forrásának magyar megjelenítése.
+
+        Az adatbázis belső értékei angol kulcsok lehetnek,
+        a felületen viszont magyar címkét jelenítünk meg.
+        """
+
+        source_map = {
+            "gold_account": "Aranyszámla",
+            "external": "Külső vásárlás",
+        }
+
+        return source_map.get(value, value)
+
+
+
+
+
+
 
 
     def _format_grams(self, value: float) -> str:
@@ -234,7 +483,7 @@ class AranyszamlaHomePage(QWidget):
         """
 
         return f"{value:,.3f} g".replace(",", " ").replace(".", ",")
-    
+
 
 
     def _format_huf(self, value: int) -> str:
