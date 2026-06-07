@@ -56,3 +56,8 @@ data/
 /start.sh
 /logging
 /sys
+
+# GPG / APT repository private keys
+*private-key*.asc
+*.private.asc
+penzugyi-naplo-private-key.asc
