@@ -19,9 +19,82 @@ Később:
 - fizikai termékek külön adatmodellje
 - érték számítása aktuális árfolyam alapján
 - finom animáció / látványelemek
+
+Térkép az Aranyszámla oldalakhoz:
+
+Aranyszámla fül page
+└── layout
+    └── hero_card
+        objectName: aranyszamlaHeroCard
+        Mire hat: nagy külső kártya
+
+        └── hero_layout
+            ├── visual_box
+            │   objectName: aranyszamlaVisualBox
+            │   Mire hat: bal oldali ikonpanel
+            │
+            │   ├── gold_icon
+            │   │   objectName: aranyszamlaGoldIcon
+            │   │   Mire hat: 🪙 emoji
+            │   │
+            │   └── gold_caption
+            │       objectName: aranyszamlaGoldCaption
+            │       Mire hat: "Aranytartalék" felirat
+            │
+            └── info_box
+                objectName: aranyszamlaInfoBox
+                Mire hat: jobb oldali információs panel
+
+                ├── section_title
+                │   objectName: aranyszamlaSectionTitle
+                │   Mire hat: "Jelenlegi állapot" cím
+                │
+                ├── grams_label
+                │   objectName: aranyszamlaInfoLabel
+                │   Mire hat: "Aranyszámla" kis címke
+                │
+                ├── self.grams_value
+                │   objectName: aranyszamlaMainValue
+                │   Mire hat: nagy "0,000 g" érték
+                │
+                ├── estimated_label
+                │   objectName: aranyszamlaInfoLabel
+                │   Mire hat: "Becsült érték" kis címke
+                │
+                ├── self.estimated_value
+                │   objectName: aranyszamlaSecondaryValue
+                │   Mire hat: nagy "0 Ft" érték
+                │
+                └── hint
+                    objectName: aranyszamlaHintText
+                    Mire hat: alsó magyarázó szöveg
+
+Konténerek, tehát mehet nekik háttér:
+
+    - hero_card.setObjectName("aranyszamlaHeroCard")
+    - visual_box.setObjectName("aranyszamlaVisualBox")
+    - info_box.setObjectName("aranyszamlaInfoBox")
+
+
+aranyszamlaHeroCard      = nagy külső doboz
+aranyszamlaVisualBox     = bal oldali ikon doboz
+aranyszamlaInfoBox       = jobb oldali infó doboz
+
+aranyszamlaGoldIcon      = csak az emoji
+aranyszamlaGoldCaption   = "Aranytartalék"
+aranyszamlaSectionTitle  = címek
+aranyszamlaInfoLabel     = kis címkék
+aranyszamlaMainValue     = nagy gramm érték
+aranyszamlaSecondaryValue= nagy forint érték
+aranyszamlaHintText      = halvány magyarázó szöveg
+
+
 """
 
 from __future__ import annotations
+
+from pathlib import Path
+
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -92,43 +165,64 @@ class AranyszamlaHomePage(QWidget):
         main_layout.addWidget(self.tabs, 1)
 
 
+    # Aranyszámla Tab:
+        # nagy fő aranykártya, bal oldali kép blokk
+        # jobb oldali infó blokk
 
     def _create_account_tab(self) -> QWidget:
-        page = QWidget()
+        page = QWidget()    # ha adnák neki style-t: page.setObjectName("aranyszamlaAccountTabPage")
+                            # akkor az egész fül hátterére hatna
 
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(24)
 
+
+        # Aranyszámla fül : központi kártya - Teljes aranyszámla fül
+
         hero_card = QFrame()
         hero_card.setObjectName("aranyszamlaHeroCard")
         hero_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
+        # Ez szintén nem látható elem:
         hero_layout = QHBoxLayout(hero_card)
         hero_layout.setContentsMargins(42, 38, 42, 38)
         hero_layout.setSpacing(36)
 
+
+        # bal oldali box.
+        # Csak a bal oldali aranyikonos doboz hátterére / keretére / lekerekítésére hat!.
         visual_box = QFrame()
         visual_box.setObjectName("aranyszamlaVisualBox")
 
+        # csak elrendezés:
         visual_layout = QVBoxLayout(visual_box)
         visual_layout.setContentsMargins(24, 24, 24, 24)
         visual_layout.setSpacing(12)
         visual_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # Emoji:
         gold_icon = QLabel("🪙")
         gold_icon.setObjectName("aranyszamlaGoldIcon")
         gold_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+
+
+        # Emoji alatti szöveg:
+        # QSS: QLabel#aranyszamlaGoldCaption
         gold_caption = QLabel("Aranytartalék")
         gold_caption.setObjectName("aranyszamlaGoldCaption")
         gold_caption.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # A visual_box belsejébe függőlegesen középre igazítja
         visual_layout.addStretch(1)
         visual_layout.addWidget(gold_icon)
         visual_layout.addWidget(gold_caption)
         visual_layout.addStretch(1)
 
+
+        # jobb oldali infó doboz: Jelenlegi állapot, becsült érték....
+        # QSS: QFrame#aranyszamlaInfoBox
         info_box = QFrame()
         info_box.setObjectName("aranyszamlaInfoBox")
 
@@ -136,6 +230,8 @@ class AranyszamlaHomePage(QWidget):
         info_layout.setContentsMargins(28, 28, 28, 28)
         info_layout.setSpacing(18)
 
+        # Jobb oldali blokk címe:
+        # QSS: QLabel#aranyszamlaSectionTitle
         section_title = QLabel("Jelenlegi állapot")
         section_title.setObjectName("aranyszamlaSectionTitle")
 
@@ -158,6 +254,8 @@ class AranyszamlaHomePage(QWidget):
         hint.setObjectName("aranyszamlaHintText")
         hint.setWordWrap(True)
 
+
+        # Elrendezés: Az info_box belsejébe egymás alá kerül a szöveg, kisebb nagyobb sorközzel.
         info_layout.addWidget(section_title)
         info_layout.addSpacing(8)
         info_layout.addWidget(grams_label)
@@ -198,28 +296,50 @@ class AranyszamlaHomePage(QWidget):
         layout.setSpacing(16)
 
         card = QFrame()
-        card.setObjectName("aranyszamlaHeroCard")
+        # Fizikai termékek fül nagy sárga panelje.
+        # Erre kerül a "Fizikai termékek" cím, az összesítő sorok,
+        # és ezen belül van a görgethető kártyaterület.
+        card.setObjectName("aranyszamlaPhysicalProductsPanel")
 
         card_layout = QVBoxLayout(card)
         card_layout.setContentsMargins(32, 32, 32, 32)
         card_layout.setSpacing(16)
 
         title = QLabel("Fizikai termékek")
+
+        # Csak a "Fizikai termékek" cím feliratára hat.
+        # Nem háttérpanel.
         title.setObjectName("aranyszamlaSectionTitle")
 
         self.physical_summary_label = QLabel("Összes fizikai arany: 0,000 g")
+
+        # Csak az összes fizikai arany szövegsorra hat.
+        # Nem háttérpanel.
         self.physical_summary_label.setObjectName("aranyszamlaInfoLabel")
 
         self.physical_value_label = QLabel("Nyilvántartott bekerülési érték: 0 Ft")
+
+        # Csak a bekerülési érték szövegsorra hat.
+        # Nem háttérpanel.
         self.physical_value_label.setObjectName("aranyszamlaInfoLabel")
 
-        # Görgethető terület a termékkártyákhoz
         self.physical_scroll = QScrollArea()
+
+        # A termékkártyák görgethető területe.
+        # Ez az a rész, ami most fehéren maradt a kártyák mögött.
+        self.physical_scroll.setObjectName("aranyszamlaPhysicalScroll")
+
         self.physical_scroll.setWidgetResizable(True)
         self.physical_scroll.setFrameShape(QFrame.Shape.NoFrame)
 
         self.physical_cards_container = QWidget()
+
+        # A kártyák mögötti belső rács-konténer.
+        # Ha ez fehér, akkor a kártyák mögött nagy fehér téglalap látszik.
+        self.physical_cards_container.setObjectName("aranyszamlaPhysicalCardsContainer")
+
         self.physical_cards_layout = QGridLayout(self.physical_cards_container)
+
         self.physical_cards_layout.setContentsMargins(0, 0, 0, 0)
         self.physical_cards_layout.setHorizontalSpacing(16)
         self.physical_cards_layout.setVerticalSpacing(16)
@@ -312,15 +432,18 @@ class AranyszamlaHomePage(QWidget):
         Egy fizikai aranytermék megjelenítő kártya létrehozása.
 
         A kártya tartalma:
-        - kép
-        - terméknév
-        - gyártó
-        - darabszám + gramm
-        - tárolási hely
-        - érték
+            - kép
+            - terméknév
+            - gyártó
+            - darabszám + gramm
+            - tárolási hely
+            - érték
         """
 
         card = QFrame()
+
+        # Egy konkrét fizikai aranytermék kártyája.
+        # CSAK EZ legyen fehér a sárga háttéren.
         card.setObjectName("aranyszamlaPhysicalItemCard")
         card.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         card.setMinimumWidth(220)
@@ -339,19 +462,50 @@ class AranyszamlaHomePage(QWidget):
         image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         image_label.setFixedSize(110, 99)
 
+        # Képek betöltése:
         image_path = str(item.get("image_path", "")).strip()
+
         if image_path:
-            pixmap = QPixmap(image_path)
-            if not pixmap.isNull():
-                image_label.setPixmap(
-                    pixmap.scaled(
-                        110,
-                        90,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
+            raw_path = Path(image_path).expanduser()
+
+            if raw_path.is_absolute():
+                resolved_image_path = raw_path
+            else:
+                # A db_path például:
+                # data/transactions_dev.sqlite3
+                #
+                # Ennek a szülője:
+                # data/
+                #
+                # Ennek a szülője:
+                # projekt gyökere
+                #
+                # Az adatbázisban most ilyen útvonal van:
+                # data/gold_physical_image/5g_aranylapka.jpg
+                #
+                # Ezért a projekt gyökeréhez képest oldjuk fel.
+                project_root = Path(self.db_path).resolve().parent.parent
+                resolved_image_path = project_root / raw_path
+
+            if resolved_image_path.exists() and resolved_image_path.is_file():
+                pixmap = QPixmap(str(resolved_image_path))
+
+                if not pixmap.isNull():
+                    image_label.setPixmap(
+                        pixmap.scaled(
+                            110,
+                            90,
+                            Qt.AspectRatioMode.KeepAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation,
+                        )
                     )
-                )
-                image_label.setText("")
+                    image_label.setText("")
+                else:
+                    image_label.setText("Hibás kép")
+            else:
+                image_label.setText("Kép nem található")
+        else:
+            image_label.setText("Nincs kép")
 
         # ---------------------------------------------------------
         # Jobb oldal: szöveges adatok
@@ -369,11 +523,13 @@ class AranyszamlaHomePage(QWidget):
 
         quantity = str(item.get("quantity", 1))
         total_weight = self._format_grams(float(item.get("total_weight_grams", 0)))
+
         quantity_line = QLabel(f"{quantity} db · {total_weight}")
         quantity_line.setObjectName("aranyszamlaInfoLabel")
         quantity_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         storage = str(item.get("storage_location", "")).strip()
+
         storage_line = QLabel(
             f"Tárolás: {storage if storage else '—'}"
         )
@@ -381,6 +537,7 @@ class AranyszamlaHomePage(QWidget):
         storage_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         source_text = self._format_physical_source(str(item.get("source", "")))
+
         source_line = QLabel(f"Forrás: {source_text if source_text else '—'}")
         source_line.setObjectName("aranyszamlaInfoLabel")
         source_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -392,6 +549,7 @@ class AranyszamlaHomePage(QWidget):
         value_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         note_text = str(item.get("note", "")).strip()
+
         note_line = QLabel(f"Megjegyzés: {note_text if note_text else '—'}")
         note_line.setObjectName("aranyszamlaHintText")
         note_line.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -410,7 +568,6 @@ class AranyszamlaHomePage(QWidget):
         layout.addLayout(info_layout)
 
         return card
-
 
 
 

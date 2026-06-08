@@ -191,3 +191,94 @@ QLabel#aranyszamlaEmptyText {
 #goldWizardHint {
     opacity: 0.82;
 }
+
+
+
+
+
+
+
+
+QScrollArea#goldScrollArea > QWidget > QWidget {
+    background-color: #f3df9b;
+}
+
+/* ScrollArea viewport fehérségének eltüntetése */
+QScrollArea#goldScrollArea QWidget#qt_scrollarea_viewport {
+    background-color: #f3df9b;
+}
+
+
+
+
+
+/* Hover / domború hatás */
+QFrame#goldProductCard:hover {
+    border: 2px solid rgba(160, 115, 20, 160);
+    background-color: #fffdf5;
+}
+
+
+
+
+/* Ideiglenes */
+
+/* =========================================================
+   Fizikai termékek fül - háttérszintek
+   ========================================================= */
+
+/*
+   A Fizikai termékek fül nagy külső panelje.
+   Ez adja a sárga/arany hátteret a cím, összesítő sorok
+   és a kártyaterület mögé.
+*/
+QFrame#aranyszamlaPhysicalProductsPanel {
+    background-color: #f3df9b;
+    border: 1px solid rgba(150, 110, 30, 80);
+    border-radius: 16px;
+}
+
+/*
+   A termékkártyák görgethető területe.
+   Ez tünteti el a nagy fehér téglalapot a kártyák mögül.
+*/
+QScrollArea#aranyszamlaPhysicalScroll {
+    background-color: #f3df9b;
+    border: none;
+}
+
+/*
+   A ScrollArea viewportja.
+   Qt-ban ez gyakran külön fehér rétegként jelenik meg.
+*/
+QScrollArea#aranyszamlaPhysicalScroll QWidget#qt_scrollarea_viewport {
+    background-color: #f3df9b;
+}
+
+/*
+   A termékkártyák mögötti belső QWidget.
+   Ez a rács konténere, amibe a kártyák kerülnek.
+*/
+QWidget#aranyszamlaPhysicalCardsContainer {
+    background-color: #f3df9b;
+}
+
+/*
+   Egy darab fizikai aranytermék kártyája.
+   CSAK EZ maradjon fehér.
+*/
+QFrame#aranyszamlaPhysicalItemCard {
+    background-color: white;
+    border-radius: 14px;
+    border: 1px solid rgba(150, 110, 30, 70);
+}
+
+/*
+   A termékkép helye.
+   Ez csak a "Nincs kép" / termékkép dobozra hat.
+*/
+QLabel#aranyszamlaPhysicalImage {
+    background-color: white;
+    border-radius: 10px;
+    border: none;
+}
