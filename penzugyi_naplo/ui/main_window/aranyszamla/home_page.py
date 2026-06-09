@@ -97,7 +97,7 @@ from pathlib import Path
 
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QColor
 
 from PySide6.QtWidgets import (
     QFrame,
@@ -109,6 +109,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QGraphicsDropShadowEffect,
 )
 
 from penzugyi_naplo.db.gold_database import (
@@ -116,6 +117,62 @@ from penzugyi_naplo.db.gold_database import (
     get_gold_summary,
     list_gold_physical_items,
 )
+
+
+
+class PhysicalGoldItemCard(QFrame):
+    """
+    Fizikai aranytermék kártya hover-effekttel.
+
+    Hover állapotban:
+    - a kártya pár pixellel feljebb mozdul,
+    - az árnyék erősebb lesz,
+    - ettől olyan hatása lesz, mintha kiemelkedne a háttérből.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self._normal_pos = None
+
+    def enterEvent(self, event) -> None:
+        """
+        Egér ráhúzásakor enyhén megemeljük a kártyát.
+        """
+
+        if self._normal_pos is None:
+            self._normal_pos = self.pos()
+
+        # Hover-re mozgás:
+        self.move(self.x(), self.y() - 20)
+
+        shadow = self.graphicsEffect()
+
+        if isinstance(shadow, QGraphicsDropShadowEffect):
+            shadow.setBlurRadius(38)
+            shadow.setOffset(0, 14)
+            shadow.setColor(QColor(70, 45, 10, 120))
+
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        """
+        Egér elhagyásakor visszaállítjuk az alap pozíciót és árnyékot.
+        """
+
+        if self._normal_pos is not None:
+            self.move(self._normal_pos)
+
+        shadow = self.graphicsEffect()
+
+        if isinstance(shadow, QGraphicsDropShadowEffect):
+            shadow.setBlurRadius(30)
+            shadow.setOffset(0, 10)
+            shadow.setColor(QColor(90, 60, 15, 95))
+
+        super().leaveEvent(event)
+
+
 
 
 
@@ -440,7 +497,7 @@ class AranyszamlaHomePage(QWidget):
             - érték
         """
 
-        card = QFrame()
+        card = PhysicalGoldItemCard()
 
         # Egy konkrét fizikai aranytermék kártyája.
         # CSAK EZ legyen fehér a sárga háttéren.
@@ -448,6 +505,10 @@ class AranyszamlaHomePage(QWidget):
         card.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         card.setMinimumWidth(220)
         card.setMaximumWidth(280)
+
+        # Finom 3D-s árnyék:
+        # ettől a kártya kissé kiemelkedik az arany háttérből.
+        self._apply_physical_card_shadow(card)
 
         layout = QVBoxLayout(card)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -649,3 +710,22 @@ class AranyszamlaHomePage(QWidget):
         """
 
         return f"{value:,} Ft".replace(",", " ")
+
+
+    def _apply_physical_card_shadow(self, card: QFrame) -> None:
+        """
+        Erősebb, de még elegáns 3D-s árnyék a fizikai aranytermék kártyákhoz.
+
+        Alapállapotban a kártya kissé kiemelkedik az arany háttérből.
+        Hover állapotban majd tovább erősítjük ezt a hatást.
+        """
+
+        shadow = QGraphicsDropShadowEffect(card)
+        shadow.setBlurRadius(30)
+        shadow.setOffset(0, 10)
+        shadow.setColor(QColor(90, 60, 15, 95))
+
+        card.setGraphicsEffect(shadow)
+
+
+    # --- Segédfüggvények vége
