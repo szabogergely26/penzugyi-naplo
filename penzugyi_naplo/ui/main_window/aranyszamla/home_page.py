@@ -469,8 +469,22 @@ class AranyszamlaHomePage(QWidget):
             empty_label = QLabel("Még nincs rögzített fizikai aranytermék.")
             empty_label.setObjectName("aranyszamlaHintText")
             empty_label.setWordWrap(True)
-            self.physical_cards_layout.addWidget(empty_label)
-           # self.physical_cards_layout.addStretch(1)
+            empty_label.setAlignment(
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            )
+
+            self.physical_cards_layout.addWidget(
+                empty_label,
+                0,
+                0,
+                1,
+                2,
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
+            )
+
+            self.physical_cards_layout.setColumnStretch(0, 1)
+            self.physical_cards_layout.setColumnStretch(1, 1)
+
             return
 
         columns = 4
@@ -482,6 +496,11 @@ class AranyszamlaHomePage(QWidget):
             card = self._create_physical_item_card(item)
             self.physical_cards_layout.addWidget(card, row, column)
 
+
+        self.physical_cards_layout.setColumnStretch(0, 1)
+        self.physical_cards_layout.setColumnStretch(1, 1)
+        self.physical_cards_layout.setColumnStretch(2, 1)
+        self.physical_cards_layout.setColumnStretch(3, 1)
 
 
     def _create_physical_item_card(self, item: dict) -> QFrame:

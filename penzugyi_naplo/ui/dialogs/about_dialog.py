@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from penzugyi_naplo.app_version import (
     APP_NAME,
     APP_VERSION,
+    APP_CHANNEL,
     BUILD_INFO,
     DEV_STATE,
 )
@@ -33,7 +34,7 @@ class AboutDialog(QDialog):
         title = QLabel(f"<h2>{APP_NAME}</h2>")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        version = QLabel(f"Verzió: {APP_VERSION}")
+        version = QLabel(f"Verzió: {APP_VERSION} ({APP_CHANNEL})")
         version.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         build = QLabel(BUILD_INFO)
