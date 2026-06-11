@@ -1263,23 +1263,52 @@ QLabel#transactionWizardHint {
     font-size: 13px;
 }
 
-QRadioButton#transactionWizardRadio {
-    background-color: #ffffff;
-    border: 1px solid #d0b896;
-    border-radius: 10px;
-    padding: 10px 12px;
+
+
+/* --- Rádió gombok */
+
+QRadioButton#transactionWizardPlainRadio {
+    background-color: transparent;
+    border: none;
+    padding: 2px 0;
     color: #3b3128;
     font-size: 15px;
-}
-
-QRadioButton#transactionWizardRadio:hover {
-    border: 1px solid #5bb9d6;
-    background-color: #f8fdff;
-}
-
-QRadioButton#transactionWizardRadio:checked {
-    border: 1px solid #5bb9d6;
-    background-color: #e8f6fb;
-    color: #12637a;
     font-weight: bold;
+    spacing: 8px;
+}
+
+QRadioButton#transactionWizardPlainRadio:hover {
+    color: #12637a;
+}
+
+QRadioButton#transactionWizardPlainRadio:checked {
+    color: #12637a;
+}
+
+QRadioButton#transactionWizardPlainRadio::indicator {
+    width: 13px;
+    height: 13px;
+    border: 1px solid #8f9aa3;
+    border-radius: 7px;
+    background-color: #ffffff;
+}
+
+QRadioButton#transactionWizardPlainRadio::indicator:hover {
+    border: 1px solid #5bb9d6;
+}
+
+QRadioButton#transactionWizardPlainRadio::indicator:checked {
+    border: 1px solid #5bb9d6;
+    border-radius: 7px;
+    background-color: qradialgradient(
+        cx: 0.5,
+        cy: 0.5,
+        radius: 0.55,
+        fx: 0.5,
+        fy: 0.5,
+        stop: 0 #12637a,
+        stop: 0.42 #12637a,
+        stop: 0.48 #ffffff,
+        stop: 1 #ffffff
+    );
 }

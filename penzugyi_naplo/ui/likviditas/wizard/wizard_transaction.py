@@ -215,9 +215,9 @@ class PageTypeSelection(QWizardPage):
         self.rb_expense = QRadioButton("Kiadás")
         self.rb_bill = QRadioButton("Számlabefizetés")
 
-        self.rb_income.setObjectName("transactionWizardRadio")
-        self.rb_expense.setObjectName("transactionWizardRadio")
-        self.rb_bill.setObjectName("transactionWizardRadio")
+        self.rb_income.setObjectName("transactionWizardPlainRadio")
+        self.rb_expense.setObjectName("transactionWizardPlainRadio")
+        self.rb_bill.setObjectName("transactionWizardPlainRadio")
 
         self.rb_income.setChecked(True)
 
@@ -226,19 +226,35 @@ class PageTypeSelection(QWizardPage):
         self.group.addButton(self.rb_expense, 1)
         self.group.addButton(self.rb_bill, 2)
 
-        layout.addWidget(self.rb_income)
-        layout.addWidget(self.rb_expense)
-        layout.addWidget(self.rb_bill)
-
-        hint_label = QLabel(
-            "A számlabefizetés külön ágon kezeli például a Telekom, KalászNet "
-            "vagy MVMNext típusú befizetéseket."
+        income_desc = QLabel(
+            "Beérkező összeg rögzítése, például fizetés, támogatás vagy más bevétel."
         )
-        hint_label.setObjectName("transactionWizardHint")
-        hint_label.setWordWrap(True)
+        income_desc.setObjectName("transactionWizardOptionDescription")
+        income_desc.setWordWrap(True)
+
+        expense_desc = QLabel(
+            "Kimenő összeg rögzítése, például vásárlás, étkezés vagy egyéb kiadás."
+        )
+        expense_desc.setObjectName("transactionWizardOptionDescription")
+        expense_desc.setWordWrap(True)
+
+        bill_desc = QLabel(
+            "Közüzemi vagy szolgáltatói számla befizetése, például Telekom, KalászNet vagy MVMNext."
+        )
+        bill_desc.setObjectName("transactionWizardOptionDescription")
+        bill_desc.setWordWrap(True)
+
+        layout.addWidget(self.rb_income)
+        layout.addWidget(income_desc)
 
         layout.addSpacing(8)
-        layout.addWidget(hint_label)
+        layout.addWidget(self.rb_expense)
+        layout.addWidget(expense_desc)
+
+        layout.addSpacing(8)
+        layout.addWidget(self.rb_bill)
+        layout.addWidget(bill_desc)
+
         layout.addStretch(1)
 
     def get_type(self) -> str:
@@ -251,7 +267,6 @@ class PageTypeSelection(QWizardPage):
         return "expense"
 
     def nextId(self) -> int:
-        # A következő wizard oldal indexe a QWizard-ben.
         return 5 if self.get_type() == "bill" else 1
 
 
