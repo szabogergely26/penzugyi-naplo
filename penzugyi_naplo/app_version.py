@@ -2,7 +2,7 @@
 # Itt szerkezd
 
 APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "0.1.3"
+APP_VERSION = "0.1.2"
 APP_CHANNEL = "GitHub APT / deb tesztverzió"
 BUILD_INFO = "2025. november - 2026. június"
 DEV_STATE = "Aktuális fejlesztési állapot:\nAPT szoftverforrás előkészítve"
