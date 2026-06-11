@@ -470,7 +470,7 @@ class AranyszamlaHomePage(QWidget):
             empty_label.setObjectName("aranyszamlaHintText")
             empty_label.setWordWrap(True)
             self.physical_cards_layout.addWidget(empty_label)
-            self.physical_cards_layout.addStretch(1)
+           # self.physical_cards_layout.addStretch(1)
             return
 
         columns = 4
