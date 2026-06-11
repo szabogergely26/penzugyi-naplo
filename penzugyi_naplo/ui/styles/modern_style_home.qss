@@ -1143,3 +1143,172 @@ QFrame#odsImportSummaryBox {
     font-weight: 700;
     color: #0f172a;
 }
+
+
+
+
+
+/* ============================================================
+   Likviditás / Tranzakció varázsló
+   ============================================================ */
+
+QWizard#transactionWizard {
+    background-color: #f5f0e8;
+    color: #3b3128;
+}
+
+QWizard#transactionWizard QWizardPage {
+    background-color: #f5f0e8;
+    color: #3b3128;
+}
+
+QWizard#transactionWizard QLabel {
+    background-color: transparent;
+    color: #3b3128;
+    font-size: 14px;
+}
+
+QWizard#transactionWizard QLineEdit,
+QWizard#transactionWizard QComboBox,
+QWizard#transactionWizard QTextEdit {
+    background-color: #ffffff;
+    color: #2f261f;
+    border: 1px solid #d0b896;
+    border-radius: 9px;
+    padding: 6px 10px;
+    selection-background-color: #d8e4f7;
+}
+
+QWizard#transactionWizard QLineEdit:hover,
+QWizard#transactionWizard QComboBox:hover,
+QWizard#transactionWizard QTextEdit:hover {
+    border: 1px solid #5bb9d6;
+}
+
+QWizard#transactionWizard QLineEdit:focus,
+QWizard#transactionWizard QComboBox:focus,
+QWizard#transactionWizard QTextEdit:focus {
+    background-color: #ffffff;
+    border: 1px solid #5bb9d6;
+}
+
+QWizard#transactionWizard QRadioButton {
+    background-color: transparent;
+    color: #3b3128;
+    spacing: 8px;
+    font-size: 14px;
+}
+
+QWizard#transactionWizard QPushButton {
+    background-color: #e8f6fb;
+    color: #12637a;
+    border: 1px solid #5bb9d6;
+    border-radius: 9px;
+    padding: 7px 16px;
+    font-weight: bold;
+}
+
+QWizard#transactionWizard QPushButton:hover {
+    background-color: #d9f0f7;
+}
+
+QWizard#transactionWizard QPushButton:pressed {
+    background-color: #c8e7f1;
+}
+
+QWizard#transactionWizard QPushButton:disabled {
+    background-color: #ece7df;
+    color: #9a8a7c;
+    border: 1px solid #d8cbb8;
+}
+
+
+
+
+QFrame#transactionWizardImagePanel {
+    background-color: #fffaf2;
+    border: 1px solid #d0b896;
+    border-radius: 18px;
+}
+
+QLabel#transactionWizardImagePlaceholder {
+    font-size: 54px;
+    color: #12637a;
+}
+
+QLabel#transactionWizardImageTitle {
+    font-size: 22px;
+    font-weight: bold;
+    color: #3b3128;
+}
+
+QLabel#transactionWizardImageSubtitle {
+    font-size: 13px;
+    color: #7a6a58;
+}
+
+QWidget#transactionWizardContentPanel {
+    background-color: transparent;
+}
+
+QLabel#transactionWizardSectionTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #3b3128;
+    padding-bottom: 8px;
+}
+
+QLabel#transactionWizardHint {
+    color: #7a6a58;
+    font-size: 13px;
+}
+
+
+
+/* --- Rádió gombok */
+
+QRadioButton#transactionWizardPlainRadio {
+    background-color: transparent;
+    border: none;
+    padding: 2px 0;
+    color: #3b3128;
+    font-size: 15px;
+    font-weight: bold;
+    spacing: 8px;
+}
+
+QRadioButton#transactionWizardPlainRadio:hover {
+    color: #12637a;
+}
+
+QRadioButton#transactionWizardPlainRadio:checked {
+    color: #12637a;
+}
+
+QRadioButton#transactionWizardPlainRadio::indicator {
+    width: 13px;
+    height: 13px;
+    border: 1px solid #8f9aa3;
+    border-radius: 7px;
+    background-color: #ffffff;
+}
+
+QRadioButton#transactionWizardPlainRadio::indicator:hover {
+    border: 1px solid #5bb9d6;
+}
+
+QRadioButton#transactionWizardPlainRadio::indicator:checked {
+    border: 1px solid #5bb9d6;
+    border-radius: 7px;
+    background-color: qradialgradient(
+        cx: 0.5,
+        cy: 0.5,
+        radius: 0.55,
+        fx: 0.5,
+        fy: 0.5,
+        stop: 0 #12637a,
+        stop: 0.42 #12637a,
+        stop: 0.48 #ffffff,
+        stop: 1 #ffffff
+    );
+}

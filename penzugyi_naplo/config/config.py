@@ -1,5 +1,5 @@
-# penzugyi_naplo/config.py
-# -----------------------------
+# penzugyi_naplo/config/config.py
+# -----------------------------------
 
 from __future__ import annotations
 
@@ -78,7 +78,20 @@ def set_dev_mode(enabled: bool) -> None:
 # -----------------------------
 
 def repo_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    """
+    Projektgyökér keresése marker fájl/mappa alapján.
+
+    Fejlesztői környezetben a projektgyökér az a mappa,
+    ahol például a .git vagy a pyproject.toml található.
+    """
+    current = Path(__file__).resolve()
+
+    for parent in current.parents:
+        if (parent / ".git").exists() or (parent / "pyproject.toml").exists():
+            return parent
+
+    # Biztonsági fallback a jelenlegi csomagszerkezethez.
+    return Path(__file__).resolve().parents[2]
 
 
 def is_dev_project() -> bool:
@@ -86,7 +99,7 @@ def is_dev_project() -> bool:
     Fejlesztői projekt felismerése.
     Ezt később lehet finomítani (pl. marker fájl).
     """
-    return (repo_root () / "data").exists()
+    return (repo_root() / "data").exists()
 
 
 # -----------------------------

@@ -64,7 +64,7 @@ from penzugyi_naplo.ui.likviditas.dialogs.transaction_edit_dialog import (
     TransactionEditDialog,
 )
 
-from penzugyi_naplo.config import APP_NAME, ORG_NAME
+from penzugyi_naplo.config.config import APP_NAME, ORG_NAME
 
 # -Importok vége -
 

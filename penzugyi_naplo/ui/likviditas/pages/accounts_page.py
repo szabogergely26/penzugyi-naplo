@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from penzugyi_naplo.config import is_dev_mode
+from penzugyi_naplo.config.config import is_dev_mode
 from penzugyi_naplo.ui.shared.pages.base_page import BasePage
 
 if TYPE_CHECKING:

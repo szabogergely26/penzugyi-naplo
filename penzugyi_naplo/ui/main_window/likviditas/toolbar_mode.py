@@ -13,11 +13,18 @@ Fontos:
     - Ez a modul csak a már létrehozott UI elemek láthatóságát kezeli.
 """
 
+
+
+
+
+
 from __future__ import annotations
 
-from PySide6.QtCore import QSettings, QTimer
+from PySide6.QtCore import Qt, QSize, QSettings, QTimer
+from PySide6.QtGui import QAction, QIcon
+from PySide6.QtWidgets import QToolBar
 
-from penzugyi_naplo.config import APP_NAME, ORG_NAME
+from penzugyi_naplo.config.config import APP_NAME, ORG_NAME
 
 
 def set_likviditas_toolbar_mode(window, mode: str) -> None:
@@ -32,6 +39,9 @@ def set_likviditas_toolbar_mode(window, mode: str) -> None:
 
     if hasattr(window, "ribbon") and window.ribbon:
         window.ribbon.setVisible(is_ribbon)
+
+    if hasattr(window, "likviditas_standard_toolbar"):
+        window.likviditas_standard_toolbar.setVisible(not is_ribbon)
 
     window.act_toolbar_menubar.setChecked(not is_ribbon)
     window.act_toolbar_ribbon.setChecked(is_ribbon)
@@ -50,3 +60,87 @@ def load_likviditas_toolbar_mode(window) -> None:
         mode = "menubar"
 
     set_likviditas_toolbar_mode(window, mode)
+
+
+def create_likviditas_standard_toolbar(window) -> QToolBar:
+    """
+    Menüsoros / standard nézet alatti egyszerű eszköztár létrehozása.
+
+    Ide kerülnek azok a gyakori műveletek, amelyekhez nem akarunk
+    külön Fájl menübe bemenni.
+    """
+    toolbar = QToolBar("Likviditás eszköztár", window)
+    toolbar.setObjectName("likviditasStandardToolbar")
+    toolbar.setMovable(False)
+    toolbar.setFloatable(False)
+
+   # Ikon felül, szöveg alatta.
+    toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+
+    # Ikonméret.
+    toolbar.setIconSize(QSize(25, 25))
+
+    # A toolbar minimum / maximum magassága.
+    toolbar.setMinimumHeight(90)
+    toolbar.setMaximumHeight(90)
+
+    # A gombok saját mérete/paddingje is számít, nem csak a toolbar magassága.
+    toolbar.setStyleSheet("""
+    QToolBar#likviditasStandardToolbar {
+        spacing: 4px;
+        padding: 4px 8px;
+    }
+
+    QToolBar#likviditasStandardToolbar QToolButton {
+        min-width: 92px;
+        min-height: 58px;
+        padding: 4px 6px;
+    }
+    """)
+
+    new_transaction_action = QAction(
+        QIcon.fromTheme("document-new"),
+        "Tranzakció Varázsló",
+        window,
+    )
+    new_transaction_action.setObjectName("actionTransactionWizardToolbar")
+    new_transaction_action.triggered.connect(window.on_new_transaction)
+
+    toolbar.addAction(new_transaction_action)
+
+
+    # Vizuális elválasztó: új tranzakció | adatbázis műveletek
+    toolbar.addSeparator()
+
+    backup_action = QAction(
+        QIcon.fromTheme("document-save"),
+        "Mentés",
+        window,
+    )
+    backup_action.setObjectName("actionBackupDatabaseToolbar")
+    backup_action.setToolTip("Adatbázis biztonsági mentése")
+    backup_action.triggered.connect(window.on_backup_database)
+    toolbar.addAction(backup_action)
+
+    restore_action = QAction(
+        QIcon.fromTheme("document-open"),
+        "Betöltés",
+        window,
+    )
+    restore_action.setObjectName("actionRestoreDatabaseToolbar")
+    restore_action.setToolTip("Adatbázis betöltése mentésből")
+    restore_action.triggered.connect(window.on_restore_database)
+    toolbar.addAction(restore_action)
+
+
+
+
+
+
+
+
+
+
+
+
+    return toolbar

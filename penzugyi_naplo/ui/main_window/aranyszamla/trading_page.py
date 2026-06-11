@@ -20,6 +20,7 @@ Megjegyzés:
 from pathlib import Path
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
@@ -30,7 +31,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
-    
+
 )
 
 from penzugyi_naplo.db.gold_database import (
@@ -84,7 +85,7 @@ class GoldTradingPage(QWidget):
         info_label.setWordWrap(True)
         layout.addWidget(info_label)
 
-       
+
         # Aranytranzakciók táblázata.
         self.table = QTableWidget()
         self.table.setObjectName("goldTransactionsTable")
@@ -174,6 +175,9 @@ class GoldTradingPage(QWidget):
     def load_transactions(self) -> None:
         """
         Betölti a gold_transactions tábla sorait a táblázatba.
+
+        A táblázat év szerinti vizuális elválasztó sorokat is kap.
+        Ezek nem adatbázis-sorok, csak megjelenítési segédsorok.
         """
 
         # Ha nincs adatbázis útvonal, nem próbálunk adatot betölteni.
@@ -195,10 +199,10 @@ class GoldTradingPage(QWidget):
         # Van adat, ezért a táblázat látszódjon, az üres szöveg ne.
         self.empty_label.setVisible(False)
 
-        # Soronként betöltjük a tranzakciókat.
-        for row_index, transaction in enumerate(transactions):
-            self.table.insertRow(row_index)
+        last_year: str | None = None
 
+        # Soronként betöltjük a tranzakciókat.
+        for transaction in transactions:
             # A lekért sor lehet dict-szerű vagy objektum-szerű.
             # Ez a segédfüggvény mindkét esetet kezeli.
             transaction_id = self._get_value(transaction, "id")
@@ -209,15 +213,88 @@ class GoldTradingPage(QWidget):
             total_huf = self._get_value(transaction, "total_huf")
             note = self._get_value(transaction, "note") or ""
 
+            year = self._extract_year(trade_date)
+
+            if year != last_year:
+                self._add_year_separator_row(year)
+                last_year = year
+
+            row_index = self.table.rowCount()
+            self.table.insertRow(row_index)
+
             # Cellák feltöltése.
             self._set_item(row_index, 0, str(trade_date or ""))
             self._set_item(row_index, 1, self._format_grams(grams), align_right=True)
-            self._set_item(row_index, 2, self._format_huf_per_gram(unit_price_huf), align_right=True)
+            self._set_item(
+                row_index,
+                2,
+                self._format_huf_per_gram(unit_price_huf),
+                align_right=True,
+            )
             self._set_item(row_index, 3, self._format_huf(total_huf), align_right=True)
             self._set_item(row_index, 4, str(note))
             self._set_item(row_index, 5, self._format_trade_type(str(trade_type or "")))
 
-            self._add_delete_button(row_index, int(transaction_id))
+            if transaction_id is not None:
+                self._add_delete_button(row_index, int(transaction_id))
+
+
+    # Segédfüggvények:
+    def _extract_year(self, trade_date: object) -> str:
+        """
+        Év kinyerése a tranzakció dátumából.
+
+        A dátum várhatóan ilyen formátumú:
+            2026.06.10
+            2026-06-10
+
+        Ha nem olvasható, akkor külön 'Ismeretlen év' csoportba kerül.
+        """
+
+        if trade_date is None:
+            return "Ismeretlen év"
+
+        date_text = str(trade_date).strip()
+
+        if len(date_text) < 4:
+            return "Ismeretlen év"
+
+        year = date_text[:4]
+
+        if not year.isdigit():
+            return "Ismeretlen év"
+
+        return year
+
+
+    def _add_year_separator_row(self, year: str) -> None:
+        """
+        Év szerinti vizuális elválasztó sort szúr be a táblázatba.
+
+        Ez nem valódi tranzakciósor, ezért:
+            - nem szerkeszthető,
+            - nincs törlés gombja,
+            - teljes táblaszélességben jelenik meg.
+        """
+
+        row = self.table.rowCount()
+        self.table.insertRow(row)
+
+        column_count = self.table.columnCount()
+
+        item = QTableWidgetItem(f"──────────── {year} ────────────")
+        item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+
+        font = QFont()
+        font.setBold(True)
+        item.setFont(font)
+
+        item.setBackground(QBrush(QColor("#eaedf3")))
+
+        self.table.setItem(row, 0, item)
+        self.table.setSpan(row, 0, 1, column_count)
+        self.table.setRowHeight(row, 30)
 
 
 
@@ -308,6 +385,14 @@ class GoldTradingPage(QWidget):
 
         self.load_transactions()
 
+
+        parent = self.parent()
+        while parent is not None:
+            if hasattr(parent, "refresh"):
+                parent.refresh()
+                break
+
+            parent = parent.parent()
 
 
 
@@ -401,6 +486,5 @@ class GoldTradingPage(QWidget):
             return str(value)
 
         return f"{number:,.0f} Ft/g".replace(",", " ")
-    
 
-    
+

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from penzugyi_naplo.ui.likviditas.pages.accounts_page import AccountsPage
 from penzugyi_naplo.ui.bills.bills_page import BillsPage
+from penzugyi_naplo.ui.shared.pages.coming_soon_page import ComingSoonPage
 from penzugyi_naplo.ui.likviditas.pages.home_page import HomePage
 from penzugyi_naplo.ui.likviditas.pages.statistics_page import StatisticsPage
 from penzugyi_naplo.ui.likviditas.pages.transactions_page import TransactionsPage
@@ -33,13 +34,11 @@ def register_likviditas_pages(window) -> None:
     window.add_page("home", HomePage(window))
     window.add_page("transactions", TransactionsPage(window, db=window.db))
 
-
-
     # --- Statisztika ---
     window.add_page("statistics", StatisticsPage(window.ctx, parent=window))
-    
 
-    
+
+
 
     # --- Számlák ---
     window.bills_page = BillsPage(window, db=window.db)
