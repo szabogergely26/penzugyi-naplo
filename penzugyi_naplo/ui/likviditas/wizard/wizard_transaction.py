@@ -29,7 +29,7 @@ import re
 from datetime import datetime
 from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import QLocale
+from PySide6.QtCore import Qt, QLocale
 from PySide6.QtWidgets import (
     QButtonGroup,
     QComboBox,
@@ -42,6 +42,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWizard,
     QWizardPage,
+    QHBoxLayout,
+    QFrame,
+    QWidget,
 )
 
 from penzugyi_naplo.core.utils import is_valid_date, parse_amount
@@ -122,6 +125,69 @@ def bill_requires_period(provider: str) -> bool:
     return (provider or "").strip() == "MVMNext"
 
 
+
+
+def create_transaction_wizard_page_layout(
+    page: QWizardPage,
+    icon_text: str,
+    title: str,
+    subtitle: str,
+) -> tuple[QVBoxLayout, QLabel, QLabel]:
+    """
+    Egységes kétoszlopos Likviditás-varázsló oldal.
+
+    Bal oldal:
+    - kép / ikon / illusztráció helye
+
+    Jobb oldal:
+    - az adott oldal tényleges tartalma
+    """
+
+    root_layout = QHBoxLayout(page)
+    root_layout.setContentsMargins(18, 18, 18, 18)
+    root_layout.setSpacing(20)
+
+    image_panel = QFrame()
+    image_panel.setObjectName("transactionWizardImagePanel")
+    image_panel.setMinimumWidth(230)
+    image_panel.setMaximumWidth(280)
+
+    image_layout = QVBoxLayout(image_panel)
+    image_layout.setContentsMargins(20, 20, 20, 20)
+    image_layout.setSpacing(12)
+
+    icon_label = QLabel(icon_text)
+    icon_label.setObjectName("transactionWizardImagePlaceholder")
+    icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    title_label = QLabel(title)
+    title_label.setObjectName("transactionWizardImageTitle")
+    title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    title_label.setWordWrap(True)
+
+    subtitle_label = QLabel(subtitle)
+    subtitle_label.setObjectName("transactionWizardImageSubtitle")
+    subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    subtitle_label.setWordWrap(True)
+
+    image_layout.addStretch(1)
+    image_layout.addWidget(icon_label)
+    image_layout.addWidget(title_label)
+    image_layout.addWidget(subtitle_label)
+    image_layout.addStretch(1)
+
+    content_panel = QWidget()
+    content_panel.setObjectName("transactionWizardContentPanel")
+
+    content_layout = QVBoxLayout(content_panel)
+    content_layout.setContentsMargins(0, 0, 0, 0)
+    content_layout.setSpacing(12)
+
+    root_layout.addWidget(image_panel)
+    root_layout.addWidget(content_panel, 1)
+
+    return content_layout, title_label, subtitle_label
+
 # ---------------- Segédfüggvények vége .............................
 
 
@@ -129,30 +195,63 @@ def bill_requires_period(provider: str) -> bool:
 class PageTypeSelection(QWizardPage):
     def __init__(self) -> None:
         super().__init__()
-        self.setTitle("Tranzakció Típusa")
+        self.setTitle("Tranzakció típusa")
         self.setSubTitle(
-            "Válassza ki a tranzakció típusát: Bevétel, Kiadás vagy Számlabefizetés."
+            "Válaszd ki, milyen pénzmozgást szeretnél rögzíteni."
         )
 
-        layout = QVBoxLayout(self)
+        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
+            self,
+            "💰",
+            "Új tranzakció",
+            "Bevétel, kiadás vagy számlabefizetés rögzítése.",
+        )
 
-        self.combo_type = QComboBox()
-        self.combo_type.addItems(["Kiadás", "Bevétel", "Számlabefizetés"])
+        info_label = QLabel("Mit szeretnél rögzíteni?")
+        info_label.setObjectName("transactionWizardSectionTitle")
+        layout.addWidget(info_label)
 
-        layout.addWidget(QLabel("Típus:"))
-        layout.addWidget(self.combo_type)
-        layout.addStretch()
+        self.rb_income = QRadioButton("Bevétel")
+        self.rb_expense = QRadioButton("Kiadás")
+        self.rb_bill = QRadioButton("Számlabefizetés")
+
+        self.rb_income.setObjectName("transactionWizardRadio")
+        self.rb_expense.setObjectName("transactionWizardRadio")
+        self.rb_bill.setObjectName("transactionWizardRadio")
+
+        self.rb_income.setChecked(True)
+
+        self.group = QButtonGroup(self)
+        self.group.addButton(self.rb_income, 0)
+        self.group.addButton(self.rb_expense, 1)
+        self.group.addButton(self.rb_bill, 2)
+
+        layout.addWidget(self.rb_income)
+        layout.addWidget(self.rb_expense)
+        layout.addWidget(self.rb_bill)
+
+        hint_label = QLabel(
+            "A számlabefizetés külön ágon kezeli például a Telekom, KalászNet "
+            "vagy MVMNext típusú befizetéseket."
+        )
+        hint_label.setObjectName("transactionWizardHint")
+        hint_label.setWordWrap(True)
+
+        layout.addSpacing(8)
+        layout.addWidget(hint_label)
+        layout.addStretch(1)
 
     def get_type(self) -> str:
-        t = self.combo_type.currentText()
-        if t == "Bevétel":
+        if self.rb_income.isChecked():
             return "income"
-        if t == "Számlabefizetés":
+
+        if self.rb_bill.isChecked():
             return "bill"
+
         return "expense"
 
     def nextId(self) -> int:
-        # A következő wizard oldal indexe a QWizard-ben
+        # A következő wizard oldal indexe a QWizard-ben.
         return 5 if self.get_type() == "bill" else 1
 
 
@@ -171,44 +270,42 @@ class PageCategorySelection(QWizardPage):
         self.setTitle("Kategória kiválasztása")
         self.setSubTitle("Melyik kategóriához tartozik a tétel és mi a leírása?")
 
-        layout = QGridLayout(self)
+        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
+            self,
+            "🧾",
+            "Tranzakció adatai",
+            "Add meg a név, kategória és dátum adatait.",
+        )
 
         self.category_map: dict[str, int] = {}
 
-        # Név
-        layout.addWidget(QLabel("Név:"), 0, 0)
+        layout.addWidget(QLabel("Név"))
         self.input_name = QLineEdit()
         self.input_name.setPlaceholderText("Pl.: Havi bérlet, Lidl, Fizetés")
-        layout.addWidget(self.input_name, 0, 1)
+        layout.addWidget(self.input_name)
 
-        # Leírás
-        layout.addWidget(QLabel("Leírás:"), 1, 0)
+        layout.addWidget(QLabel("Leírás"))
         self.input_description = QLineEdit()
         self.input_description.setPlaceholderText("Opcionális megjegyzés / részletek")
-        layout.addWidget(self.input_description, 1, 1)
+        layout.addWidget(self.input_description)
 
-        # Kategória
-        layout.addWidget(QLabel("Kategória:"), 2, 0)
+        layout.addWidget(QLabel("Kategória"))
         self.combo_category = QComboBox()
-        layout.addWidget(self.combo_category, 2, 1)
+        layout.addWidget(self.combo_category)
 
-        # Dátum
-        layout.addWidget(QLabel("Dátum (YYYY-MM-DD):"), 3, 0)
+        layout.addWidget(QLabel("Dátum"))
         self.input_date = QLineEdit()
         self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
-        layout.addWidget(self.input_date, 3, 1)
+        layout.addWidget(self.input_date)
 
-        layout.addWidget(
-            QLabel(
-                "Megjegyzés: A dátum formátuma YYYY-MM-DD legyen (Pl.: 2025-2-7 is működik)."
-            ),
-            4,
-            0,
-            1,
-            2,
+        hint = QLabel(
+            "A dátum formátuma YYYY-MM-DD legyen. Például: 2026-06-11."
         )
+        hint.setObjectName("transactionWizardHint")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
 
-        layout.setRowStretch(5, 1)
+        layout.addStretch(1)
 
     def initializePage(self) -> None:
         """
@@ -232,6 +329,25 @@ class PageCategorySelection(QWizardPage):
         current_type = "expense"
         if type_page is not None and hasattr(type_page, "get_type"):
             current_type = cast(object, type_page).get_type()  # type: ignore[attr-defined]
+
+        if current_type == "income":
+            self.setTitle("Bevétel hozzáadása")
+            self.setSubTitle("Add meg a bevétel nevét, kategóriáját és dátumát.")
+            self.side_title_label.setText("Bevétel")
+            self.side_subtitle_label.setText("Pénz érkezése valamelyik saját egyenleghez.")
+
+        elif current_type == "expense":
+            self.setTitle("Kiadás hozzáadása")
+            self.setSubTitle("Add meg a kiadás nevét, kategóriáját és dátumát.")
+            self.side_title_label.setText("Kiadás")
+            self.side_subtitle_label.setText("Külső célra elköltött összeg rögzítése.")
+
+        else:
+            self.setTitle("Tranzakció hozzáadása")
+            self.setSubTitle("Add meg a tranzakció adatait.")
+            self.side_title_label.setText("Tranzakció")
+            self.side_subtitle_label.setText("Pénzmozgás rögzítése a naplóban.")
+
 
         # 2) Kategóriák betöltése: először DB API, ha van; különben fallback SQL
         categories: list[tuple[int, str]] = []
@@ -279,6 +395,20 @@ class PageCategorySelection(QWizardPage):
         )
 
     def nextId(self) -> int:
+        wizard = self.wizard()
+
+        if (
+            wizard is not None
+            and wizard.page(0) is not None
+            and hasattr(wizard.page(0), "get_type")
+        ):
+            current_type = wizard.page(0).get_type()
+
+            # Bevételnél nincs részletezés, egyből az összeg oldalra megyünk.
+            if current_type == "income":
+                return 3
+
+        # Kiadásnál marad a részletezés döntés oldal.
         return 2
 
 
@@ -296,16 +426,28 @@ class PageSplitDecision(QWizardPage):
         self.setTitle("Tétel típusa")
         self.setSubTitle("Egy tételként rögzíted, vagy több részletből áll?")
 
-        layout = QVBoxLayout(self)
+        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
+            self,
+            "🧩",
+            "Tétel típusa",
+            "Döntsd el, hogy egyszerű vagy részletezett tételt rögzítesz.",
+        )
 
         info = QLabel(
             "• Egy tétel: egy összeg kerül rögzítésre.\n"
             "• Részletezés: több tételt rögzítesz, és azok összege adja a végösszeget."
         )
+        info.setObjectName("transactionWizardHint")
         info.setWordWrap(True)
 
-        self.rb_single = QRadioButton("Egy tétel (nincs bontás)")
-        self.rb_details = QRadioButton("Több tételből áll (részletezés)")
+        self.rb_single = QRadioButton("Egy tétel\n    Nincs bontás, csak egy végösszeg.")
+        self.rb_details = QRadioButton(
+            "Több tételből áll\n"
+            "    Részletezett bevitel, például: burgonya;500*2"
+        )
+
+        self.rb_single.setObjectName("transactionWizardRadio")
+        self.rb_details.setObjectName("transactionWizardRadio")
 
         self.rb_single.setChecked(True)
 
@@ -326,6 +468,9 @@ class PageSplitDecision(QWizardPage):
         return 4 if has_details else 3
 
 
+
+
+
 class PageBillProvider(QWizardPage):
     """
     Számlabefizetés oldal (Számlabefizetés ág): szolgáltató választás.
@@ -334,26 +479,45 @@ class PageBillProvider(QWizardPage):
     def __init__(self) -> None:
         super().__init__()
         self.setTitle("Számlabefizetés")
-        self.setSubTitle("Válassza ki a célszámlát / szolgáltatót.")
+        self.setSubTitle("Válaszd ki a célszámlát / szolgáltatót.")
 
-        layout = QVBoxLayout(self)
+        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
+            self,
+            "🧾",
+            "Számlabefizetés",
+            "Válaszd ki, melyik számlát vagy szolgáltatót fizeted be.",
+        )
+
+        label = QLabel("Célszámla / szolgáltató")
+        label.setObjectName("transactionWizardSectionTitle")
+        layout.addWidget(label)
 
         self.combo = QComboBox()
-        self.combo.addItems([
+        self.combo.addItems(
+            [
                 "Válassz szolgáltatót...",
                 "KalászNet (Internet)",
                 "Telekom",
                 "MVMNext",
-            ])
+            ]
+        )
 
-        layout.addWidget(QLabel("Célszámla:"))
         layout.addWidget(self.combo)
+
+        hint = QLabel(
+            "Az MVMNext választás után külön megadható, hogy villany vagy gáz számláról van szó."
+        )
+        hint.setObjectName("transactionWizardHint")
+        hint.setWordWrap(True)
+
+        layout.addSpacing(8)
+        layout.addWidget(hint)
         layout.addStretch(1)
 
         self.registerField(
-            "bill_provider*", 
-            self.combo, 
-            "currentText", 
+            "bill_provider*",
+            self.combo,
+            "currentText",
             self.combo.currentTextChanged,
         )
 
@@ -363,7 +527,11 @@ class PageBillProvider(QWizardPage):
         return self.combo.currentIndex() > 0
 
     def nextId(self) -> int:
-        return 6 if self.combo.currentText() == "MVMNext" else 3  # Amount
+        return 6 if self.combo.currentText() == "MVMNext" else 3
+
+
+
+
 
 
 class PageBillMvmType(QWizardPage):
@@ -374,12 +542,25 @@ class PageBillMvmType(QWizardPage):
     def __init__(self) -> None:
         super().__init__()
         self.setTitle("MVMNext")
-        self.setSubTitle("Válassza ki: Villany vagy Gáz.")
+        self.setSubTitle("Válaszd ki: villany vagy gáz.")
 
-        layout = QVBoxLayout(self)
+        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
+            self,
+            "⚡",
+            "MVMNext",
+            "Válaszd ki, hogy villany vagy gáz számlát rögzítesz.",
+        )
+
+        label = QLabel("Milyen MVMNext számlát fizetsz?")
+        label.setObjectName("transactionWizardSectionTitle")
+        layout.addWidget(label)
 
         self.rb_villany = QRadioButton("Villany")
         self.rb_gaz = QRadioButton("Gáz")
+
+        self.rb_villany.setObjectName("transactionWizardRadio")
+        self.rb_gaz.setObjectName("transactionWizardRadio")
+
         self.rb_villany.setChecked(True)
 
         self.group = QButtonGroup(self)
@@ -394,7 +575,7 @@ class PageBillMvmType(QWizardPage):
         return self.rb_gaz.isChecked()
 
     def nextId(self) -> int:
-        return 3  # Amount
+        return 3
 
 
 class PageAmount(QWizardPage):
@@ -404,7 +585,12 @@ class PageAmount(QWizardPage):
         self.setSubTitle("Adja meg a tranzakció értékét (csak pozitív számot).")
         self.setFinalPage(True)
 
-        layout = QVBoxLayout(self)
+        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
+            self,
+            "💵",
+            "Összeg rögzítése",
+            "Add meg a tranzakció értékét.",
+        )
 
         # ---- Bill mód mezők (alapesetben rejtve) ----
 
@@ -446,7 +632,7 @@ class PageAmount(QWizardPage):
         layout.addWidget(self.input_amount)
         layout.addStretch()
 
-   
+
     def initializePage(self) -> None:
         super().initializePage()
 
@@ -466,6 +652,26 @@ class PageAmount(QWizardPage):
 
         is_bill = mode == "bill"
         needs_period = is_bill and bill_requires_period(provider)
+
+        if is_bill:
+            self.setTitle("Számlabefizetés összege")
+            self.setSubTitle("Add meg a fizetés dátumát és a befizetett összeget.")
+            self.side_title_label.setText("Számla összege")
+            self.side_subtitle_label.setText("A számlabefizetéshez tartozó összeg és dátum.")
+
+        elif mode == "income":
+            self.setTitle("Bevétel összege")
+            self.setSubTitle("Add meg a bevétel összegét.")
+            self.side_title_label.setText("Bevétel összege")
+            self.side_subtitle_label.setText("A saját egyenleghez érkező pénz rögzítése.")
+
+        else:
+            self.setTitle("Kiadás összege")
+            self.setSubTitle("Add meg a kiadás összegét.")
+            self.side_title_label.setText("Kiadás összege")
+            self.side_subtitle_label.setText("A kiadáshoz tartozó végösszeg rögzítése.")
+
+
 
         self.lbl_date.setVisible(is_bill)
         self.input_date.setVisible(is_bill)
@@ -594,7 +800,7 @@ class PageAmount(QWizardPage):
 
     def nextId(self) -> int:
         return -1
-    
+
     def get_invoice_number_raw(self) -> str:
         return self.input_invoice_number.text().strip()
 
@@ -616,6 +822,17 @@ class TransactionWizard(QWizard):
         self.main_window = main_window
 
         self.setWindowTitle("Új Tranzakció Rögzítése")
+        self.setMinimumWidth(860)
+        self.setMinimumHeight(580)
+        self.setObjectName("transactionWizard")
+
+        self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
+        self.setOption(QWizard.WizardOption.NoBackButtonOnStartPage, True)
+
+        self.setButtonText(QWizard.WizardButton.BackButton, "Vissza")
+        self.setButtonText(QWizard.WizardButton.NextButton, "Tovább")
+        self.setButtonText(QWizard.WizardButton.FinishButton, "Mentés")
+        self.setButtonText(QWizard.WizardButton.CancelButton, "Mégse")
 
         # Oldalak (id-k: 0,1,2,3)
         self.setPage(0, PageTypeSelection())
@@ -626,7 +843,7 @@ class TransactionWizard(QWizard):
         self.setPage(5, PageBillProvider())
         self.setPage(6, PageBillMvmType())
 
-   
+
     def accept(self) -> None:
         raw_mode = self.page(0).get_type()  # 'income' / 'expense' / 'bill'
         provider = (self.field("bill_provider") or "").strip()
@@ -684,7 +901,7 @@ class TransactionWizard(QWizard):
 
             amount_page = self.page(3)
 
-           
+
             date_raw = amount_page.get_bill_date_raw()
 
             name = target_name
@@ -716,7 +933,7 @@ class TransactionWizard(QWizard):
                         "Az időszak kezdete nem lehet későbbi, mint az időszak vége.",
                     )
                     return
-                
+
 
 
         # -------------------------------------------------
@@ -798,7 +1015,7 @@ class TransactionWizard(QWizard):
             period_start,
             period_end,
         )
-        
+
         print("BILL SAVE DATA:", data)
         print("BILL SAVE DB:", getattr(self.db, "db_name", None))
 
@@ -836,11 +1053,11 @@ class TransactionWizard(QWizard):
                 )
 
         msg = (
-            "Számla sikeresen rögzítve!" 
-            if mode == "bill" 
+            "Számla sikeresen rögzítve!"
+            if mode == "bill"
             else "Tranzakció sikeresen rögzítve!"
         )
-        
+
         QMessageBox.information(self, "Siker", msg)
 
         # Mentés után frissítjük az érintett oldalakat,
@@ -875,10 +1092,25 @@ class PageDetails(QWizardPage):
         super().__init__()
         self.setTitle("Részletek rögzítése")
         self.setSubTitle(
-            "Soronként add meg: tételnév;egységár*db  (pl. rágó;349*3)  vagy tételnév;egységár  (db=1)."
+            "Soronként add meg: tételnév;egységár*db vagy tételnév;egységár."
         )
 
-        layout = QVBoxLayout(self)
+        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
+            self,
+            "📝",
+            "Részletezés",
+            "Több tételből álló kiadás vagy bevétel bontása.",
+        )
+
+        hint = QLabel(
+            "Formátum példák:\n"
+            "• burgonyás pogácsa;185*2\n"
+            "• orbit gyümölcsös;349*3\n"
+            "• kávé;450"
+        )
+        hint.setObjectName("transactionWizardHint")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
 
         self.txt = QTextEdit()
         self.txt.setPlaceholderText(
@@ -887,6 +1119,7 @@ class PageDetails(QWizardPage):
         layout.addWidget(self.txt)
 
         self.lbl_sum = QLabel("Összesen: 0 HUF")
+        self.lbl_sum.setObjectName("transactionWizardSectionTitle")
         layout.addWidget(self.lbl_sum)
 
         # wizard field: details_total (float)
@@ -903,17 +1136,21 @@ class PageDetails(QWizardPage):
 
         # total megy a hidden_total-on
         self.registerField(
-            "details_total", 
-            self._hidden_total, 
-            "text", "textChanged"
+            "details_total",
+            self._hidden_total,
+            "text",
+            "textChanged",
         )
 
         self._hidden_text = QLineEdit(self)
         self._hidden_text.setVisible(False)
         self._hidden_text.setText("")
 
-        # text megy a hidden_text-en (CSAK EGYSZER!)
+        # text megy a hidden_text-en
         self.registerField("details_text", self._hidden_text, "text", "textChanged")
+
+
+
 
     def _sync_hidden_text(self) -> None:
         self._hidden_text.setText(self.txt.toPlainText())
