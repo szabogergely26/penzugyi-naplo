@@ -150,6 +150,30 @@ QLabel#aranyszamlaSecondaryValue {
    4. Kereskedés oldal
    ============================================================ */
 
+
+   /* Kereskedés oldal címe */
+QLabel#goldPageTitle {
+    font-size: 28px;
+    font-weight: bold;
+    color: #3f2f08;
+}
+
+/* Kereskedés oldal rövid magyarázó szövege */
+QLabel#goldPageInfo {
+    font-size: 14px;
+    color: #78612a;
+}
+
+
+
+
+
+
+
+
+
+
+
 QFrame#aranyszamlaTableCard {
     background: rgba(255, 255, 255, 0.72);
     border: 1px solid rgba(202, 138, 4, 0.18);
