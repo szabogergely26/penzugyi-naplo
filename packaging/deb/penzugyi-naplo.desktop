@@ -1,0 +1,18 @@
+[Desktop Entry]
+Categories=Office;Finance;
+Comment[hu_HU]=Saját fejlesztésű pénzügyi napló alkalmazás
+Comment=Saját fejlesztésű pénzügyi napló alkalmazás
+Exec=penzugyi-naplo
+GenericName[hu_HU]=
+GenericName=
+Icon=penzugyi-naplo
+MimeType=
+Name[hu_HU]=Pénzügyi Napló
+Name=Pénzügyi Napló
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-KDE-SubstituteUID=false
+X-KDE-Username=
