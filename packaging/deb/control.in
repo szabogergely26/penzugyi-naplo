@@ -1,5 +1,5 @@
 Package: penzugyi-naplo
-Version: 0.1.2
+Version: @VERSION@
 Section: utils
 Priority: optional
 Architecture: all
