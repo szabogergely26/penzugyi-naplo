@@ -11,11 +11,12 @@ CONTROL_TEMPLATE="$ROOT_DIR/packaging/deb/control.in"
 DESKTOP_FILE="$ROOT_DIR/packaging/deb/penzugyi-naplo.desktop"
 
 VERSION="$(
-  python3 - <<'PY'
+  PYTHONPATH="$ROOT_DIR" python3 - <<'PY'
 from penzugyi_naplo.app_version import APP_VERSION
 print(APP_VERSION)
 PY
 )"
+
 PKG_DIR="$BUILD_DIR/${APP_NAME}_${VERSION}_${ARCH}"
 DEB_FILE="$BUILD_DIR/${APP_NAME}_${VERSION}_${ARCH}.deb"
 
