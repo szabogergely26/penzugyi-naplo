@@ -397,9 +397,11 @@ class AranyszamlaHomePage(QWidget):
 
         self.physical_cards_layout = QGridLayout(self.physical_cards_container)
 
-        self.physical_cards_layout.setContentsMargins(0, 0, 0, 0)
+        # Felső margó kell, mert hover-nél a kártya felfelé mozdul.
+        # Ha nincs puffer, a scroll area levágja a kártya tetejét.
+        self.physical_cards_layout.setContentsMargins(0, 20, 0, 12)
         self.physical_cards_layout.setHorizontalSpacing(16)
-        self.physical_cards_layout.setVerticalSpacing(16)
+        self.physical_cards_layout.setVerticalSpacing(12)
 
         self.physical_scroll.setWidget(self.physical_cards_container)
 
@@ -487,21 +489,30 @@ class AranyszamlaHomePage(QWidget):
 
             return
 
-        columns = 4
+        max_columns = 4
+        columns = min(max_columns, max(1, len(items)))
 
         for index, item in enumerate(items):
             row = index // columns
             column = index % columns
 
             card = self._create_physical_item_card(item)
-            self.physical_cards_layout.addWidget(card, row, column)
+            self.physical_cards_layout.addWidget(
+                card,
+                row,
+                column,
+                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop,
+            )
 
+        # Először nullázzuk a lehetséges oszlopnyújtásokat,
+        # hogy refresh után se maradjon bent régi 4 oszlopos elosztás.
+        for column in range(max_columns):
+            self.physical_cards_layout.setColumnStretch(column, 0)
 
-        self.physical_cards_layout.setColumnStretch(0, 1)
-        self.physical_cards_layout.setColumnStretch(1, 1)
-        self.physical_cards_layout.setColumnStretch(2, 1)
-        self.physical_cards_layout.setColumnStretch(3, 1)
-
+        # Csak a ténylegesen használt oszlopokat nyújtjuk.
+        # Így 3 terméknél 3 oszlop lesz, nem 4 oszlop + üres jobb oldal.
+        for column in range(columns):
+            self.physical_cards_layout.setColumnStretch(column, 1)
 
     def _create_physical_item_card(self, item: dict) -> QFrame:
         """
@@ -532,7 +543,7 @@ class AranyszamlaHomePage(QWidget):
         layout = QVBoxLayout(card)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(18)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
         # ---------------------------------------------------------
         # Bal oldal: termékkép
@@ -544,48 +555,25 @@ class AranyszamlaHomePage(QWidget):
 
         # Képek betöltése:
         image_path = str(item.get("image_path", "")).strip()
+        resolved_image_path = self._resolve_app_asset_path(image_path)
 
-        if image_path:
-            raw_path = Path(image_path).expanduser()
+        if resolved_image_path is not None:
+            pixmap = QPixmap(str(resolved_image_path))
 
-            if raw_path.is_absolute():
-                resolved_image_path = raw_path
-            else:
-                # A db_path például:
-                # data/transactions_dev.sqlite3
-                #
-                # Ennek a szülője:
-                # data/
-                #
-                # Ennek a szülője:
-                # projekt gyökere
-                #
-                # Az adatbázisban most ilyen útvonal van:
-                # data/gold_physical_image/5g_aranylapka.jpg
-                #
-                # Ezért a projekt gyökeréhez képest oldjuk fel.
-                project_root = Path(self.db_path).resolve().parent.parent
-                resolved_image_path = project_root / raw_path
-
-            if resolved_image_path.exists() and resolved_image_path.is_file():
-                pixmap = QPixmap(str(resolved_image_path))
-
-                if not pixmap.isNull():
-                    image_label.setPixmap(
-                        pixmap.scaled(
-                            110,
-                            90,
-                            Qt.AspectRatioMode.KeepAspectRatio,
-                            Qt.TransformationMode.SmoothTransformation,
-                        )
+            if not pixmap.isNull():
+                image_label.setPixmap(
+                    pixmap.scaled(
+                        110,
+                        90,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
                     )
-                    image_label.setText("")
-                else:
-                    image_label.setText("Hibás kép")
+                )
+                image_label.setText("")
             else:
-                image_label.setText("Kép nem található")
+                image_label.setText("Hibás kép")
         else:
-            image_label.setText("Nincs kép")
+            image_label.setText("Kép nem található" if image_path else "Nincs kép")
 
         # ---------------------------------------------------------
         # Jobb oldal: szöveges adatok
@@ -745,6 +733,42 @@ class AranyszamlaHomePage(QWidget):
         shadow.setColor(QColor(90, 60, 15, 95))
 
         card.setGraphicsEffect(shadow)
+
+
+
+    def _resolve_app_asset_path(self, relative_path: str | None) -> Path | None:
+        """
+        Alkalmazáshoz tartozó képek / asset fájlok feloldása.
+
+        Működjön:
+            - fejlesztői futtatásnál projektmappából
+            - telepített .deb csomagnál /usr/share/penzugyi-naplo alól
+            - abszolút útvonal esetén közvetlenül
+        """
+
+        if not relative_path:
+            return None
+
+        raw_path = Path(relative_path).expanduser()
+
+        if raw_path.is_absolute():
+            if raw_path.exists() and raw_path.is_file():
+                return raw_path
+            return None
+
+        project_root = Path(__file__).resolve().parents[4]
+
+        candidates = [
+            project_root / raw_path,
+            Path.cwd() / raw_path,
+            Path("/usr/share/penzugyi-naplo") / raw_path,
+        ]
+
+        for candidate in candidates:
+            if candidate.exists() and candidate.is_file():
+                return candidate
+
+        return None
 
 
     # --- Segédfüggvények vége
