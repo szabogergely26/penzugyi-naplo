@@ -15,13 +15,21 @@ class VersionHistoryDialog(QDialog):
         browser.setHtml("""
         <h1>Verziótörténet – Pénzügyi Napló</h1>
 
+        <h2>0.1.6 – 2026-06-13</h2>
+        <ul>
+            <li>Fizikai aranytermékek megjelenítésének javítása az Aranyszámla oldalon.</li>
+            <li>Fizikai aranytermék képek betöltésének javítása fejlesztői és telepített környezetben.</li>
+            <li>Fizikai aranytermék kártyák igazításának és hover megjelenésének finomítása.</li>
+        </ul>
+
+
         <h2>0.1.2 – 2026-06-05</h2>
         <ul>
             <li>Tranzakciólista frissítése wizard befejezése után.</li>
             <li>Évszűrő kezelés javítása a Tranzakciók oldalon.</li>
-        </ul>                
-        
-                        
+        </ul>
+
+
         <h2>0.1.1 – 2026-06-05</h2>
         <ul>
             <li>Aláírt APT szoftverforrás létrehozása GitHub Pages alapon.</li>
