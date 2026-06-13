@@ -27,7 +27,6 @@ Topology:
 
 from __future__ import annotations
 
-import logging
 import sys
 from pathlib import Path
 
@@ -117,15 +116,14 @@ def main() -> int:
 
     db = TransactionDatabase(str(path))
     win = MainWindow(db=db, dev_mode=dev_mode)
+    win.log = log
     win.setWindowIcon(app_icon)
     win.showMaximized()
 
 
-    log.info("APP EXEC START")
+    log.d("APP EXEC START")
     rc = app.exec()
-    log.info("APP EXEC END", rc)
-
-    logging.shutdown()
+    log.d("APP EXEC END", rc)
 
     return rc
 
