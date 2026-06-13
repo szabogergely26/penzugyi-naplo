@@ -28,7 +28,7 @@ Oldalak:
         → Részletes tranzakciós tábla
     - Statisztika: ui/charts.py (ChartManager)
     - Számlák: ui/pages/bills_page.py
-    - Beállítások: ui/pages/settings_page.py
+    - Beállítások: ui/settings/settings.py
 
 Adatkapcsolat:
     - TransactionDatabase példány kezelése
