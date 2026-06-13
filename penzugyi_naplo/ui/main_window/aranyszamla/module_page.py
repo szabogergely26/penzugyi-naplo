@@ -2,7 +2,7 @@
 # ---------------------------------------------------------
 
 """
-Aranyszámla modul konténeroldal.
+Aranyszámla modul konténeroldal / főoldal.
 
 Feladata:
 - saját belső nav_bar biztosítása
@@ -89,6 +89,9 @@ class AranyszamlaModulePage(QWidget):
     def show_home(self) -> None:
         """Átvált az Aranyszámla kezdőoldalára."""
 
+        if hasattr(self.home_page, "refresh"):
+            self.home_page.refresh()
+
         self.stack.setCurrentWidget(self.home_page)
         self.btn_home.setChecked(True)
         self.btn_trading.setChecked(False)
@@ -112,3 +115,8 @@ class AranyszamlaModulePage(QWidget):
 
         if hasattr(self.trading_page, "refresh"):
             self.trading_page.refresh()
+
+        elif hasattr(self.trading_page, "reload"):
+            self.trading_page.reload()
+        elif hasattr(self.trading_page, "reload_data"):
+            self.trading_page.reload_data()

@@ -13,10 +13,13 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "4.5-dev"
-BUILD_INFO = "Fejlesztés alatt...\n2025. novembertől"
-DEV_STATE = "Aktuális fejlesztési állapot:\n4.6"
+from penzugyi_naplo.app_version import (
+    APP_NAME,
+    APP_VERSION,
+    APP_CHANNEL,
+    BUILD_INFO,
+    DEV_STATE,
+)
 
 
 class AboutDialog(QDialog):
@@ -31,7 +34,7 @@ class AboutDialog(QDialog):
         title = QLabel(f"<h2>{APP_NAME}</h2>")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        version = QLabel(f"Verzió: {APP_VERSION}")
+        version = QLabel(f"Verzió: {APP_VERSION} ({APP_CHANNEL})")
         version.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         build = QLabel(BUILD_INFO)

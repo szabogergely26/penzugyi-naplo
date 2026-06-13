@@ -112,15 +112,20 @@ def stable_data_dir() -> Path:
     return base
 
 
-def dev_project_data_dir() -> Path:
-    data_dir = repo_root() / "data"
+def dev_data_dir() -> Path:
+    """
+    Fejlesztői adatkönyvtár.
+
+    Szándékosan a felhasználói adatkönyvtár alatt van, nem a projektmappában
+    és nem /usr/share alatt. Így telepített .deb csomagból futtatva is írható.
+    """
+    data_dir = stable_data_dir() / "dev"
     data_dir.mkdir(parents=True, exist_ok=True)
     return data_dir
 
 
 def active_data_dir() -> Path:
-    return dev_project_data_dir() if is_dev_project() else stable_data_dir()
-
+    return dev_data_dir() if is_dev_mode() else stable_data_dir()
 
 # -----------------------------
 # DB

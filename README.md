@@ -10,9 +10,76 @@ Célja, hogy hónapok múlva is gyorsan megtalálható legyen:
     - milyen adatútvonalon megy végig egy funkció,
     - milyen döntéseket hoztunk korábban.
 
+    - Kitűzött célok tisztázása
+
+
+## - Kitűzött célok:
+    Likviditás/Tranzakciók:
+        - Jobb gomb: oszlopszűrő lista az oszlopra kattintva
+        - Bal gomb: növekvő/ csökkenő sorrend
+        -  Részletes tételhez utólag lehessen új sort hozzáadni
+
+    Tranzakciós lista frissítése a Varázsló bezárása után
+
+    Pénztárcák:
+        - Bank szekcióba Hitelkártya
+        - Előzmények lista törlésének lehetősége (vagy mindig az utolsó 30 nap mutatása)
+        - Kézi rögzítés típusához lenyíló nyíl
+
+
+    Számlák:
+        - Hónapok jelzése számmal
 
 
 
+
+
+## Oldalak DEV módba tétele / kivétele
+
+Az alkalmazásban egy oldal akkor számít DEV-only oldalnak, ha a megjelenítése vagy regisztrálása `dev_mode` feltételhez van kötve.
+
+### Oldal kivétele DEV módból
+
+Ha egy oldal már stabil, és normál módban is használható, akkor:
+
+1. Az oldal regisztrációját ki kell venni a `dev_mode` feltételből.
+2. Az oldalnak mindig bekerülő normál oldalként kell regisztrálódnia.
+3. Ellenőrizni kell, hogy a navigációs menüpont sincs-e külön `dev_mode` mögött.
+4. Ellenőrizni kell, hogy az oldal frissítési / szűrési logikája normál módban is működik-e.
+
+
+Vagyis röviden:
+
+**DEV-only oldal placeholderrel:**
+
+```python
+if window.dev_mode:
+    window.add_page("page_key", RealPage(window))
+else:
+    window.add_page("page_key", ComingSoonPage("Készülő oldal", parent=window))
+
+### Példa:
+Ha azt szeretnénk, hogy normál módban placeholder jelenjen meg:
+
+```python
+if window.dev_mode:
+    window.add_page("statistics", StatisticsPage(window.ctx, parent=window))
+else:
+    window.add_page("statistics", ComingSoonPage("Statisztika", parent=window))
+```
+
+`else` nélkül DEV-only oldal:
+
+```python
+if window.dev_mode:
+    window.add_page("statistics", StatisticsPage(window.ctx, parent=window))
+```
+
+Normál, mindig elérhető oldal:
+
+```python
+window.add_page("statistics", StatisticsPage(window.ctx, parent=window))
+```
 
 ## Projekt fő részei
 
@@ -371,19 +438,19 @@ Felelősségek:
 
 ### /ui/bills/bill_card.py:
 --------------------------
- nagyon rendben van: tiszta, UI-only komponens, jó separation (nincs DB/logika), és a “kártya” viselkedés (kattintás, inaktív stílus) korrektül meg van oldva. 
+ nagyon rendben van: tiszta, UI-only komponens, jó separation (nincs DB/logika), és a “kártya” viselkedés (kattintás, inaktív stílus) korrektül meg van oldva.
 
 
 
 Ami kifejezetten jó:
 
-        - Egyszerű, jól olvasható felelősség: BillCardModel → cím + belső widget; kattintás → clicked(bill_id). 
+        - Egyszerű, jól olvasható felelősség: BillCardModel → cím + belső widget; kattintás → clicked(bill_id).
 
 
-        - Külső tartalom kiválasztása kind alapján: MonthlyGridWidget vs PeriodicListWidget jó komponenshatár. 
+        - Külső tartalom kiválasztása kind alapján: MonthlyGridWidget vs PeriodicListWidget jó komponenshatár.
 
 
-        - Stílus hookok: objectName="billCard" és az inactive property később QSS-ben jól kezelhető. 
+        - Stílus hookok: objectName="billCard" és az inactive property később QSS-ben jól kezelhető.
 
 
 
@@ -393,21 +460,21 @@ Ami kifejezetten jó:
 
 ### /ui/bills/bill_model.py:
 --------------------------
-A /ui/bills/bill_models.py jó, tiszta UI-adatmodell réteg: “frozen” dataclass, egyszerű típusok, és a BillKind literal miatt a kódbázis többi része 
+A /ui/bills/bill_models.py jó, tiszta UI-adatmodell réteg: “frozen” dataclass, egyszerű típusok, és a BillKind literal miatt a kódbázis többi része
 (pl. BillCard) jól típusoztatva marad.
 
 
 Ami kifejezetten erős
 
-        - Immutable modellek (@dataclass(frozen=True)): UI-state kiszámíthatóbb, nem “csúsznak el” referenciák. 
+        - Immutable modellek (@dataclass(frozen=True)): UI-state kiszámíthatóbb, nem “csúsznak el” referenciák.
 
 
 
-        - BillKind = Literal["monthly","periodic"]: jó “ön-dokumentáló” megoldás, és a BillCard-ban a kind alapján történő render tiszta. 
+        - BillKind = Literal["monthly","periodic"]: jó “ön-dokumentáló” megoldás, és a BillCard-ban a kind alapján történő render tiszta.
 
     bill_card
 
-        - Töltet szétválasztása: monthly vs periodic a kind alapján — ez illeszkedik a UI-kártyás logikához. 
+        - Töltet szétválasztása: monthly vs periodic a kind alapján — ez illeszkedik a UI-kártyás logikához.
 
 bill_models
 
@@ -418,19 +485,19 @@ bill_models
 
 ### /ui/bills/bills_page.py:
 --------------------------
-jelenlegi állapotában stabil, tiszta “oldal-komponens”, és jó alapot ad a későbbi DB-rákötéshez. A szerkezet (QScrollArea + FlowLayout + BillCard) ergonomikus, a szűrőállapot (_year, _all_years) pedig helyesen a MainWindow felől vezérelt. 
+jelenlegi állapotában stabil, tiszta “oldal-komponens”, és jó alapot ad a későbbi DB-rákötéshez. A szerkezet (QScrollArea + FlowLayout + BillCard) ergonomikus, a szűrőállapot (_year, _all_years) pedig helyesen a MainWindow felől vezérelt.
 
 
 
 Ami most kifejezetten jó
 
-        - Jó UI-architektúra: set_filter() csak állapotot állít, reload() az adatbetöltés belépőpontja, _render() csak kirajzol. Ez jól tesztelhető és később DB-re cserélhető. 
+        - Jó UI-architektúra: set_filter() csak állapotot állít, reload() az adatbetöltés belépőpontja, _render() csak kirajzol. Ez jól tesztelhető és később DB-re cserélhető.
 
 
-        - Kártyák tiszta kezelése: _clear_cards() deleteLater-rel korrekt. 
+        - Kártyák tiszta kezelése: _clear_cards() deleteLater-rel korrekt.
 
 
-        - Eseménylánc: BillCard.clicked -> billRequested(bill_id) jó, a page nem “tud” részletekről, csak jelzi. 
+        - Eseménylánc: BillCard.clicked -> billRequested(bill_id) jó, a page nem “tud” részletekről, csak jelzi.
 
 
         - Demó adatok évfüggése: jó szemléltetés arra, hogy év szerint változhat az összeg.
@@ -440,7 +507,7 @@ Ami most kifejezetten jó
 
 ### /ui/bills/monthly_grid_widget.py:
 -------------------------------------
-összességében rendben van: egyszerű, stabil widget, jó QSS-hook (objectName="monthlyGrid", property-k a cellákon), és a 12 hónapos fix táblázatos 
+összességében rendben van: egyszerű, stabil widget, jó QSS-hook (objectName="monthlyGrid", property-k a cellákon), és a 12 hónapos fix táblázatos
 megjelenítés a számlák kártyáján UX-ben korrekt.
 
 A MonthlyGridWidget egy jól szervezett, tiszta komponens, amely hatékony
@@ -449,13 +516,13 @@ A MonthlyGridWidget egy jól szervezett, tiszta komponens, amely hatékony
 
 Ami jó és maradhat
 
-        - Egyszerű leképezés: items -> dict[month]=amount, majd fix 12 sor. Olcsó és megbízható. 
+        - Egyszerű leképezés: items -> dict[month]=amount, majd fix 12 sor. Olcsó és megbízható.
 
 
-        - Header + jobb igazítás: “Fizetett” oszlop AlignRight, olvashatóság oké. 
+        - Header + jobb igazítás: “Fizetett” oszlop AlignRight, olvashatóság oké.
 
 
-        - 0/hiány jelölése “—”: jó vizuális jelzés. 
+        - 0/hiány jelölése “—”: jó vizuális jelzés.
 
 
         - QSS felkészítés: cell és cellHeader property-k nagyon hasznosak lesznek.
@@ -474,13 +541,13 @@ Ami jó:
 
 
 
-    - Letisztult felelősség: csak megjelenít, semmi logika/DB. 
+    - Letisztult felelősség: csak megjelenít, semmi logika/DB.
 
 
-    - Rendezett layout: 2 oszlop (Időszak | Összeg), fix spacingek, margók 0 – jól beágyazható kártyába. 
+    - Rendezett layout: 2 oszlop (Időszak | Összeg), fix spacingek, margók 0 – jól beágyazható kártyába.
 
 
-    - QSS property-k: cell és cellHeader egységes a monthly widgettel. 
+    - QSS property-k: cell és cellHeader egységes a monthly widgettel.
 
 
     - Jobbra igazított összeg: helyes olvashatóság.
@@ -496,14 +563,14 @@ Kockázatok / finomítandó pontok:
 
             pénz floatként (pontossági csúszás),
 
-            duplikált formázás (később eltérő viselkedéshez vezet). 
+            duplikált formázás (később eltérő viselkedéshez vezet).
 
-  
+
         Javaslat:
 
             UI-modellekben és itt is: amount: int (HUF).
 
-            Formázás: központi util (format_number_hu) használata a /core/utils.py-ból, ne legyen két külön _fmt_huf. (Ugyanez igaz a monthly widgetre is.) 
+            Formázás: központi util (format_number_hu) használata a /core/utils.py-ból, ne legyen két külön _fmt_huf. (Ugyanez igaz a monthly widgetre is.)
 
 
 
@@ -517,15 +584,15 @@ Kockázatok / finomítandó pontok:
 
                 vagy akár “2026. jan. 01 – febr. 01”.
 
-        
+
             Javaslat (későbbre is jó):
 
                 legyen egy központi format_date_hu("YYYY-MM-DD") -> "YYYY.MM.DD" util, és itt azt használd.
 
     3) 0 összeg megjelenítése
 
-            A  monthly widgetnél van “—” 0-ra, itt nincs: 0 esetén “0 Ft” jelenik meg. A BillsPage demóban konkrétan van 0 összegű periodikus sor, 
-            tehát a két widget eltérően kommunikálja az “üres” hónapot/időszakot. 
+            A  monthly widgetnél van “—” 0-ra, itt nincs: 0 esetén “0 Ft” jelenik meg. A BillsPage demóban konkrétan van 0 összegű periodikus sor,
+            tehát a két widget eltérően kommunikálja az “üres” hónapot/időszakot.
 
             Javaslat:
 
@@ -539,13 +606,13 @@ Javasolt további fejlesztések:
 
         Rövid teendő a monthly_grid_widget.py + periodic_list_widget.py pároshoz:
 
-        Vezess be 1 központi pénzformázót (ne legyen két _fmt_huf). 
+        Vezess be 1 központi pénzformázót (ne legyen két _fmt_huf).
 
 
 
-        Válts amount típuson int-re a bill modellekben és widgetekben. 
+        Válts amount típuson int-re a bill modellekben és widgetekben.
 
-        Egységes “0/hiány” megjelenítés (pl. “—”). 
+        Egységes “0/hiány” megjelenítés (pl. “—”).
 
 
 
@@ -636,15 +703,15 @@ Ez így UI-szinten korrekt.
 ### /ui/pages/base_page.py:
 ------------------------
 
-teljesen rendben van: egy minimál, tiszta “kontraktus” osztály az oldalakhoz, és pont azt a célt szolgálja, amit korábban is terveztél 
+teljesen rendben van: egy minimál, tiszta “kontraktus” osztály az oldalakhoz, és pont azt a célt szolgálja, amit korábban is terveztél
 (MainWindow → oldal évállapot).
 
 
 Ami jó (és maradjon):
 
-    - Egyszerű felelősség: csak az év-állapotot tárolja, és setter/getter van rá. 
+    - Egyszerű felelősség: csak az év-állapotot tárolja, és setter/getter van rá.
 
-    - Típusok: int | None helyes; a from __future__ import annotations korrekt, itt a fájl elején van (nincs “future import” hiba). 
+    - Típusok: int | None helyes; a from __future__ import annotations korrekt, itt a fájl elején van (nincs “future import” hiba).
 
     - Bővíthető: a docstring jelzi, hogy set_year felülírható oldalszinten.
 
@@ -665,11 +732,11 @@ jó, egyszerű, célszerű – és pont olyan, amire egy ilyen appnál szükség
 
 Ami jó (maradhat):
 
-    - Tiszta jelzés: pageRequested = Signal(str) és key-t küld (“home”, “transactions”…). 
+    - Tiszta jelzés: pageRequested = Signal(str) és key-t küld (“home”, “transactions”…).
 
-    - AutoExclusive gombok: egyszerűen megoldja az “aktív oldal” kijelölést. 
+    - AutoExclusive gombok: egyszerűen megoldja az “aktív oldal” kijelölést.
 
-    - QSS hook: navBar + navButton objectName jó. 
+    - QSS hook: navBar + navButton objectName jó.
 
     - Layout: settings jobbra tolása addStretch(1)-gyel UX-ben jó.
 
@@ -708,11 +775,11 @@ jó alap, egyszerű és érthető, és pontosan arra való, amire neked kell (Of
 
     Ami kifejezetten jó:
 
-        - QAction-alapú gombok: setDefaultAction(action) a legjobb Qt-s minta (shortcutok, enabled/disabled állapot, icon/text automatikus). 
+        - QAction-alapú gombok: setDefaultAction(action) a legjobb Qt-s minta (shortcutok, enabled/disabled állapot, icon/text automatikus).
 
-        - Szalag felépítés: QTabBar + QStackedWidget teljesen korrekt, minimál dependenciával. 
+        - Szalag felépítés: QTabBar + QStackedWidget teljesen korrekt, minimál dependenciával.
 
-        - Collapse/expand jelzés: toggled(bool) jel nagyon jó a MainWindow-nak (el tudja menteni QSettings-be is). 
+        - Collapse/expand jelzés: toggled(bool) jel nagyon jó a MainWindow-nak (el tudja menteni QSettings-be is).
 
         - QSS hookok: objectName-ek jól elő vannak készítve.
 
@@ -728,17 +795,17 @@ jó alap, egyszerű és érthető, és pontosan arra való, amire neked kell (Of
 
 ### /ui/widgets/transactions_filter_bar.py
 --------------------------------------------
-kifejezetten jó irány: egy kicsi, újrahasznosítható, UI-only komponens, tiszta signal-kontraktussal. Ez pont az, ami később segít abban, hogy a TransactionsPage ne legyen tele “vezérlő UI” kóddal. 
+kifejezetten jó irány: egy kicsi, újrahasznosítható, UI-only komponens, tiszta signal-kontraktussal. Ez pont az, ami később segít abban, hogy a TransactionsPage ne legyen tele “vezérlő UI” kóddal.
 
 
     mi nagyon jó (maradjon így):
 
 
-        - Signal alapú kimenet: searchRequested(text, all_years) + clearRequested() – ez a helyes Qt/arch minta. 
+        - Signal alapú kimenet: searchRequested(text, all_years) + clearRequested() – ez a helyes Qt/arch minta.
 
-        - ReturnPressed keresés: jó UX, és a gombbal is egységes. 
+        - ReturnPressed keresés: jó UX, és a gombbal is egységes.
 
-        - Layout arányok: a search mező stretch=1, a többi fix – jól fog kinézni. 
+        - Layout arányok: a search mező stretch=1, a többi fix – jól fog kinézni.
 
         - Docstring / kontraktus: fejlesztőbarát, később is érthető.
 
@@ -763,11 +830,11 @@ Kapcsolat a TransactionsPage-el:
 
     Ami kifejezetten jó:
 
-        - Signal-kontraktus tiszta: yearChanged(int) – ez kell a MainWindow számára. 
+        - Signal-kontraktus tiszta: yearChanged(int) – ez kell a MainWindow számára.
 
-        - AutoExclusive gombok: egyszerre egy aktív év, jó UX. 
+        - AutoExclusive gombok: egyszerre egy aktív év, jó UX.
 
-        - QSS-integráció profi: setProperty("active", ...) + polish/unpolish – ez a helyes minta, ha QSS-sel “active tab” kinézetet akarsz. 
+        - QSS-integráció profi: setProperty("active", ...) + polish/unpolish – ez a helyes minta, ha QSS-sel “active tab” kinézetet akarsz.
 
         - emit flag a set_active_year-ben: nagyon jó, így tudsz programból állítani anélkül, hogy minden reload elsülne.
 
@@ -789,9 +856,9 @@ A szándékod (diagram-rajzolás kiszervezése a MainWindow-ból) teljesen helye
 
     Ami kifejezetten jó
 
-        - Kiszervezés: a MainWindow-ban csak Figure/Canvas létrehozás + charts.update_all() marad – ez tiszta felelősségi határ. 
+        - Kiszervezés: a MainWindow-ban csak Figure/Canvas létrehozás + charts.update_all() marad – ez tiszta felelősségi határ.
 
-        - Context objektum: nem globálok, nem “varázs importok”, hanem explicit dependency injection (db, selected_year, 3 fig/canvas pár, formatter). 
+        - Context objektum: nem globálok, nem “varázs importok”, hanem explicit dependency injection (db, selected_year, 3 fig/canvas pár, formatter).
 
         - update_context_year(): jó, hogy külön tudod frissíteni a kiválasztott évet.
 

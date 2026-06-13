@@ -34,17 +34,11 @@ def register_likviditas_pages(window) -> None:
     window.add_page("home", HomePage(window))
     window.add_page("transactions", TransactionsPage(window, db=window.db))
 
+
     # --- Statisztika ---
     window.add_page("statistics", StatisticsPage(window.ctx, parent=window))
-    
-
-    
 
     # --- Számlák ---
     window.bills_page = BillsPage(window, db=window.db)
     window.bills_page.billRequested.connect(window.on_bill_requested)
     window.add_page("bills", window.bills_page)
-
-    # --- Pénztárcák / egyenlegek (Accounts/Wallets) ---
-    # Ez NEM a bills (kötelezők) oldal, hanem egyenleg/érték nyilvántartás.
-    window.add_page("accounts", AccountsPage(window, db=window.db))

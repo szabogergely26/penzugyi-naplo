@@ -13,13 +13,16 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "-"
-APP_CHANNEL = "Fejlesztői verzió"
-BUILD_INFO = "2025. novembertől"
+from penzugyi_naplo.app_version import (
+    APP_NAME,
+    APP_VERSION,
+    APP_CHANNEL,
+    BUILD_INFO,
+)
 
 
 VERSION_DESCRIPTION = """
+
 <b>Fejlesztői verzió</b><br><br>
 
 <b>Normál / PROD mód:</b><br>
@@ -35,7 +38,7 @@ Hibák előfordulhatnak. Érzékeny adatok kezelésére nem ajánlott.<br><br>
 Hibátlan funkciók, hosszú távú használatra javasolt. Stabil.<br><br>
 
 <b>Fejlesztői mód:</b><br>
-Jövőbeni funkciók, még előfordulhatnak hibák.
+Jövőbeni funkciók, még előfordulhatnak hibák.<br><br>
 """
 
 
