@@ -93,8 +93,8 @@ aranyszamlaHintText      = halvány magyarázó szöveg
 
 from __future__ import annotations
 
-from pathlib import Path
 
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QColor
@@ -117,6 +117,12 @@ from penzugyi_naplo.db.gold_database import (
     get_gold_summary,
     list_gold_physical_items,
 )
+
+
+
+
+
+
 
 
 
@@ -440,7 +446,7 @@ class AranyszamlaHomePage(QWidget):
 
 
 
-    # Segédfüggvények:
+    # Belső frissítő és segédfüggvények:
 
     def _refresh_physical_products(self) -> None:
         """
@@ -515,6 +521,50 @@ class AranyszamlaHomePage(QWidget):
             self.physical_cards_layout.setColumnStretch(column, 1)
 
 
+    def _get_app_log(self):
+        """
+        Megkeresi a főablakhoz tartozó alkalmazás-loggert a szülő widgeteken keresztül.
+
+        A main.py ezt állítja be:
+            win.log = log
+        """
+
+        current = self
+
+        while current is not None:
+            app_log = getattr(current, "log", None)
+
+            if app_log is not None:
+                return app_log
+
+            current = current.parent()
+
+        return None
+
+
+    def _log_d(self, *parts) -> None:
+        """
+        Debug naplózás az alkalmazás saját log rendszerén keresztül.
+        """
+
+        app_log = self._get_app_log()
+
+        if app_log is not None:
+            app_log.d(*parts)
+
+
+    def _log_warning(self, *parts) -> None:
+        """
+        Warning naplózás az alkalmazás saját log rendszerén keresztül.
+        """
+
+        app_log = self._get_app_log()
+
+        if app_log is not None:
+            app_log.warning(*parts)
+
+
+
 
 
     def _create_physical_item_card(self, item: dict) -> QFrame:
@@ -557,17 +607,52 @@ class AranyszamlaHomePage(QWidget):
         image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         image_label.setFixedSize(110, 99)
 
+
+
         image_path = str(item.get("image_path", "") or "").strip()
+        product_id = item.get("id", "?")
+        product_name = str(item.get("product_name", "") or "").strip()
+
+        self._log_d(
+            "Fizikai arany kép: induló adatok | id=",
+            product_id,
+            "| product_name=",
+            product_name or "-",
+            "| image_path=",
+            image_path or "-",
+        )
+
         resolved_image_path = self._resolve_app_asset_path(image_path)
 
         if resolved_image_path is not None:
+            self._log_d(
+                "Fizikai arany kép: útvonal feloldva | id=",
+                product_id,
+                "| product_name=",
+                product_name or "-",
+                "| resolved_path=",
+                resolved_image_path,
+            )
+
             pixmap = QPixmap(str(resolved_image_path))
 
             if not pixmap.isNull():
+                self._log_d(
+                    "Fizikai arany kép: sikeres betöltés | id=",
+                    product_id,
+                    "| product_name=",
+                    product_name or "-",
+                    "| path=",
+                    resolved_image_path,
+                    "| size=",
+                    pixmap.width(),
+                    "x",
+                    pixmap.height(),
+                )
+
                 image_label.setPixmap(
                     pixmap.scaled(
-                        110,
-                        90,
+                        image_label.size(),
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     )
@@ -575,17 +660,39 @@ class AranyszamlaHomePage(QWidget):
                 image_label.setText("")
                 image_label.setToolTip(str(resolved_image_path))
             else:
+                self._log_warning(
+                    "Fizikai arany kép: QPixmap nem tudta betölteni | id=",
+                    product_id,
+                    "| product_name=",
+                    product_name or "-",
+                    "| path=",
+                    resolved_image_path,
+                )
+
                 image_label.setText("Hibás kép")
                 image_label.setToolTip(str(resolved_image_path))
         else:
-            image_label.setText("Kép nem található" if image_path else "Nincs kép")
-
             if image_path:
+                self._log_warning(
+                    "Fizikai arany kép: kép nem található vagy nem feloldható | id=",
+                    product_id,
+                    "| product_name=",
+                    product_name or "-",
+                    "| image_path=",
+                    image_path,
+                )
+
+                image_label.setText("Kép nem található")
                 image_label.setToolTip(f"Hiányzó kép: {image_path}")
+            else:
+                self._log_d(
+                    "Fizikai arany kép: nincs image_path megadva | id=",
+                    product_id,
+                    "| product_name=",
+                    product_name or "-",
+                )
 
-        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignHCenter)
-
-
+                image_label.setText("Nincs kép")
 
         # ---------------------------------------------------------
         # Jobb oldal: szöveges adatok
@@ -710,10 +817,6 @@ class AranyszamlaHomePage(QWidget):
 
 
 
-
-
-
-
     def _format_grams(self, value: float) -> str:
         """
         Gramm érték magyaros megjelenítése.
@@ -757,13 +860,25 @@ class AranyszamlaHomePage(QWidget):
         raw_path = str(image_path or "").strip()
 
         if not raw_path:
+            self._log_d("Fizikai arany kép útvonal feloldás: üres image_path")
             return None
+
+        self._log_d(
+            "Fizikai arany kép útvonal feloldás indul | raw_path=",
+            raw_path,
+        )
 
         path = Path(raw_path)
         filename = path.name
 
         # Abszolút útvonal esetén először közvetlenül próbáljuk.
         if path.is_absolute() and path.exists():
+            self._log_d(
+                "Fizikai arany kép útvonal feloldás: abszolút útvonal találat | raw_path=",
+                raw_path,
+                "| path=",
+                path,
+            )
             return path
 
         # home_page.py helye:
@@ -792,9 +907,21 @@ class AranyszamlaHomePage(QWidget):
 
         for candidate in candidates:
             if candidate.exists():
+                self._log_d(
+                    "Fizikai arany kép útvonal feloldás: találat | raw_path=",
+                    raw_path,
+                    "| candidate=",
+                    candidate,
+                )
                 return candidate
 
-        return None
+        self._log_warning(
+            "Fizikai arany kép útvonal feloldás: nincs találat | raw_path=",
+            raw_path,
+            "| filename=",
+            filename,
+        )
 
+        return None
 
     # --- Segédfüggvények vége
