@@ -45,9 +45,15 @@ rsync -a \
   --exclude "*.db" \
   --exclude "*.sqlite3" \
   --exclude "*.asc" \
+  --exclude "data" \
   "$ROOT_DIR/" "$PKG_DIR/usr/share/$APP_NAME/"
 
 cp "$DESKTOP_FILE" "$PKG_DIR/usr/share/applications/penzugyi-naplo.desktop"
+
+# Statikus alkalmazás-assetek explicit másolása
+mkdir -p "$PKG_DIR/usr/share/$APP_NAME/assets"
+cp -a "$ROOT_DIR/assets/." \
+      "$PKG_DIR/usr/share/penzugyi-naplo/assets/"
 
 if [ -d "$ROOT_DIR/packaging/icons/hicolor" ]; then
   rsync -a "$ROOT_DIR/packaging/icons/hicolor/" "$PKG_DIR/usr/share/icons/hicolor/"

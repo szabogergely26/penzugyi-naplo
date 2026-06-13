@@ -514,6 +514,9 @@ class AranyszamlaHomePage(QWidget):
         for column in range(columns):
             self.physical_cards_layout.setColumnStretch(column, 1)
 
+
+
+
     def _create_physical_item_card(self, item: dict) -> QFrame:
         """
         Egy fizikai aranytermék megjelenítő kártya létrehozása.
@@ -536,6 +539,7 @@ class AranyszamlaHomePage(QWidget):
         card.setMinimumWidth(220)
         card.setMaximumWidth(280)
 
+
         # Finom 3D-s árnyék:
         # ettől a kártya kissé kiemelkedik az arany háttérből.
         self._apply_physical_card_shadow(card)
@@ -546,15 +550,14 @@ class AranyszamlaHomePage(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
         # ---------------------------------------------------------
-        # Bal oldal: termékkép
+        # Termékkép
         # ---------------------------------------------------------
         image_label = QLabel("Nincs kép")
         image_label.setObjectName("aranyszamlaPhysicalImage")
         image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         image_label.setFixedSize(110, 99)
 
-        # Képek betöltése:
-        image_path = str(item.get("image_path", "")).strip()
+        image_path = str(item.get("image_path", "") or "").strip()
         resolved_image_path = self._resolve_app_asset_path(image_path)
 
         if resolved_image_path is not None:
@@ -570,10 +573,19 @@ class AranyszamlaHomePage(QWidget):
                     )
                 )
                 image_label.setText("")
+                image_label.setToolTip(str(resolved_image_path))
             else:
                 image_label.setText("Hibás kép")
+                image_label.setToolTip(str(resolved_image_path))
         else:
             image_label.setText("Kép nem található" if image_path else "Nincs kép")
+
+            if image_path:
+                image_label.setToolTip(f"Hiányzó kép: {image_path}")
+
+        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+
 
         # ---------------------------------------------------------
         # Jobb oldal: szöveges adatok
@@ -736,36 +748,50 @@ class AranyszamlaHomePage(QWidget):
 
 
 
-    def _resolve_app_asset_path(self, relative_path: str | None) -> Path | None:
-        """
-        Alkalmazáshoz tartozó képek / asset fájlok feloldása.
+    def _resolve_app_asset_path(self, image_path: str) -> Path | None:
+        """Alkalmazással szállított képfájl útvonalának feloldása.
 
-        Működjön:
-            - fejlesztői futtatásnál projektmappából
-            - telepített .deb csomagnál /usr/share/penzugyi-naplo alól
-            - abszolút útvonal esetén közvetlenül
+        Kezeli az új útvonalakat és a korábban eltárolt régi data/... útvonalakat is.
         """
 
-        if not relative_path:
+        raw_path = str(image_path or "").strip()
+
+        if not raw_path:
             return None
 
-        raw_path = Path(relative_path).expanduser()
+        path = Path(raw_path)
+        filename = path.name
 
-        if raw_path.is_absolute():
-            if raw_path.exists() and raw_path.is_file():
-                return raw_path
-            return None
+        # Abszolút útvonal esetén először közvetlenül próbáljuk.
+        if path.is_absolute() and path.exists():
+            return path
 
-        project_root = Path(__file__).resolve().parents[4]
+        # home_page.py helye:
+        # penzugyi_naplo/ui/main_window/aranyszamla/home_page.py
+        #
+        # Fejlesztés közben:
+        #   /home/szaboger/Projects/Penzugyi_Naplo
+        #
+        # Telepített appnál:
+        #   /usr/share/penzugyi-naplo
+        app_root = Path(__file__).resolve().parents[4]
 
         candidates = [
-            project_root / raw_path,
-            Path.cwd() / raw_path,
-            Path("/usr/share/penzugyi-naplo") / raw_path,
+            # Ha image_path = "assets/gold_physical_images/20g_aranylapka.jpg"
+            app_root / raw_path,
+
+            # Ha image_path = "gold_physical_images/20g_aranylapka.jpg"
+            app_root / "assets" / raw_path,
+
+            # Ha image_path = "20g_aranylapka.jpg"
+            app_root / "assets" / "gold_physical_images" / raw_path,
+
+            # Ha image_path = régi "data/.../20g_aranylapka.jpg"
+            app_root / "assets" / "gold_physical_images" / filename,
         ]
 
         for candidate in candidates:
-            if candidate.exists() and candidate.is_file():
+            if candidate.exists():
                 return candidate
 
         return None
