@@ -880,8 +880,10 @@ class MainWindow(QMainWindow):
         wiz = GoldTradeWizard(self.db.db_name, parent=self)
 
         if wiz.exec() == QDialog.DialogCode.Accepted:
-            # Mentés után frissítjük az Aranyszámla modult,
-            # de nem váltunk át másik oldalra.
+            # Mentés után frissítjük az Aranyszámla teljes moduloldalát.
+            # A moduloldal refresh() metódusa továbbfrissíti a belső oldalakat:
+            # - Kezdő / Aranyszámla
+            # - Kereskedés
             aranyszamla_page = self.pages.get("aranyszamla_home")
 
             if aranyszamla_page and hasattr(aranyszamla_page, "refresh"):

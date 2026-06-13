@@ -61,3 +61,7 @@ data/
 *private-key*.asc
 *.private.asc
 penzugyi-naplo-private-key.asc
+
+# Tömörített fájlok
+*.zip
+*.tar.gz
