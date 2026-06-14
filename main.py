@@ -1,7 +1,13 @@
-# Fejlesztői -  pénzügyi_napló/main.py
+# Előzetes -  pénzügyi_napló/main.py
 # ------------------------------------
 
 """
+--------------------------------------------------------
+FONTOS!!!:
+-----------
+MAIN-re húzás előtt írd át a fontos.md -be leírtakat
+------------------------------------------------------
+
 Alkalmazás belépési pont
 (penzugyi_naplo/main.py).
 
