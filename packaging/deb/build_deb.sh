@@ -17,6 +17,17 @@ print(APP_VERSION)
 PY
 )"
 
+DESKTOP_NAME="Pénzügyi Napló"
+DESKTOP_GENERIC_NAME="Pénzügyi napló alkalmazás"
+DESKTOP_COMMENT="Helyi adatbázist használó pénzügyi napló bevételek, kiadások, számlák, statisztikák és aranyszámla nyilvántartásához"
+
+if [[ "$VERSION" == *"preview"* || "$VERSION" == *"előzetes"* || "$VERSION" == *"beta"* ]]; then
+  DESKTOP_NAME="Pénzügyi Napló (Előzetes)"
+  DESKTOP_GENERIC_NAME="Pénzügyi napló alkalmazás – előzetes verzió"
+  DESKTOP_COMMENT="Előzetes verzió – helyi adatbázist használó pénzügyi napló bevételek, kiadások, számlák, statisztikák és aranyszámla nyilvántartásához"
+fi
+
+
 PKG_DIR="$BUILD_DIR/${APP_NAME}_${VERSION}_${ARCH}"
 DEB_FILE="$BUILD_DIR/${APP_NAME}_${VERSION}_${ARCH}.deb"
 
@@ -48,7 +59,11 @@ rsync -a \
   --exclude "data" \
   "$ROOT_DIR/" "$PKG_DIR/usr/share/$APP_NAME/"
 
-cp "$DESKTOP_FILE" "$PKG_DIR/usr/share/applications/penzugyi-naplo.desktop"
+sed \
+  -e "s|@DESKTOP_NAME@|$DESKTOP_NAME|g" \
+  -e "s|@DESKTOP_GENERIC_NAME@|$DESKTOP_GENERIC_NAME|g" \
+  -e "s|@DESKTOP_COMMENT@|$DESKTOP_COMMENT|g" \
+  "$DESKTOP_FILE" > "$PKG_DIR/usr/share/applications/penzugyi-naplo.desktop"
 
 # Statikus alkalmazás-assetek explicit másolása
 mkdir -p "$PKG_DIR/usr/share/$APP_NAME/assets"
