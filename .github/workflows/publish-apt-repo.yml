@@ -1,10 +1,17 @@
+
+# Publish APT repository: ---> Github-on ezt látod
+
 name: Publish APT repository
+
+# mikor induljon el autómatikusan: -ha push main / preview...
 
 "on":
   push:
     branches:
       - main
       - Preview
+
+  # kézi indítás, + alapérték megadása:
   workflow_dispatch:
     inputs:
       suite:
@@ -16,15 +23,35 @@ name: Publish APT repository
           - stable
           - preview
 
+
+
 permissions:
   contents: write
+
+# JOB: APT repository publikálása
+# ====================================================================
+# Ez az egyetlen GitHub Actions munka ebben a workflow-ban.
+# Feladata:
+#     - .deb csomag építése
+#     - APT repository struktúra létrehozása/frissítése
+#     - Release fájl generálása
+#     - GPG aláírás
+#     - publikálás a gh-pages ágra
 
 jobs:
   publish-apt-repo:
     runs-on: ubuntu-latest
 
+
+# 1. Közös környezeti változók
+# ------------------------------
+
+# REPO_DIR:
+#     Ide klónozzuk le a gh-pages ágat, majd ebben építjük/frissítjük  az APT repository tartalmát.
+# PUBLIC_KEY_PATH:  A publikus APT kulcs helye a projektben.
+# Ez kerül majd ki a GitHub Pages repo gyökerébe.
+
     env:
-      PACKAGE_NAME: penzugyi-naplo
       REPO_DIR: apt-repo
       PUBLIC_KEY_PATH: packaging/apt/penzugyi-naplo-archive-keyring.gpg
 
@@ -33,10 +60,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Meghatározzuk, hogy stable vagy preview APT csatornát kell publikálni.
-      # - main ág      -> stable
-      # - Preview ág   -> preview
-      # - kézi futtatás -> a workflow_dispatch input dönti el
+
+      # 2. APT csatorna és Debian csomagnév meghatározása
+      # -----------------------------------------------------
+
+      # Itt dől el, hogy stable vagy preview APT repository készüljön.
+      # Automatikus futásnál:
+          # main ág -> stable
+          # Preview ág -> preview #
+
+          # Kézi futtatásnál:  a workflow_dispatch input dönti el.
+      # Ezután ehhez igazítjuk a Debian csomagnevet is:
+        # stable -> penzugyi-naplo  preview -> penzugyi-naplo-preview
+
       - name: Determine APT suite
         env:
           INPUT_SUITE: ${{ inputs.suite }}
@@ -51,26 +87,78 @@ jobs:
             APT_SUITE="stable"
           fi
 
-          echo "APT_SUITE=$APT_SUITE" >> "$GITHUB_ENV"
-          echo "APT suite: $APT_SUITE"
+          if [ "$APT_SUITE" = "preview" ]; then
+            PACKAGE_NAME="penzugyi-naplo-preview"
+          else
+            PACKAGE_NAME="penzugyi-naplo"
+          fi
 
-      # A .deb építéséhez, az APT index generálásához és a GPG aláíráshoz szükséges csomagok.
+          echo "APT_SUITE=$APT_SUITE" >> "$GITHUB_ENV"
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
+
+          echo "APT suite: $APT_SUITE"
+          echo "Package name: $PACKAGE_NAME"
+
+
+
+
+
+
+      # 3. Build és APT repository függőségek telepítése
+      # --------------------------------------------------------
+
+      # Ez a lépés telepíti azokat a Linux csomagokat, amelyekre
+      # a .deb csomag építéséhez és az APT repository előállításához szükség van.
+      # dpkg-dev: Debian csomagokhoz és Packages index generáláshoz kell.
+      # fakeroot: Csomagépítésnél hasznos, mert root jogosultságot szimulál.
+      # rsync: A projekt fájljainak másolásához kell a csomag mappájába.
+      # gzip: A Packages.gz tömörített APT index elkészítéséhez kell.
+      # coreutils: Alap parancsok miatt kell, például stat, md5sum, sha1sum, sha256sum.
+      # gnupg:  A Release fájl GPG aláírásához kell.
+      #   - name: Install repository build dependencies
+      #       run: | sudo apt-get update sudo apt-get install -y dpkg-dev fakeroot rsync gzip coreutils gnupg
+
       - name: Install repository build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y dpkg-dev fakeroot rsync gzip coreutils gnupg
 
-      # A csomagépítő script futtathatóvá tétele.
+
+
+
+
+    # 4. Csomagépítő script futtathatóvá tétele
+      # A .deb csomagot a packaging/deb/build_deb.sh script készíti.
+      # GitHub Actions alatt biztosra megyünk, és futtathatóvá tesszük.
       - name: Make build script executable
         run: |
           chmod +x packaging/deb/build_deb.sh
 
-      # A projekt .deb csomagjának elkészítése.
+
+
+
+    # 5. A projekt .deb csomagjának elkészítése.
+        # Itt készül el maga a Debian csomag a build/ mappába.
+        # A PACKAGE_NAME változót átadjuk a build scriptnek.
+          # stable esetén: PACKAGE_NAME=penzugyi-naplo
+          # preview esetén: PACKAGE_NAME=penzugyi-naplo-preview
+
       - name: Build deb package
         run: |
-          ./packaging/deb/build_deb.sh
+          PACKAGE_NAME="$PACKAGE_NAME" ./packaging/deb/build_deb.sh
 
-      # A meglévő gh-pages tartalom letöltése, hogy a stable és preview csatornák ne töröljék egymást.
+
+
+
+      # 6. gh-pages ág előkészítése
+      # Az APT repository fájljai nem a main vagy Preview ágra kerülnek, hanem a gh-pages ágra.
+      # Ez a lépés letölti a meglévő gh-pages ágat egy külön mappába:
+      #     apt-repo/
+      # Ha még nincs gh-pages ág, akkor létrehoz egy újat.
+      # Ez azért fontos, mert a stable és preview csatorna ugyanazon  GitHub Pages repositoryn belül él:
+      #    - dists/stable
+      #    - dists/preview
+
       - name: Prepare gh-pages worktree
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -91,7 +179,21 @@ jobs:
             cd - >/dev/null
           fi
 
-      # APT repository mappaszerkezet létrehozása/frissítése.
+
+
+
+      # 7. APT repository struktúra létrehozása/frissítése
+      # Ez a workflow egyik legfontosabb része.
+      # Itt történik:
+        # - a megfelelő pool könyvtár létrehozása
+        # - a dists/stable vagy dists/preview struktúra létrehozása
+        # - az elkészült .deb fájl bemásolása
+        # - a Packages index generálása
+        # - a Packages.gz tömörített index generálása
+        # - a Release fájl létrehozása
+        # - a Release fájlba checksumok írása
+
+        # APT oldalról ezek szükségesek ahhoz, hogy a felhasználó gépén  a sudo apt update felismerje a repository tartalmát.
       - name: Create APT repository structure
         run: |
           set -e
@@ -102,18 +204,31 @@ jobs:
           BINARY_DIR="$DIST_DIR/main/binary-all"
 
           # Megkeressük az előző lépésben elkészült .deb csomagot.
+
+          # # stable esetén ezt keresi: penzugyi-naplo_*_all.deb
+          # preview esetén ezt keresi:  penzugyi-naplo-preview_*_all.deb
+
           DEB_FILE="$(find build -maxdepth 1 -type f -name "${PACKAGE_NAME}_*_all.deb" -print -quit)"
 
-          # Ha nincs .deb fájl, akkor nincs mit publikálni.
+
+          # Ha nem található .deb fájl, akkor nincs mit publikálni.
+          # Ilyenkor a workflow hibával leáll.
+
           if [ -z "$DEB_FILE" ]; then
             echo "Nem található .deb fájl a build mappában."
             exit 1
           fi
 
+
+          # Ellenőrizzük, hogy megvan-e a publikus APT kulcs.
+          # Ez az a kulcs, amit a felhasználó gépe is használni fog a repository ellenőrzéséhez.
+
           if [ ! -f "$PUBLIC_KEY_PATH" ]; then
             echo "Nem található a publikus APT kulcs: $PUBLIC_KEY_PATH"
             exit 1
           fi
+
+          # Létrehozzuk a szükséges repository könyvtárakat.
 
           mkdir -p "$POOL_DIR"
           mkdir -p "$BINARY_DIR"
@@ -127,13 +242,29 @@ jobs:
           # Innentől az APT repo gyökerében dolgozunk.
           cd "$REPO_DIR"
 
+
+
+          # Packages index generálása.
+          # Ez mondja meg az APT-nek, hogy milyen csomagok vannak a repositoryban.
+
           echo "==> Packages index generálása: $APT_SUITE"
           dpkg-scanpackages --arch all "pool/$APT_SUITE" /dev/null > "dists/$APT_SUITE/main/binary-all/Packages"
+
+
+          # Packages.gz generálása.
+          # Ez a Packages fájl tömörített változata.
+          # Az APT ezt ismeri és használja frissítéskor.
 
           echo "==> Packages.gz generálása: $APT_SUITE"
           gzip -9 -k -f "dists/$APT_SUITE/main/binary-all/Packages"
 
+          # Belépünk az adott suite dists könyvtárába.
           cd "dists/$APT_SUITE"
+
+
+          # Release fájl létrehozása.
+          # Ez az APT repository egyik fő leíró fájlja.
+          # Tartalmazza a repository alapadatait.
 
           echo "==> Release fájl létrehozása: $APT_SUITE"
           {
@@ -147,15 +278,24 @@ jobs:
             printf '%s\n' "Date: $(date -Ru)"
           } > Release
 
+
+          # MD5 checksumok hozzáadása a Release fájlhoz.
+          # Régebbi kompatibilitás miatt szerepelhet benne,  de az erősebb ellenőrzéshez a SHA256 a fontosabb.
+
           echo "MD5Sum:" >> Release
           for file in main/binary-all/Packages main/binary-all/Packages.gz; do
             printf " %s %16s %s\n" "$(md5sum "$file" | cut -d' ' -f1)" "$(stat -c%s "$file")" "$file" >> Release
           done
 
+          # SHA1 checksumok hozzáadása a Release fájlhoz.
           echo "SHA1:" >> Release
           for file in main/binary-all/Packages main/binary-all/Packages.gz; do
             printf " %s %16s %s\n" "$(sha1sum "$file" | cut -d' ' -f1)" "$(stat -c%s "$file")" "$file" >> Release
           done
+
+
+          # SHA256 checksumok hozzáadása a Release fájlhoz.
+          # Ez a modern, fontosabb ellenőrzés.
 
           echo "SHA256:" >> Release
           for file in main/binary-all/Packages main/binary-all/Packages.gz; do
