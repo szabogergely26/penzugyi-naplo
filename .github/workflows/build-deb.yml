@@ -33,20 +33,18 @@ jobs:
 
           mkdir -p artifacts
 
-          DEB_FILE="$(find build -maxdepth 1 -type f -name "penzugyi-naplo_*_all.deb" -print -quit)"
+          echo "Build mappa tartalma:"
+          find build -maxdepth 2 -type f -print
+
+          DEB_FILE="$(find build -maxdepth 1 -type f -name "penzugyi-naplo*.deb" -print -quit)"
 
           if [ -z "$DEB_FILE" ]; then
             echo "Nem található .deb fájl a build mappában."
             exit 1
           fi
 
-          APP_VERSION="$(python - <<'PY'
-          from penzugyi_naplo.app_version import APP_VERSION
-          print(APP_VERSION.replace("~", "-"))
-          PY
-          )"
-
-          cp "$DEB_FILE" "artifacts/penzugyi-naplo.${APP_VERSION}.deb"
+          PKG_BASENAME="$(basename "$DEB_FILE" .deb)"
+          cp "$DEB_FILE" "artifacts/${PKG_BASENAME}.deb"
 
           ls -l artifacts/
 
