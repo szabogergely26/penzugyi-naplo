@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install build dependencies
         run: |
@@ -29,12 +29,27 @@ jobs:
 
       - name: Collect deb artifact
         run: |
+          set -e
+
           mkdir -p artifacts
-          find . -type f -name "*.deb" -print -exec cp {} artifacts/ \;
-          test -n "$(find artifacts -type f -name '*.deb' -print -quit)"
+
+          echo "Build mappa tartalma:"
+          find build -maxdepth 2 -type f -print
+
+          DEB_FILE="$(find build -maxdepth 1 -type f -name "penzugyi-naplo*.deb" -print -quit)"
+
+          if [ -z "$DEB_FILE" ]; then
+            echo "Nem található .deb fájl a build mappában."
+            exit 1
+          fi
+
+          PKG_BASENAME="$(basename "$DEB_FILE" .deb)"
+          cp "$DEB_FILE" "artifacts/${PKG_BASENAME}.deb"
+
+          ls -l artifacts/
 
       - name: Upload deb artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: penzugyi-naplo-deb
           path: artifacts/*.deb

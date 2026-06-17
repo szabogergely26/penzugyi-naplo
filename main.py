@@ -1,7 +1,13 @@
-# Fejlesztői -  pénzügyi_napló/main.py
+# Előzetes -  pénzügyi_napló/main.py
 # ------------------------------------
 
 """
+--------------------------------------------------------
+FONTOS!!!:
+-----------
+MAIN-re húzás előtt írd át a fontos.md -be leírtakat
+------------------------------------------------------
+
 Alkalmazás belépési pont
 (penzugyi_naplo/main.py).
 
@@ -27,19 +33,22 @@ Topology:
 
 from __future__ import annotations
 
-import logging
 import sys
 from pathlib import Path
 
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication 
+from PySide6.QtWidgets import QApplication
 
 import penzugyi_naplo.config.config as config
 
-from penzugyi_naplo.core.logging_utils import Log, DebugFlags
+from penzugyi_naplo.core.logging_utils import (
+    DebugFlags,
+    Log,
+    read_log_mode_from_settings,
+)
 
-from penzugyi_naplo.db.transaction_database import TransactionDatabase  
-from penzugyi_naplo.ui.main_window import MainWindow  
+from penzugyi_naplo.db.transaction_database import TransactionDatabase
+from penzugyi_naplo.ui.main_window import MainWindow
 
 
 # VSCode "Run file" esetére: a projekt gyökerét tegyük sys.path-ra
@@ -65,29 +74,39 @@ def main() -> int:
 
     app = QApplication(sys.argv)
 
-    app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon.png"
-    app_icon = QIcon(str(app_icon_path))
-
-    print("APP ICON PATH:", app_icon_path)
-    print("APP ICON EXISTS:", app_icon_path.exists())
-    print("APP ICON NULL:", app_icon.isNull())
-
-    app.setWindowIcon(app_icon)
-
     app.setApplicationName(config.APP_NAME)
     app.setOrganizationName(config.ORG_NAME)
 
     # 1) DEV állapot a beállításból
     dev_mode = config.is_dev_mode()
 
+    # 2) Naplózási mód QSettingsből
+    log_mode = read_log_mode_from_settings()
+
     log = Log(
-    DebugFlags(
-        enabled=dev_mode,
-        trace_page_stack=False,
+        DebugFlags(
+            mode=log_mode,
+            trace_page_stack=False,
         )
     )
     log.session_start("Pénzügyi Napló - app start")
 
+    icon_name = "app_icon_dev.png" if dev_mode else "app_icon_preview.png"
+    app_icon_path = Path(__file__).resolve().parent / "icons" / icon_name
+
+    if not app_icon_path.exists():
+        fallback_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon.png"
+        log.warning("Elsődleges app ikon nem található:", app_icon_path)
+        log.warning("Fallback app ikon próbálása:", fallback_icon_path)
+        app_icon_path = fallback_icon_path
+
+    app_icon = QIcon(str(app_icon_path))
+
+    log.d("APP ICON PATH:", app_icon_path)
+    log.d("APP ICON EXISTS:", app_icon_path.exists())
+    log.d("APP ICON NULL:", app_icon.isNull())
+
+    app.setWindowIcon(app_icon)
 
 
     # 2) aktív DB path
@@ -103,15 +122,14 @@ def main() -> int:
 
     db = TransactionDatabase(str(path))
     win = MainWindow(db=db, dev_mode=dev_mode)
+    win.log = log
     win.setWindowIcon(app_icon)
     win.showMaximized()
-    
 
-    log.info("APP EXEC START")
+
+    log.d("APP EXEC START")
     rc = app.exec()
-    log.info("APP EXEC END", rc)
-
-    logging.shutdown()
+    log.d("APP EXEC END", rc)
 
     return rc
 

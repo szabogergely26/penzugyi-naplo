@@ -28,7 +28,7 @@ Oldalak:
         → Részletes tranzakciós tábla
     - Statisztika: ui/charts.py (ChartManager)
     - Számlák: ui/pages/bills_page.py
-    - Beállítások: ui/pages/settings_page.py
+    - Beállítások: ui/settings/settings.py
 
 Adatkapcsolat:
     - TransactionDatabase példány kezelése
@@ -51,6 +51,7 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import QEvent, QSettings, Qt, QTimer
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QPushButton,
     QButtonGroup,
@@ -78,6 +79,8 @@ from penzugyi_naplo.config.config import (
     DEFAULT_STYLE_MODE,
     AVAILABLE_STYLE_MODES,
 )
+
+from penzugyi_naplo.core.paths import ICON_PATH
 
 from penzugyi_naplo.core.app_context import AppContext, AppState
 from penzugyi_naplo.core.logging_utils import DebugFlags, Log
@@ -360,7 +363,10 @@ class MainWindow(QMainWindow):
         self._connect_core_signals()
         self._load_toolbar_mode()
 
-        self.setWindowTitle("Pénzügyi Napló")
+        self.setWindowTitle("Pénzügyi Napló : Előzetes verzió")
+
+        self.setWindowIcon(QIcon(str(ICON_PATH)))
+
 
         # --  Induló ablakméret:   (szélesség, magasság)
         self.resize(1650, 1000)

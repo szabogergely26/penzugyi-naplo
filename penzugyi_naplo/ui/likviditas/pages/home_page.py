@@ -192,7 +192,6 @@ class HomePage(QWidget):
         btn.clicked.connect(self.open_table_dialog)
 
         content_layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignRight)
-        print("HOME PAGE: Tablázatos nézet gomb letrehozva")
 
         self.dashboard_body = QFrame()
         self.dashboard_body.setObjectName("homeDashboardBody")

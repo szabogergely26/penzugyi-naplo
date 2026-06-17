@@ -16,7 +16,6 @@ from __future__ import annotations
 
 from penzugyi_naplo.ui.likviditas.pages.accounts_page import AccountsPage
 from penzugyi_naplo.ui.bills.bills_page import BillsPage
-from penzugyi_naplo.ui.shared.pages.coming_soon_page import ComingSoonPage
 from penzugyi_naplo.ui.likviditas.pages.home_page import HomePage
 from penzugyi_naplo.ui.likviditas.pages.statistics_page import StatisticsPage
 from penzugyi_naplo.ui.likviditas.pages.transactions_page import TransactionsPage
@@ -34,17 +33,21 @@ def register_likviditas_pages(window) -> None:
     window.add_page("home", HomePage(window))
     window.add_page("transactions", TransactionsPage(window, db=window.db))
 
+
+
+
+
+
+
     # --- Statisztika ---
-    window.add_page("statistics", StatisticsPage(window.ctx, parent=window))
-
-
-
+    window.statistics_page = StatisticsPage(window.ctx, parent=window)
+    window.add_page("statistics", window.statistics_page)
 
     # --- Számlák ---
     window.bills_page = BillsPage(window, db=window.db)
     window.bills_page.billRequested.connect(window.on_bill_requested)
     window.add_page("bills", window.bills_page)
 
-    # --- Pénztárcák / egyenlegek (Accounts/Wallets) ---
-    # Ez NEM a bills (kötelezők) oldal, hanem egyenleg/érték nyilvántartás.
-    window.add_page("accounts", AccountsPage(window, db=window.db))
+    # --- Pénztárcák ---
+    window.accounts_page = AccountsPage(window, db=window.db)
+    window.add_page("accounts", window.accounts_page)

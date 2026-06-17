@@ -63,6 +63,15 @@ from penzugyi_naplo.config.config import (
     DEFAULT_STYLE_MODE,
 )
 
+from penzugyi_naplo.core.logging_utils import (
+    DEFAULT_LOG_MODE,
+    LOG_MODE_BASIC,
+    LOG_MODE_DEBUG,
+    LOG_MODE_FULL,
+    SETTINGS_KEY_LOG_MODE,
+    normalize_log_mode,
+)
+
 
 class SettingsDialog(QDialog):
     """Az alkalmazás fő Beállítások ablaka."""
@@ -126,10 +135,12 @@ class SettingsDialog(QDialog):
         self.general_btn = self._create_category_button("Általános", 0)
         self.appearance_btn = self._create_category_button("Megjelenés", 1)
         self.developer_btn = self._create_category_button("Fejlesztői", 2)
+        self.logging_btn = self._create_category_button("Napló", 3)
 
         layout.addWidget(self.general_btn)
         layout.addWidget(self.appearance_btn)
         layout.addWidget(self.developer_btn)
+        layout.addWidget(self.logging_btn)
 
         # Vizuális elválasztó az app-szintű és modul-szintű beállítások között.
         layout.addSpacing(8)
@@ -137,8 +148,8 @@ class SettingsDialog(QDialog):
         layout.addSpacing(8)
 
         # Modul-szintű kategóriák.
-        self.liquidity_btn = self._create_category_button("Likviditás", 3)
-        self.gold_btn = self._create_category_button("Aranyszámla", 4)
+        self.liquidity_btn = self._create_category_button("Likviditás", 4)
+        self.gold_btn = self._create_category_button("Aranyszámla", 5)
 
         layout.addWidget(self.liquidity_btn)
         layout.addWidget(self.gold_btn)
@@ -187,9 +198,11 @@ class SettingsDialog(QDialog):
         layout.setContentsMargins(18, 16, 18, 16)
         layout.setSpacing(12)
 
+        # Stack
         self.stack.addWidget(self._build_general_page())
         self.stack.addWidget(self._build_appearance_page())
         self.stack.addWidget(self._build_developer_page())
+        self.stack.addWidget(self._build_logging_page())
         self.stack.addWidget(self._build_liquidity_page())
         self.stack.addWidget(self._build_gold_page())
 
@@ -230,7 +243,7 @@ class SettingsDialog(QDialog):
         self.db_path_value.setWordWrap(True)
 
 
-        
+
         prod_dev_section = self._create_section_title("PROD / DEV adatbázis műveletek")
 
         prod_to_dev_btn = QPushButton("PROD → DEV másolás")
@@ -394,6 +407,59 @@ class SettingsDialog(QDialog):
 
 
 
+    def _build_logging_page(self) -> QWidget:
+        """Naplózási beállítások oldala."""
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        title = self._create_page_title("Napló")
+        description = self._create_description_label(
+            "A naplózás részletessége. Hibakereséshez hasznos, "
+            "de magasabb szinten több sor kerül a terminálba és a naplófájlba."
+        )
+
+        log_section = self._create_section_title("Naplózási szint")
+
+        log_combo = QComboBox()
+        log_combo.setObjectName("settingsComboBox")
+        log_combo.addItem("Alap", LOG_MODE_BASIC)
+        log_combo.addItem("Hibakeresés", LOG_MODE_DEBUG)
+        log_combo.addItem("Teljes", LOG_MODE_FULL)
+
+        settings = QSettings(ORG_NAME, APP_NAME)
+        current_mode = normalize_log_mode(
+            settings.value(SETTINGS_KEY_LOG_MODE, DEFAULT_LOG_MODE)
+        )
+
+        for index in range(log_combo.count()):
+            if log_combo.itemData(index) == current_mode:
+                log_combo.setCurrentIndex(index)
+                break
+
+        log_combo.currentIndexChanged.connect(
+            lambda _index: self._on_log_mode_changed(log_combo.currentData())
+        )
+
+        note = self._create_description_label(
+            "Alap: normál használat.\n"
+            "Hibakeresés: részletesebb állapot- és útvonalnaplózás.\n"
+            "Teljes: nagyon részletes nyomkövetés, későbbi mély hibakereséshez."
+        )
+
+        layout.addWidget(title)
+        layout.addWidget(description)
+        layout.addSpacing(8)
+
+        layout.addWidget(log_section)
+        layout.addWidget(log_combo)
+        layout.addWidget(note)
+
+        layout.addStretch(1)
+
+        return page
+
 
 
     def _build_liquidity_page(self) -> QWidget:
@@ -537,7 +603,20 @@ class SettingsDialog(QDialog):
             self.main_window.set_toolbar_mode(mode)
 
 
-    
+    # mentő metódus:
+    def _on_log_mode_changed(self, mode: str) -> None:
+        """Naplózási mód módosítása."""
+        normalized_mode = normalize_log_mode(mode)
+
+        settings = QSettings(ORG_NAME, APP_NAME)
+        settings.setValue(SETTINGS_KEY_LOG_MODE, normalized_mode)
+        settings.sync()
+
+        log = getattr(self.main_window, "log", None)
+
+        if log is not None and hasattr(log, "set_mode"):
+            log.set_mode(normalized_mode)
+            log.info("Naplózási mód módosítva:", normalized_mode)
 
 
 
@@ -556,7 +635,6 @@ class SettingsDialog(QDialog):
 
 
 
-    
 
 
 

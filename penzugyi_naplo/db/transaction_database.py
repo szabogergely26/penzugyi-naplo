@@ -91,7 +91,6 @@ TxType = str  # 'income' | 'expense'
 
 
 
-print("### LOADED transaction_database.py ###")
 
 
 def _now_ts() -> str:
@@ -279,7 +278,6 @@ class TransactionDatabase:
     def initialize_db(self) -> None:
         conn = self.get_db_connection()
         cur = conn.cursor()
-        print("DB PATH:", self.db_name)
         # schema version (minimal migration framework)
         cur.execute(
             """
