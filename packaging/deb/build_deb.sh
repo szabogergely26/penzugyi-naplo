@@ -9,9 +9,13 @@ BUILD_DIR="$ROOT_DIR/build"
 BIN_NAME="penzugyi-naplo-preview"
 ICON_NAME="penzugyi-naplo-preview"
 
-
+# Csomagolási bemeneti fájlok:
 CONTROL_TEMPLATE="$ROOT_DIR/packaging/deb/control.in"
 DESKTOP_FILE="$ROOT_DIR/packaging/deb/penzugyi-naplo-preview.desktop"
+
+APT_KEYRING_FILE="$ROOT_DIR/packaging/apt/penzugyi-naplo-archive-keyring.gpg"
+APT_SOURCES_FILE="$ROOT_DIR/packaging/apt/penzugyi-naplo-preview.sources"
+APT_PREFERENCES_FILE="$ROOT_DIR/packaging/apt/penzugyi-naplo-preview.pref"
 
 VERSION="$(
   PYTHONPATH="$ROOT_DIR" python3 - <<'PY'
@@ -45,6 +49,9 @@ mkdir -p "$PKG_DIR/usr/share/$APP_NAME"
 mkdir -p "$PKG_DIR/usr/bin"
 mkdir -p "$PKG_DIR/usr/share/applications"
 mkdir -p "$PKG_DIR/usr/share/icons/hicolor"
+mkdir -p "$PKG_DIR/usr/share/keyrings"
+mkdir -p "$PKG_DIR/etc/apt/sources.list.d"
+mkdir -p "$PKG_DIR/etc/apt/preferences.d"
 
 sed \
   -e "s|@PACKAGE_NAME@|$APP_NAME|g" \
@@ -100,6 +107,16 @@ if [ -d "$ROOT_DIR/packaging/icons/hicolor" ]; then
     cp "$icon_file" "$PKG_DIR/usr/share/icons/hicolor/$rel_dir/$ICON_NAME.$ext"
   done < <(find "$ROOT_DIR/packaging/icons/hicolor" -type f \( -name "*.png" -o -name "*.svg" \) -print0)
 fi
+
+# APT szoftverforrás fájlok telepítése a Preview csomaghoz
+install -m 644 "$APT_KEYRING_FILE" \
+  "$PKG_DIR/usr/share/keyrings/penzugyi-naplo-archive-keyring.gpg"
+
+install -m 644 "$APT_SOURCES_FILE" \
+  "$PKG_DIR/etc/apt/sources.list.d/penzugyi-naplo-preview.sources"
+
+install -m 644 "$APT_PREFERENCES_FILE" \
+  "$PKG_DIR/etc/apt/preferences.d/penzugyi-naplo-preview.pref"
 
 cat > "$PKG_DIR/usr/bin/penzugyi-naplo-preview" <<EOF
 #!/usr/bin/env bash
