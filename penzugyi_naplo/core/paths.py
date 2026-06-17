@@ -11,7 +11,10 @@ from PySide6.QtCore import QStandardPaths
 
 from penzugyi_naplo.config.config import DB_FILENAME_DEV, DB_FILENAME_PROD, is_dev_mode
 
-APP_NAME: Final[str] = "PenzugyiNaplo"
+HERE = Path(__file__).resolve().parent
+PACKAGE_ROOT = HERE.parent
+PROJECT_ROOT = PACKAGE_ROOT.parent
+ICON_PATH: Final[Path] = PROJECT_ROOT / "icons" / "app_icon_preview.png"
 
 
 def resolve_dev_mode(argv: list[str] | None = None) -> bool:

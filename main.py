@@ -91,7 +91,7 @@ def main() -> int:
     )
     log.session_start("Pénzügyi Napló - app start")
 
-    icon_name = "app_icon_dev.png" if dev_mode else "app_icon_main.png"
+    icon_name = "app_icon_dev.png" if dev_mode else "app_icon_preview.png"
     app_icon_path = Path(__file__).resolve().parent / "icons" / icon_name
 
     if not app_icon_path.exists():
