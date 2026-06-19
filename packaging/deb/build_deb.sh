@@ -11,6 +11,7 @@ CONTROL_TEMPLATE="$ROOT_DIR/packaging/deb/control.in"
 DESKTOP_FILE="$ROOT_DIR/packaging/deb/penzugyi-naplo.desktop"
 APT_SOURCE_FILE="$ROOT_DIR/packaging/apt/penzugyi-naplo.sources"
 APT_KEYRING_FILE="$ROOT_DIR/packaging/apt/penzugyi-naplo-archive-keyring.gpg"
+APT_PREFERENCES_FILE="$ROOT_DIR/packaging/apt/penzugyi-naplo.pref"
 
 VERSION="$(
   PYTHONPATH="$ROOT_DIR" python3 - <<'PY'
@@ -47,6 +48,11 @@ if [ ! -f "$APT_KEYRING_FILE" ]; then
   exit 1
 fi
 
+if [ ! -f "$APT_PREFERENCES_FILE" ]; then
+  echo "HIBA: hiányzik az APT preferences fájl: $APT_PREFERENCES_FILE" >&2
+  exit 1
+fi
+
 rm -rf "$PKG_DIR"
 
 mkdir -p "$PKG_DIR/DEBIAN"
@@ -56,6 +62,7 @@ mkdir -p "$PKG_DIR/usr/share/applications"
 mkdir -p "$PKG_DIR/usr/share/icons/hicolor"
 mkdir -p "$PKG_DIR/usr/share/keyrings"
 mkdir -p "$PKG_DIR/etc/apt/sources.list.d"
+mkdir -p "$PKG_DIR/etc/apt/preferences.d"
 
 sed "s/@VERSION@/$VERSION/g" "$CONTROL_TEMPLATE" > "$PKG_DIR/DEBIAN/control"
 
@@ -90,7 +97,8 @@ fi
 
 # Stable APT szoftverforrás és publikus keyring.
 cp "$APT_SOURCE_FILE" "$PKG_DIR/etc/apt/sources.list.d/penzugyi-naplo.sources"
-cp "$APT_KEYRING_FILE" "$PKG_DIR/usr/share/keyrings/penzugyi-naplo-stable-archive-keyring.gpg"
+cp "$APT_KEYRING_FILE" "$PKG_DIR/usr/share/keyrings/penzugyi-naplo-archive-keyring.gpg"
+cp "$APT_PREFERENCES_FILE" "$PKG_DIR/etc/apt/preferences.d/penzugyi-naplo.pref"
 
 cat > "$PKG_DIR/usr/bin/penzugyi-naplo" <<EOF_BIN
 #!/usr/bin/env bash
