@@ -1,8 +1,25 @@
 # Publish APT repository
 # ------------------------------------------------------------
+# FÁJL SZEREPE
+# ------------------------------------------------------------
+# Közös APT repository publikáló workflow a Pénzügyi Naplóhoz.
+#
+# Ág / csatorna megfeleltetés:
+#   main    -> stable  -> penzugyi-naplo
+#   Preview -> preview -> penzugyi-naplo-preview
+#
+# Fontos:
+#   - A workflow a gh-pages ágat használja APT repository kiszolgálásra.
+#   - Nem szabad force push-sal lecserélni az egész gh-pages tartalmat.
+#   - Csak az aktuális suite törölhető/frissíthető:
+#       stable futáskor:  dists/stable  + pool/stable
+#       preview futáskor: dists/preview + pool/preview
+#   - A másik suite tartalmát meg kell őrizni.
+
 # GitHub Actions felületen ezt a nevet fogod látni.
 
 name: Publish APT repository
+run-name: APT repo - ${{ github.ref_name }} - ${{ github.event.inputs.suite || 'auto' }}
 
 
 # Mikor induljon el automatikusan?
