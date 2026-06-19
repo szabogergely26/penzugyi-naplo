@@ -1,0 +1,6 @@
+Types: deb
+URIs: https://szabogergely26.github.io/penzugyi-naplo/
+Suites: stable
+Components: main
+Architectures: all
+Signed-By: /usr/share/keyrings/penzugyi-naplo-stable-archive-keyring.gpg

@@ -65,7 +65,7 @@ def main() -> int:
 
     app = QApplication(sys.argv)
 
-    app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon.png"
+    app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon_main.png"
     app_icon = QIcon(str(app_icon_path))
 
     print("APP ICON PATH:", app_icon_path)
