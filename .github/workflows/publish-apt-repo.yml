@@ -190,25 +190,49 @@ jobs:
         run: |
           set -e
 
-          # Külön mappa készítése a publikálandó tartalomnak.
-          mkdir gh-pages
-          cp -a apt-repo/. gh-pages/
+          PACKAGE_NAME="penzugyi-naplo"
+          SUITE="stable"
+          REMOTE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          # Meglévő gh-pages branch letöltése, hogy a másik suite ne vesszen el.
+          rm -rf gh-pages
+
+          if git ls-remote --exit-code --heads "$REMOTE_URL" gh-pages >/dev/null 2>&1; then
+            git clone --branch gh-pages --single-branch "$REMOTE_URL" gh-pages
+          else
+            mkdir gh-pages
+            cd gh-pages
+            git init
+            git checkout -b gh-pages
+            cd ..
+          fi
 
           cd gh-pages
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git remote set-url origin "$REMOTE_URL" 2>/dev/null || git remote add origin "$REMOTE_URL"
 
           # GitHub Pages esetén kikapcsoljuk a Jekyll feldolgozást.
           touch .nojekyll
 
-          # Ideiglenes Git repository inicializálása a gh-pages tartalomhoz.
-          git init
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cd ..
 
-          # A teljes tartalmat a gh-pages branch gyökerébe commitoljuk.
-          git checkout -b gh-pages
+          # Csak az aktuális suite és csomag pool-részének frissítése.
+          # Így stable publikáláskor a preview megmarad.
+          rm -rf "gh-pages/dists/$SUITE"
+          rm -rf "gh-pages/pool/main/p/$PACKAGE_NAME"
+
+          rsync -a apt-repo/ gh-pages/
+
+          cd gh-pages
+
           git add -A
-          git commit -m "Publish APT repository"
 
-          # A gh-pages branch felülírása az új APT repo tartalommal.
-          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git push --force origin gh-pages
+          if git diff --cached --quiet; then
+            echo "Nincs publikálandó változás."
+          else
+            git commit -m "Publish APT repository: $SUITE"
+            git push origin gh-pages
+          fi
