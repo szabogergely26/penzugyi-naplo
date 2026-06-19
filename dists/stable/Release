@@ -1,0 +1,17 @@
+Origin: Penzugyi Naplo
+Label: Penzugyi Naplo
+Suite: stable
+Codename: stable
+Architectures: all
+Components: main
+Description: APT repository for Penzugyi Naplo
+Date: Fri, 19 Jun 2026 07:18:09 +0000
+MD5Sum:
+ b6f8ffa3b40f122f3f66625030f524d9              682 main/binary-all/Packages
+ 57473c6a110522433263d1459d31fc2a              504 main/binary-all/Packages.gz
+SHA1:
+ 03131942960aa0a652df2205486c0b8b90909f5a              682 main/binary-all/Packages
+ a0eac1bfa41159e980583ca06f89c8e01ceb6111              504 main/binary-all/Packages.gz
+SHA256:
+ b7a756e6d7bcd8d7597156e1293694352e38dc26829a1b576d57d70cf2f4e3a2              682 main/binary-all/Packages
+ f4babac5d2cdb281dae3af433a95850c01c1f00ee2cb44a268efed205dc734cf              504 main/binary-all/Packages.gz
