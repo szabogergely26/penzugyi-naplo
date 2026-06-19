@@ -1,0 +1,36 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: Penzugyi Naplo
+Label: Penzugyi Naplo
+Suite: preview
+Codename: preview
+Architectures: all
+Components: main
+Description: APT repository for Penzugyi Naplo
+Date: Fri, 19 Jun 2026 08:15:14 +0000
+MD5Sum:
+ f1e8aded06fbb6f9ba5ba8281d5d2bb6              732 main/binary-all/Packages
+ 37640654faea85207da83ecf46c39b18              523 main/binary-all/Packages.gz
+SHA1:
+ fc637a8da6b9e1842d16dd904fcff37d6ff163bd              732 main/binary-all/Packages
+ be113654b25dd97862c2a1dbf40fd0893bed0002              523 main/binary-all/Packages.gz
+SHA256:
+ 3b114abc41fe6f1512f5c73b2f1c7b3e4c0d9019ea93b9c79bfc32a25ec944ee              732 main/binary-all/Packages
+ 8032a3c3090749616e42014b2a2efb79e47f139b1188d71f1fbbd87243d0b1f2              523 main/binary-all/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEE6DsWr2L478SLjQtG12tgxGKnF+cFAmo0+pIACgkQ12tgxGKn
+F+cS0hAAm1TVeNs4IqEG8Vpu8il2+jMlX7CZ/aHtGcvjTdbQbzwmZ1fzfanZCErr
+yy28WGaGfsGMYy/JoktbeDTUuFzwAQN90IieevDl8ngnM3py+ptE9MXSjyZlBsv6
+aEUZjpQB+3ZAFlB+zi0S5x8Ou2NRy2BxxZmsA5j87tyX/AXTcdTXsAQs4fVhEOIf
+a6q7L7sfQ3jc3SXVgvxfoNf6fUdIPv5SsB88fr4GZhGzTqLQ21pFizbaEd1u6PuA
+wXpjObtrSGG1H7tbycT/kjgM3YKpKUxkvBlFHcyWnBuFvq2ZyzKGIX9RN84vjATU
+soJMMbvdLDspM4X0QS8zsCVrFItvlLgaPtJtNrC5fR7MOlt0YaqST17iWhHtHi98
+Ev+oiq8pzOxYwZjuNul5Fty6CO9q2it74Re8hHsWU2GHLFoug5A8s73uukdE4BWm
+HmjgCB7lfQN+/WGqinrUEfp2tXKK3lsThuSmF/wFnPXX//BLkOk9uCQCpF63pYH5
+iOKaN8UG3DxQqODZFIpZeEz6gHC419NH/LGQqZEq75/h7z4GegKq/eL3EhLauFzp
+ypYUMjGhCrpfFp9/sA5HfU7zxBB7MRZo8jc8tH0KIsTAsMt8DS93hhyXrN60jNRI
+X/7VDNxxA8HB4B+cG+rLMCUhmkl52RcQhj/Fhd3VfSmNj+z6+ao=
+=JJik
+-----END PGP SIGNATURE-----
