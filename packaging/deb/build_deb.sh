@@ -82,6 +82,7 @@ rsync -a \
   --exclude "requirements-dev.txt" \
   --exclude "build-venv.sh" \
   --exclude "venv-How-to.txt" \
+  --exclude "*.gpg" \
   "$ROOT_DIR/" "$PKG_DIR/usr/share/$APP_NAME/"
 
 sed \
