@@ -97,7 +97,7 @@ fi
 
 # Stable APT szoftverforrás és publikus keyring.
 cp "$APT_SOURCE_FILE" "$PKG_DIR/etc/apt/sources.list.d/penzugyi-naplo.sources"
-cp "$APT_KEYRING_FILE" "$PKG_DIR/usr/share/keyrings/penzugyi-naplo-archive-keyring.gpg"
+cp "$APT_KEYRING_FILE" "$PKG_DIR/usr/share/keyrings/penzugyi-naplo-stable-archive-keyring.gpg"
 cp "$APT_PREFERENCES_FILE" "$PKG_DIR/etc/apt/preferences.d/penzugyi-naplo.pref"
 
 cat > "$PKG_DIR/usr/bin/penzugyi-naplo" <<EOF_BIN
