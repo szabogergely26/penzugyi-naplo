@@ -1,6 +1,6 @@
 # - Pénzügyi Napló - Fejlesztői kézikönyv
 
-Utoljára frissítve: 2026.május 08.
+Utoljára frissítve: 2026.június 9.
 
 
 Ez a dokumentum nem felhasználói kézikönyv, hanem fejlesztői térkép.
@@ -17,7 +17,8 @@ Célja, hogy hónapok múlva is gyorsan megtalálható legyen:
     Likviditás/Tranzakciók:
         - Jobb gomb: oszlopszűrő lista az oszlopra kattintva
         - Bal gomb: növekvő/ csökkenő sorrend
-        -  Részletes tételhez utólag lehessen új sort hozzáadni
+        - Részletes tételhez utólag lehessen új sort hozzáadni
+        - Tranzakcióvarázsló Összegző oldal hozzáadása QDialog helyett
 
     Tranzakciós lista frissítése a Varázsló bezárása után
 
