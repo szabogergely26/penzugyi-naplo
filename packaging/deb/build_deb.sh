@@ -21,7 +21,10 @@ PY
 )"
 
 PKG_DIR="$BUILD_DIR/${APP_NAME}_${VERSION}_${ARCH}"
-DEB_FILE="$BUILD_DIR/${APP_NAME}_${VERSION}_${ARCH}.deb"
+
+# A végleges kimeneti .deb fájl -- MINDIG fix nevű, verziószám nélkül,
+# hogy a weboldali/APT letöltési linket soha ne kelljen módosítani.
+DEB_FILE="$BUILD_DIR/${APP_NAME}.deb"
 
 echo "==> Root: $ROOT_DIR"
 echo "==> Version: $VERSION"

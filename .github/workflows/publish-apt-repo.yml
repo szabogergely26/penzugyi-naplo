@@ -30,8 +30,8 @@ jobs:
           chmod +x packaging/deb/build_deb.sh
 
       # A projekt .deb csomagjának elkészítése.
-      # A build_deb.sh jelenleg ezt hozza létre:
-      # build/penzugyi-naplo_0.1.2_all.deb
+      # A build_deb.sh jelenleg ezt hozza létre (fix név, verziószám nélkül):
+      # build/penzugyi-naplo.deb
       - name: Build deb package
         run: |
           ./packaging/deb/build_deb.sh
@@ -50,7 +50,7 @@ jobs:
           BINARY_DIR="$DIST_DIR/main/binary-all"
 
           # Megkeressük az előző lépésben elkészült .deb csomagot.
-          DEB_FILE="$(find build -maxdepth 1 -type f -name "${PACKAGE_NAME}_*_all.deb" -print -quit)"
+          DEB_FILE="$(find build -maxdepth 1 -type f -name "${PACKAGE_NAME}.deb" -print -quit)"
 
           # Ha nincs .deb fájl, akkor nincs mit publikálni.
           if [ -z "$DEB_FILE" ]; then
