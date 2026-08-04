@@ -8,29 +8,29 @@ Codename: stable
 Architectures: all
 Components: main
 Description: APT repository for Penzugyi Naplo
-Date: Wed, 29 Jul 2026 08:28:59 +0000
+Date: Tue, 04 Aug 2026 07:23:35 +0000
 MD5Sum:
  d41d8cd98f00b204e9800998ecf8427e                0 main/binary-all/Packages
- aecc48f37f05e015099d9ff5bd01ce6c               29 main/binary-all/Packages.gz
+ 83c8ac6b57b343c6ebdc87ccd16cff66               29 main/binary-all/Packages.gz
 SHA1:
  da39a3ee5e6b4b0d3255bfef95601890afd80709                0 main/binary-all/Packages
- 638524864bdafbf3060ac96e9a89f978bde9c2a9               29 main/binary-all/Packages.gz
+ 17eb019c3fd94151f839c0a61d9aee55e6d5f4e2               29 main/binary-all/Packages.gz
 SHA256:
  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855                0 main/binary-all/Packages
- 86fdec9fba7af3dadb02b0322984c60ecff3ccd3077a633b55e5ce2baf99dd7c               29 main/binary-all/Packages.gz
+ 445278cddbad66e93b569c25a86267c2c568fc8ba049b3eb2925515212d67806               29 main/binary-all/Packages.gz
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEE6DsWr2L478SLjQtG12tgxGKnF+cFAmppucsACgkQ12tgxGKn
-F+cPqQ//XUkPsqbjI6RehwvEIZWhBBbmsQtCaBBUUDLX6oYYkWwZvJDg0ET5sP0Q
-EkDGPDMIAPaE0UZEfNP+4x6kCtq4SZH9Kxxrat+9QTBCixkRb/eN1yp3FbPUeZ8+
-fDsW26SbcExyrsqHgmYacn0VyNCtQPZCkAFIltelrPrLnAf2f0hngNI3OB8dz/+G
-SC+xmOjTLEW6AJGV7xErhteYfS/i/dSvtYI9qPLLXdZvXjpOhQKNucmt2ylSpBiw
-/trzrRsh+nx1WebZ1yKsRRLoX0BDAE2SVSExRBhXHjMrwf5MWU9FgbZe179Xw9jn
-9BLtOy4y6g1kgrrfxg6HSKDsoXH2VX4kc8t7bJVL9Owok8YWYw421S4oJnhtSAZ5
-S3ZaEQUoRyLdxIXveUTTAUW5lYYOi1IWW0UgyAKDQDLm4UTDP29/rdTz7m61X/jK
-cpKM4yryd4ufcxKk8JD7xRyz5QNekLeMPy1YdD7uUGc2dcpKrLn+/dcflICHfbg7
-hfbRcAjQi40dCjSckAIBjJImK9WLMuHnAgO0LiSMmjkX36gz886yNdRjGcwkrmGp
-kIjd6qugI15avGvq+SYSSAiE3qz0qWQLdSZ3+SrEnolLVdCYYrOncWkexLyQWDyF
-7fOVSqzd1bDnacCPw0UWLMvtZeKI0J3tDEFiDjMoJonk08OXfNM=
-=JkpC
+iQIzBAEBCgAdFiEE6DsWr2L478SLjQtG12tgxGKnF+cFAmpxk3gACgkQ12tgxGKn
+F+dTGhAAjIxF1wVmTuQBdt/UQCkuQKNWHKHIRAptMSBlxMpyWWnTPcqsObQG+S/X
+k+XLI/WqwfN8kao8IBARa+1NuLZrI1MHjEF707fvpDCikqHXc58JOCdnH62Akm9D
+bTexyVLMn98TBY3af5X+a3AaNM/+dU3vfG2IKGU6Yqm6jWvsZNjkuQl14nuYqCiE
+TSV0dpAzt+UrAkC5iAs9GtsHcCYWnQl55qsGZ1u8Gul0xXVeTzpiDrk0xuAL626R
+NfY74ByD00wbgzsMERprUD3SStgAB48JIHbWacMpFFk6k4ETnyEHuCSCPV74olTm
+p8rQi01tA1ISn9p+/KjJE1ums4RkNp5vCvUbNrGyyG6Ms+1GcwC0I7xN1qzBsK++
+w5oBCOqzoNT2KDe9ppALUlOmvtRvwgHeVO1g+5MAhoAfxu0nV8zXRdnQD5UKDc5S
+rajF4Zy5Ze7OlC84X8EBU1VM3fqRR/RpZGaqbagI0e6YRmE61PhNgQjPn9AQFVJM
+lsimlA25qjo2PaG/dXT9i3UAyceKShpgAy2/eim2OCP3iCh9qefw97DDfFz+u9vq
+7xIJFO59gPnlx9NtkZTDUShsS21w2o+S576O+rbbce5YvTgKMYNCVoMQjPIxSkpA
+3tLmz2MCrejWn331eclThwQqntxlPKJTdrz+iBydhUXNnTuV61M=
+=geui
 -----END PGP SIGNATURE-----
