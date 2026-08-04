@@ -117,6 +117,6 @@ chmod 755 "$PKG_DIR/DEBIAN"
 chmod 644 "$PKG_DIR/DEBIAN/control"
 chmod +x "$PKG_DIR/usr/bin/penzugyi-naplo"
 
-dpkg-deb --root-owner-group --build "$PKG_DIR" "$DEB_FILE"
+dpkg-deb --root-owner-group -Zgzip --build "$PKG_DIR" "$DEB_FILE"
 
 echo "==> Built: $DEB_FILE"
