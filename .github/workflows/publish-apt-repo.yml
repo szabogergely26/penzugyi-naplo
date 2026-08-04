@@ -58,6 +58,9 @@ jobs:
             exit 1
           fi
 
+          # A csomag verziószámának kiolvasása a megépített .deb control fájljából.
+          VERSION="$(dpkg-deb -f "$DEB_FILE" Version)"
+
           # Régi ideiglenes repo törlése, majd új mappaszerkezet létrehozása.
           rm -rf "$REPO_DIR"
 
@@ -70,7 +73,7 @@ jobs:
           cp packaging/apt/penzugyi-naplo-archive-keyring.gpg "$REPO_DIR/"
 
           # A .deb csomag átmásolása a Debian/Ubuntu-szerű pool struktúrába.
-          cp "$DEB_FILE" "$POOL_DIR/"
+          cp "$DEB_FILE" "$POOL_DIR/${PACKAGE_NAME}_${VERSION}_all.deb"
 
           echo "DEB_FILE=$DEB_FILE"
           ls -la "$POOL_DIR"
