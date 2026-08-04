@@ -72,6 +72,10 @@ jobs:
           # A .deb csomag átmásolása a Debian/Ubuntu-szerű pool struktúrába.
           cp "$DEB_FILE" "$POOL_DIR/"
 
+          echo "DEB_FILE=$DEB_FILE"
+          ls -la "$POOL_DIR"
+          file "$POOL_DIR"/*.deb
+
           # Innentől az APT repo gyökerében dolgozunk.
           cd "$REPO_DIR"
 
