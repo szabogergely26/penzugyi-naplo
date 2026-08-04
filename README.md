@@ -2,6 +2,9 @@
 
 Utoljára frissítve: 2026.május 08.
 
+> **Megjegyzés az AI-közreműködésről:** A kód nagy része AI (Claude) segítségével
+> készült, emberi tervezés, irányítás és folyamatos ellenőrzés mellett. A
+> funkcionalitásért és a projekt irányáért a szerző felel.
 
 Ez a dokumentum nem felhasználói kézikönyv, hanem fejlesztői térkép.
 Célja, hogy hónapok múlva is gyorsan megtalálható legyen:
