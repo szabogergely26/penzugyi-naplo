@@ -27,6 +27,7 @@ Topology (UI):
 from __future__ import annotations
 
 import sqlite3
+from datetime import date
 from typing import Any, Optional
 
 from PySide6.QtCore import Qt
@@ -59,6 +60,8 @@ from PySide6.QtGui import QColor, QPainter
 
 
 # ----- Importok vége ----
+
+print(f"[DEBUG] statistics_page.py modul betöltve innen: {__file__}")
 
 MONTH_LABELS = [
     "Január", "Február", "Március", "Április", "Május", "Június",
@@ -126,6 +129,8 @@ class StatisticSummaryCard(QFrame):
 class StatisticsPage(QWidget):
     def __init__(self, ctx:Any = None, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+
+        print(f"[DEBUG] StatisticsPage példány létrehozva. Forrásfájl: {__file__}")
 
         self.ctx = ctx
 
@@ -227,11 +232,15 @@ class StatisticsPage(QWidget):
         self.period_combo.addItems(
             [
                 "Aktív év",
+                "Aktuális hónap",
                 "Utolsó 3 hónap",
                 "Utolsó 6 hónap",
                 "Teljes adatbázis",
             ]
         )
+        # Ez volt a hiányzó kapocs: enélkül a combo box váltása
+        # soha nem hívta meg a refresh()-t.
+        self.period_combo.currentIndexChanged.connect(self.refresh)
 
         top_row.addWidget(period_label)
         top_row.addWidget(self.period_combo)
@@ -342,14 +351,61 @@ class StatisticsPage(QWidget):
     
 
 
+    def _resolve_period_range(
+        self, active_year: int
+    ) -> tuple[Optional[str], Optional[str], str]:
+        """
+        A period_combo aktuális kiválasztásából kiszámolja a szűrendő
+        dátumtartományt.
+
+        Visszatérés:
+            tuple[start_date, end_date, mode]
+                - start_date / end_date: 'YYYY-MM-DD' string, vagy None ha nincs korlát
+                  (pl. "Teljes adatbázis" esetén mindkettő None)
+                - mode: "year" | "range" | "all"
+                    "year"  -> régi, egy-éves viselkedés (Aktív év)
+                    "range" -> konkrét [start_date, end_date] intervallum
+                               (Aktuális hónap / Utolsó 3 hónap / Utolsó 6 hónap)
+                    "all"   -> teljes adatbázis, nincs dátumkorlát
+        """
+        selection = self.period_combo.currentText() if hasattr(self, "period_combo") else "Aktív év"
+
+        today = date.today()
+
+        if selection == "Aktív év":
+            return None, None, "year"
+
+        if selection == "Teljes adatbázis":
+            return None, None, "all"
+
+        if selection == "Aktuális hónap":
+            start = date(today.year, today.month, 1)
+            end = today
+            return start.isoformat(), end.isoformat(), "range"
+
+        if selection in ("Utolsó 3 hónap", "Utolsó 6 hónap"):
+            months_back = 3 if selection == "Utolsó 3 hónap" else 6
+
+            # Hónap-visszaszámolás évhatáron át is (pl. 2026 február - 3 hónap -> 2025 november).
+            total_month_index = (today.year * 12 + (today.month - 1)) - (months_back - 1)
+            start_year, start_month = divmod(total_month_index, 12)
+            start_month += 1
+
+            start = date(start_year, start_month, 1)
+            end = today
+            return start.isoformat(), end.isoformat(), "range"
+
+        # Ismeretlen/váratlan érték esetén essünk vissza a régi, biztonságos viselkedésre.
+        return None, None, "year"
+
     def refresh(self) -> None:
         """
-        Statisztikai adatok újratöltése.
+        Statisztikai adatok újratöltése az Időszak szűrő aktuális állása szerint.
 
-        Jelenlegi funkció:
-            - aktív év lekérése az AppContextből
-            - éves bevétel / kiadás / megtakarítás összesítése
-            - szöveges összefoglaló megjelenítése
+        Az Időszak szűrő (self.period_combo) értéke alapján:
+            - "Aktív év"          -> a korábbi, egy évre szűrő logika (year oszlop)
+            - "Teljes adatbázis"  -> nincs dátumkorlát
+            - egyéb (hónap/3/6 hó)-> konkrét [start_date, end_date] tartomány (tx_date oszlop)
         """
         if self.ctx is None:
             self.summary_text.setText(
@@ -365,8 +421,16 @@ class StatisticsPage(QWidget):
             )
             return
 
+        active_year = int(active_year)
+        start_date, end_date, mode = self._resolve_period_range(active_year)
+
         try:
-            summary = self._build_year_summary_text(int(active_year))
+            summary = self._build_period_summary_text(
+                active_year=active_year,
+                start_date=start_date,
+                end_date=end_date,
+                mode=mode,
+            )
         except Exception as exc:
             self.summary_text.setText(
                 "A statisztikai összegzés nem sikerült.\n\n"
@@ -376,49 +440,95 @@ class StatisticsPage(QWidget):
 
         self.summary_text.setText(summary)
 
-        income_total, expense_total = self._load_year_totals(int(active_year))
+        income_total, expense_total = self._load_period_totals(
+            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+        )
 
-
-
+        period_label = self._period_label(
+            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+        )
 
         # Az összegző kártyák több helyen is megjelennek, ezért mindegyiket frissíteni kell.
         self._update_summary_cards(
-            year=int(active_year),
+            year=active_year,
             income_total=income_total,
             expense_total=expense_total,
+            period_label=period_label,
         )
 
-        income_values, expense_values, saving_values = self._load_monthly_totals(
-            int(active_year)
+        month_labels, income_values, expense_values, saving_values = self._load_period_monthly_totals(
+            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
         )
-        # A havi bontású diagramok is csak akkor értelmezhetők, ha van aktív év, ezért ezt a részt is csak akkor futtatjuk le.
+
         self._update_trend_chart(
             income_values=income_values,
             expense_values=expense_values,
             saving_values=saving_values,
+            month_labels=month_labels,
         )
 
         self._update_monthly_bar_chart(
             income_values=income_values,
             expense_values=expense_values,
             saving_values=saving_values,
+            month_labels=month_labels,
         )
 
-        category_values = self._load_expenses_by_category(int(active_year))
+        category_values = self._load_period_expenses_by_category(
+            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+        )
         self._update_category_pie_chart(category_values)
 
 
 
-    # Segéd metódusok:
-    def _build_year_summary_text(self, year: int) -> str:
-        """
-        Éves pénzügyi összefoglaló szövegének összeállítása.
+    # --- Segéd metódusok: WHERE-feltétel összeállítása mode szerint ---
 
-        Az adatokat a transactions táblából olvassa:
-            - income  → bevétel
-            - expense → kiadás
+    def _period_where_clause(
+        self,
+        *,
+        active_year: int,
+        start_date: Optional[str],
+        end_date: Optional[str],
+        mode: str,
+    ) -> tuple[str, tuple]:
         """
-        income_total, expense_total = self._load_year_totals(year)
+        Egységes helyen állítja elő a WHERE feltételt és a hozzá tartozó
+        SQL paramétereket, a period módja szerint.
+        """
+        if mode == "year":
+            return "WHERE year = ?", (active_year,)
+
+        if mode == "range":
+            return "WHERE tx_date BETWEEN ? AND ?", (start_date, end_date)
+
+        # mode == "all": nincs szűrés
+        return "", ()
+
+    def _period_label(
+        self, *, active_year: int, start_date: Optional[str], end_date: Optional[str], mode: str
+    ) -> str:
+        if mode == "year":
+            return str(active_year)
+        if mode == "all":
+            return "Teljes adatbázis"
+        return f"{start_date} – {end_date}"
+
+    # Segéd metódusok:
+    def _build_period_summary_text(
+        self,
+        *,
+        active_year: int,
+        start_date: Optional[str],
+        end_date: Optional[str],
+        mode: str,
+    ) -> str:
+        """
+        Pénzügyi összefoglaló szövegének összeállítása a kiválasztott
+        Időszak szűrő szerint.
+        """
+        income_total, expense_total = self._load_period_totals(
+            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+        )
 
         saving = income_total - expense_total
 
@@ -427,8 +537,12 @@ class StatisticsPage(QWidget):
         else:
             saving_rate = 0.0
 
+        period_label = self._period_label(
+            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+        )
+
         lines = [
-            f"{year} összefoglalója",
+            f"{period_label} összefoglalója",
             "",
             f"Összes bevétel: {self._format_money(income_total)}",
             f"Összes kiadás: {self._format_money(expense_total)}",
@@ -438,7 +552,7 @@ class StatisticsPage(QWidget):
         ]
 
         if income_total == 0 and expense_total == 0:
-            lines.append("Ehhez az évhez még nincs rögzített tranzakció.")
+            lines.append("Ehhez az időszakhoz még nincs rögzített tranzakció.")
         elif saving > 0:
             lines.append("A bevételek jelenleg meghaladják a kiadásokat.")
         elif saving < 0:
@@ -455,6 +569,7 @@ class StatisticsPage(QWidget):
         year: int,
         income_total: float,
         expense_total: float,
+        period_label: Optional[str] = None,
     ) -> None:
         """
         Felső statisztikai kártyák frissítése.
@@ -469,6 +584,8 @@ class StatisticsPage(QWidget):
         else:
             saving_rate = 0.0
 
+        label = period_label if period_label is not None else str(year)
+
         for (
             income_card,
             expense_card,
@@ -477,15 +594,15 @@ class StatisticsPage(QWidget):
         ) in self.summary_card_sets:
             income_card.set_values(
                 self._format_money(income_total),
-                f"{year} összes bevétele",
+                f"{label} összes bevétele",
             )
             expense_card.set_values(
                 self._format_money(expense_total),
-                f"{year} összes kiadása",
+                f"{label} összes kiadása",
             )
             saving_card.set_values(
                 self._format_money(saving),
-                f"{year} megtakarítása",
+                f"{label} megtakarítása",
             )
             saving_rate_card.set_values(
                 f"{saving_rate:.1f}%",
@@ -494,31 +611,42 @@ class StatisticsPage(QWidget):
 
 
 
-    def _load_year_totals(self, year: int) -> tuple[float, float]:
+    def _load_period_totals(
+        self,
+        *,
+        active_year: int,
+        start_date: Optional[str],
+        end_date: Optional[str],
+        mode: str,
+    ) -> tuple[float, float]:
         """
-        Aktív év bevétel / kiadás összesítése SQLite adatbázisból.
+        Bevétel / kiadás összesítése SQLite adatbázisból, a kiválasztott
+        Időszak szűrő (self.period_combo) szerint.
 
         Visszatérés:
             tuple[income_total, expense_total]
         """
-        
+
         database_path = self.ctx.db.db_name
 
-      
-        sql = """
+        where_clause, params = self._period_where_clause(
+            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+        )
+
+        sql = f"""
             SELECT
                 COALESCE(SUM(CASE WHEN tx_type = 'income' THEN amount ELSE 0 END), 0),
                 COALESCE(SUM(CASE WHEN tx_type = 'expense' THEN amount ELSE 0 END), 0)
             FROM transactions
-            WHERE year = ?
+            {where_clause}
         """
 
         with sqlite3.connect(database_path) as conn:
             cursor = conn.cursor()
-            cursor.execute(sql, (year,))
+            cursor.execute(sql, params)
             row = cursor.fetchone()
 
-        
+
         if row is None:
             return 0.0, 0.0
 
@@ -539,48 +667,147 @@ class StatisticsPage(QWidget):
     
 
 
-    def _load_monthly_totals(self, year: int) -> tuple[list[float], list[float], list[float]]:
+    def _load_period_monthly_totals(
+        self,
+        *,
+        active_year: int,
+        start_date: Optional[str],
+        end_date: Optional[str],
+        mode: str,
+    ) -> tuple[list[str], list[float], list[float], list[float]]:
         """
-        Havi bevétel / kiadás / megtakarítás összesítése SQLite adatbázisból.
+        Havi bevétel / kiadás / megtakarítás összesítése SQLite adatbázisból,
+        a kiválasztott Időszak szűrő szerint.
+
+        mode == "year": a korábbi viselkedés, 12 hónap (Január..December) egy évre.
+        mode == "range": csak a [start_date, end_date] tartományba eső hónapok,
+                         dinamikus hónapszámmal (pl. 3 vagy 6 oszlop).
+        mode == "all": teljes adatbázis, hónap szerint összesítve évektől
+                       függetlenül (Január..December, minden év összeadva).
 
         Visszatérés:
-            tuple[income_values, expense_values, saving_values]
+            tuple[month_labels, income_values, expense_values, saving_values]
         """
-        
+
         database_path = self.ctx.db.db_name
 
-        income_values = [0.0] * 12
-        expense_values = [0.0] * 12
+        if mode == "year":
+            income_values = [0.0] * 12
+            expense_values = [0.0] * 12
 
+            sql = """
+                SELECT
+                    month,
+                    COALESCE(SUM(CASE WHEN tx_type = 'income' THEN amount ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN tx_type = 'expense' THEN amount ELSE 0 END), 0)
+                FROM transactions
+                WHERE year = ?
+                GROUP BY month
+                ORDER BY month
+            """
+
+            with sqlite3.connect(database_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(sql, (active_year,))
+                rows = cursor.fetchall()
+
+            for month, income_total, expense_total in rows:
+                month_index = int(month) - 1
+
+                if 0 <= month_index < 12:
+                    income_values[month_index] = float(income_total or 0)
+                    expense_values[month_index] = float(expense_total or 0)
+
+            saving_values = [
+                income - expense
+                for income, expense in zip(income_values, expense_values, strict=True)
+            ]
+
+            return list(MONTH_LABELS), income_values, expense_values, saving_values
+
+        if mode == "all":
+            # Hónap szerint összesítve, évektől függetlenül.
+            income_values = [0.0] * 12
+            expense_values = [0.0] * 12
+
+            sql = """
+                SELECT
+                    month,
+                    COALESCE(SUM(CASE WHEN tx_type = 'income' THEN amount ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN tx_type = 'expense' THEN amount ELSE 0 END), 0)
+                FROM transactions
+                GROUP BY month
+                ORDER BY month
+            """
+
+            with sqlite3.connect(database_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(sql)
+                rows = cursor.fetchall()
+
+            for month, income_total, expense_total in rows:
+                month_index = int(month) - 1
+
+                if 0 <= month_index < 12:
+                    income_values[month_index] = float(income_total or 0)
+                    expense_values[month_index] = float(expense_total or 0)
+
+            saving_values = [
+                income - expense
+                for income, expense in zip(income_values, expense_values, strict=True)
+            ]
+
+            return list(MONTH_LABELS), income_values, expense_values, saving_values
+
+        # mode == "range": dinamikus hónaptartomány a [start_date, end_date] között.
         sql = """
             SELECT
-                month,
+                strftime('%Y-%m', tx_date) AS ym,
                 COALESCE(SUM(CASE WHEN tx_type = 'income' THEN amount ELSE 0 END), 0),
                 COALESCE(SUM(CASE WHEN tx_type = 'expense' THEN amount ELSE 0 END), 0)
             FROM transactions
-            WHERE year = ?
-            GROUP BY month
-            ORDER BY month
+            WHERE tx_date BETWEEN ? AND ?
+            GROUP BY ym
+            ORDER BY ym
         """
 
         with sqlite3.connect(database_path) as conn:
             cursor = conn.cursor()
-            cursor.execute(sql, (year,))
+            cursor.execute(sql, (start_date, end_date))
             rows = cursor.fetchall()
 
-        for month, income_total, expense_total in rows:
-            month_index = int(month) - 1
+        totals_by_ym = {ym: (float(inc or 0), float(exp or 0)) for ym, inc, exp in rows}
 
-            if 0 <= month_index < 12:
-                income_values[month_index] = float(income_total or 0)
-                expense_values[month_index] = float(expense_total or 0)
+        # Az összes hónapot generáljuk a tartományban, hogy az üres hónapok is
+        # megjelenjenek 0 értékkel (ne csak azok, amikben volt tranzakció).
+        start_year, start_month = int(start_date[:4]), int(start_date[5:7])
+        end_year, end_month = int(end_date[:4]), int(end_date[5:7])
+
+        month_labels: list[str] = []
+        income_values = []
+        expense_values = []
+
+        cursor_index = start_year * 12 + (start_month - 1)
+        end_index = end_year * 12 + (end_month - 1)
+
+        while cursor_index <= end_index:
+            y, m = divmod(cursor_index, 12)
+            m += 1
+            ym_key = f"{y:04d}-{m:02d}"
+
+            income, expense = totals_by_ym.get(ym_key, (0.0, 0.0))
+            month_labels.append(f"{MONTH_LABELS[m - 1]} {y}")
+            income_values.append(income)
+            expense_values.append(expense)
+
+            cursor_index += 1
 
         saving_values = [
             income - expense
             for income, expense in zip(income_values, expense_values, strict=True)
         ]
 
-        return income_values, expense_values, saving_values
+        return month_labels, income_values, expense_values, saving_values
     
 
 
@@ -590,6 +817,7 @@ class StatisticsPage(QWidget):
         income_values: list[float],
         expense_values: list[float],
         saving_values: list[float],
+        month_labels: Optional[list[str]] = None,
     ) -> None:
         """
         Trenddiagram frissítése.
@@ -598,7 +826,11 @@ class StatisticsPage(QWidget):
             - Bevétel: zöld oszlop
             - Kiadás: piros oszlop
             - Megtakarítás: kék vonal
+
+        month_labels: az X tengely feliratai. Ha None, a régi, fix
+        12 hónapos MONTH_LABELS-t használjuk (visszafelé kompatibilitás).
         """
+        labels = month_labels if month_labels is not None else MONTH_LABELS
         
         income_set = QBarSet("Bevétel")
         expense_set = QBarSet("Kiadás")
@@ -628,7 +860,7 @@ class StatisticsPage(QWidget):
         chart.addSeries(saving_series)
 
         axis_x = QBarCategoryAxis()
-        axis_x.append(MONTH_LABELS)
+        axis_x.append(labels)
 
         all_values = income_values + expense_values + saving_values
         max_value = max(all_values) if all_values else 0
@@ -661,6 +893,7 @@ class StatisticsPage(QWidget):
         income_values: list[float],
         expense_values: list[float],
         saving_values: list[float],
+        month_labels: Optional[list[str]] = None,
     ) -> None:
         """
         Diagramok fül havi oszlopdiagramjának frissítése.
@@ -669,7 +902,11 @@ class StatisticsPage(QWidget):
             - Bevétel: zöld oszlop
             - Kiadás: piros oszlop
             - Megtakarítás: kék oszlop
+
+        month_labels: az X tengely feliratai. Ha None, a régi, fix
+        12 hónapos MONTH_LABELS-t használjuk (visszafelé kompatibilitás).
         """
+        labels = month_labels if month_labels is not None else MONTH_LABELS
 
         income_set = QBarSet("Bevétel")
         expense_set = QBarSet("Kiadás")
@@ -694,7 +931,7 @@ class StatisticsPage(QWidget):
         chart.addSeries(series)
 
         axis_x = QBarCategoryAxis()
-        axis_x.append(MONTH_LABELS)
+        axis_x.append(labels)
 
         all_values = income_values + expense_values + saving_values
         max_value = max(all_values) if all_values else 0
@@ -795,11 +1032,18 @@ class StatisticsPage(QWidget):
 
 
 
-    def _load_expenses_by_category(self, year: int) -> list[tuple[str, float]]:
+    def _load_period_expenses_by_category(
+        self,
+        *,
+        active_year: int,
+        start_date: Optional[str],
+        end_date: Optional[str],
+        mode: str,
+    ) -> list[tuple[str, float]]:
         """
-        Kiadások összesítése kategória szerint.
+        Kiadások összesítése kategória szerint, a kiválasztott Időszak
+        szűrő szerint.
 
-        Első verzió:
             - transactions táblából olvas
             - categories táblával LEFT JOIN
             - csak expense típusú tranzakciókat számol
@@ -807,15 +1051,28 @@ class StatisticsPage(QWidget):
 
         database_path = self.ctx.db.db_name
 
+        where_clause, params = self._period_where_clause(
+            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+        )
 
-        sql = """
+        # A meglévő WHERE feltételhez hozzáfűzzük az expense-szűrést.
+        # (mode == "all" esetén where_clause üres, ott WHERE-rel kell kezdeni.)
+        if where_clause:
+            # tx.year / tx.tx_date oszlopokra hivatkozás t. prefixszel.
+            where_clause = where_clause.replace("year = ?", "t.year = ?").replace(
+                "tx_date BETWEEN", "t.tx_date BETWEEN"
+            )
+            expense_clause = f"{where_clause} AND t.tx_type = 'expense'"
+        else:
+            expense_clause = "WHERE t.tx_type = 'expense'"
+
+        sql = f"""
             SELECT
                 COALESCE(c.name, 'Nincs kategória') AS category_name,
                 COALESCE(SUM(t.amount), 0) AS total_amount
             FROM transactions t
             LEFT JOIN categories c ON c.id = t.category_id
-            WHERE t.year = ?
-                AND t.tx_type = 'expense'
+            {expense_clause}
             GROUP BY c.name
             HAVING total_amount > 0
             ORDER BY total_amount DESC
@@ -823,7 +1080,7 @@ class StatisticsPage(QWidget):
 
         with sqlite3.connect(database_path) as conn:
             cursor = conn.cursor()
-            cursor.execute(sql, (year,))
+            cursor.execute(sql, params)
             rows = cursor.fetchall()
 
         return [
