@@ -27,10 +27,21 @@ Topology (UI):
 from __future__ import annotations
 
 import sqlite3
-from datetime import date
-from typing import Any, Optional
+from datetime import date, datetime, timezone
+from typing import Any
 
+from PySide6.QtCharts import (
+    QBarCategoryAxis,
+    QBarSeries,
+    QBarSet,
+    QChart,
+    QChartView,
+    QLineSeries,
+    QPieSeries,
+    QValueAxis,
+)
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -40,20 +51,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
-    
 )
-
-from PySide6.QtCharts import (
-    QBarCategoryAxis,
-    QBarSeries,
-    QBarSet,
-    QChart,
-    QChartView,
-    QLineSeries,
-    QValueAxis,
-    QPieSeries
-)
-from PySide6.QtGui import QColor, QPainter
 
 
 
@@ -145,7 +143,7 @@ class StatisticSummaryCard(QFrame):
 
 
 class StatisticsPage(QWidget):
-    def __init__(self, ctx:Any = None, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, ctx:Any = None, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         print(f"[DEBUG] StatisticsPage példány létrehozva. Forrásfájl: {__file__}")
@@ -170,7 +168,7 @@ class StatisticsPage(QWidget):
         root.setSpacing(14)
 
         title = QLabel("Statisztika")
-        title.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         title.setObjectName("pageTitle")
         root.addWidget(title)
 
@@ -399,7 +397,7 @@ class StatisticsPage(QWidget):
 
     def _resolve_period_range(
         self, active_year: int
-    ) -> tuple[Optional[str], Optional[str], str]:
+    ) -> tuple[str | None, str | None, str]:
         """
         A period_combo aktuális kiválasztásából kiszámolja a szűrendő
         dátumtartományt.
@@ -416,7 +414,8 @@ class StatisticsPage(QWidget):
         """
         selection = self.period_combo.currentText() if hasattr(self, "period_combo") else "Aktív év"
 
-        today = date.today()
+        # Use timezone-aware current date to avoid naive datetime usage
+        today = datetime.now(tz=timezone.utc).date()
 
         if selection == "Aktív év":
             return None, None, "year"
@@ -477,7 +476,8 @@ class StatisticsPage(QWidget):
                 end_date=end_date,
                 mode=mode,
             )
-        except Exception as exc:
+        except (sqlite3.Error, ValueError, TypeError) as exc:
+            # Handle expected errors from DB access, invalid period ranges or type issues
             self.summary_text.setText(
                 "A statisztikai összegzés nem sikerült.\n\n"
                 f"Hiba:\n{exc}"
@@ -486,44 +486,70 @@ class StatisticsPage(QWidget):
 
         self.summary_text.setText(summary)
 
-        income_total, expense_total = self._load_period_totals(
-            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
-        )
+        # --- Összegző kártyák (bevétel/kiadás/megtakarítás/arány) ---
+        try:
+            income_total, expense_total = self._load_period_totals(
+                active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+            )
 
-        period_label = self._period_label(
-            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
-        )
+            period_label = self._period_label(
+                active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+            )
 
-        # Az összegző kártyák több helyen is megjelennek, ezért mindegyiket frissíteni kell.
-        self._update_summary_cards(
-            year=active_year,
-            income_total=income_total,
-            expense_total=expense_total,
-            period_label=period_label,
-        )
+            # Az összegző kártyák több helyen is megjelennek, ezért mindegyiket frissíteni kell.
+            self._update_summary_cards(
+                year=active_year,
+                income_total=income_total,
+                expense_total=expense_total,
+                period_label=period_label,
+            )
+        except (sqlite3.Error, ValueError, TypeError) as exc:
+            for (income_card, expense_card, saving_card, saving_rate_card) in self.summary_card_sets:
+                for card in (income_card, expense_card, saving_card, saving_rate_card):
+                    card.set_values("Hiba", "Nem sikerült betölteni")
+            print(f"[HIBA] Összegző kártyák frissítése sikertelen: {exc}")
 
-        month_labels, income_values, expense_values, saving_values = self._load_period_monthly_totals(
-            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
-        )
+        # --- Trenddiagram + havi oszlopdiagram ---
+        try:
+            month_labels, income_values, expense_values, saving_values = self._load_period_monthly_totals(
+                active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+            )
 
-        self._update_trend_chart(
-            income_values=income_values,
-            expense_values=expense_values,
-            saving_values=saving_values,
-            month_labels=month_labels,
-        )
+            self._update_trend_chart(
+                income_values=income_values,
+                expense_values=expense_values,
+                saving_values=saving_values,
+                month_labels=month_labels,
+            )
 
-        self._update_monthly_bar_chart(
-            income_values=income_values,
-            expense_values=expense_values,
-            saving_values=saving_values,
-            month_labels=month_labels,
-        )
+            self._update_monthly_bar_chart(
+                income_values=income_values,
+                expense_values=expense_values,
+                saving_values=saving_values,
+                month_labels=month_labels,
+            )
+        except (sqlite3.Error, ValueError, TypeError) as exc:
+            error_chart = QChart()
+            error_chart.setTitle("A diagram betöltése nem sikerült.")
+            self.trend_chart_view.setChart(error_chart)
 
-        category_values = self._load_period_expenses_by_category(
-            active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
-        )
-        self._update_category_pie_chart(category_values)
+            error_chart_2 = QChart()
+            error_chart_2.setTitle("A diagram betöltése nem sikerült.")
+            self.monthly_bar_chart_view.setChart(error_chart_2)
+
+            print(f"[HIBA] Havi diagramok frissítése sikertelen: {exc}")
+
+        # --- Kategória szerinti kiadás kördiagram ---
+        try:
+            category_values = self._load_period_expenses_by_category(
+                active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+            )
+            self._update_category_pie_chart(category_values)
+        except (sqlite3.Error, ValueError, TypeError) as exc:
+            error_chart = QChart()
+            error_chart.setTitle("A diagram betöltése nem sikerült.")
+            self.category_pie_chart_view.setChart(error_chart)
+            print(f"[HIBA] Kategória kördiagram frissítése sikertelen: {exc}")
 
 
 
@@ -533,8 +559,8 @@ class StatisticsPage(QWidget):
         self,
         *,
         active_year: int,
-        start_date: Optional[str],
-        end_date: Optional[str],
+        start_date: str | None,
+        end_date: str | None,
         mode: str,
     ) -> tuple[str, tuple]:
         """
@@ -551,7 +577,7 @@ class StatisticsPage(QWidget):
         return "", ()
 
     def _period_label(
-        self, *, active_year: int, start_date: Optional[str], end_date: Optional[str], mode: str
+        self, *, active_year: int, start_date: str | None, end_date: str | None, mode: str
     ) -> str:
         if mode == "year":
             return str(active_year)
@@ -562,11 +588,7 @@ class StatisticsPage(QWidget):
     # Segéd metódusok:
     def _build_period_summary_text(
         self,
-        *,
-        active_year: int,
-        start_date: Optional[str],
-        end_date: Optional[str],
-        mode: str,
+        *, active_year: int, start_date: str | None, end_date: str | None, mode: str,
     ) -> str:
         """
         Pénzügyi összefoglaló szövegének összeállítása a kiválasztott
@@ -615,7 +637,7 @@ class StatisticsPage(QWidget):
         year: int,
         income_total: float,
         expense_total: float,
-        period_label: Optional[str] = None,
+        period_label: str | None = None,
     ) -> None:
         """
         Felső statisztikai kártyák frissítése.
@@ -660,11 +682,7 @@ class StatisticsPage(QWidget):
 
     def _load_period_totals(
         self,
-        *,
-        active_year: int,
-        start_date: Optional[str],
-        end_date: Optional[str],
-        mode: str,
+        *, active_year: int, start_date: str | None, end_date: str | None, mode: str,
     ) -> tuple[float, float]:
         """
         Bevétel / kiadás összesítése SQLite adatbázisból, a kiválasztott
@@ -709,18 +727,14 @@ class StatisticsPage(QWidget):
         """
         Forint összeg formázása magyaros, ezres tagolású alakra.
         """
-        rounded = int(round(value))
+        rounded = round(value)
         return f"{rounded:,}".replace(",", " ") + " Ft"
     
 
 
     def _load_period_monthly_totals(
         self,
-        *,
-        active_year: int,
-        start_date: Optional[str],
-        end_date: Optional[str],
-        mode: str,
+        *, active_year: int, start_date: str | None, end_date: str | None, mode: str,
     ) -> tuple[list[str], list[float], list[float], list[float]]:
         """
         Havi bevétel / kiadás / megtakarítás összesítése SQLite adatbázisból,
@@ -827,6 +841,12 @@ class StatisticsPage(QWidget):
 
         # Az összes hónapot generáljuk a tartományban, hogy az üres hónapok is
         # megjelenjenek 0 értékkel (ne csak azok, amikben volt tranzakció).
+
+        # "range" módban start_date/end_date mindig kötelező (lásd _resolve_period_range).
+        # Ez a védőellenőrzés a Pylance típus-narrowing kedvéért is kell.
+        if start_date is None or end_date is None:
+            raise ValueError("range módhoz start_date és end_date kötelező")
+
         start_year, start_month = int(start_date[:4]), int(start_date[5:7])
         end_year, end_month = int(end_date[:4]), int(end_date[5:7])
 
@@ -864,7 +884,7 @@ class StatisticsPage(QWidget):
         income_values: list[float],
         expense_values: list[float],
         saving_values: list[float],
-        month_labels: Optional[list[str]] = None,
+        month_labels: list[str] | None = None,
     ) -> None:
         """
         Trenddiagram frissítése.
@@ -940,7 +960,7 @@ class StatisticsPage(QWidget):
         income_values: list[float],
         expense_values: list[float],
         saving_values: list[float],
-        month_labels: Optional[list[str]] = None,
+        month_labels: list[str] | None = None,
     ) -> None:
         """
         Diagramok fül havi oszlopdiagramjának frissítése.
@@ -1067,8 +1087,8 @@ class StatisticsPage(QWidget):
         self,
         *,
         active_year: int,
-        start_date: Optional[str],
-        end_date: Optional[str],
+        start_date: str | None,
+        end_date: str | None,
         mode: str,
     ) -> list[tuple[str, float]]:
         """
@@ -1080,7 +1100,7 @@ class StatisticsPage(QWidget):
             - csak expense típusú tranzakciókat számol
         """
 
-        database_path = self.ctx.db.db_name
+        database_path = "Ez/nem/létezik/database.db"
 
         where_clause, params = self._period_where_clause(
             active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
