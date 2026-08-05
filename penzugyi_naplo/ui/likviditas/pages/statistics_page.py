@@ -1100,7 +1100,7 @@ class StatisticsPage(QWidget):
             - csak expense típusú tranzakciókat számol
         """
 
-        database_path = "Ez/nem/létezik/database.db"
+        database_path = self.ctx.db.db_name
 
         where_clause, params = self._period_where_clause(
             active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
