@@ -1,5 +1,11 @@
 # - Pénzügyi Napló - Fejlesztői kézikönyv
 
+## Licenc
+
+Ez a projekt a **CC BY-NC-SA 4.0** licenc alatt áll, kiegészítve egy 
+non-commercial záradékkal — **nem árulható és nem terjeszthető pénzért 
+vagy más termékbe építve**. Részletek: [LICENSE.md](./LICENSE.md)
+
 Utoljára frissítve: 2026.június 9.
 
 > **Megjegyzés az AI-közreműködésről:** A kód nagy része AI (Claude) segítségével
