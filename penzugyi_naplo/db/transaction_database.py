@@ -1601,6 +1601,53 @@ class TransactionDatabase:
 
         return {m: (v[0], v[1], v[2]) for m, v in out.items()}
 
+
+    def get_month_transactions_by_type( 
+        self, *, year: int, month: int, kind: str
+    ) -> list[Any]:
+        """
+        Egy adott hónap tranzakcióinak listája, típus szerint szűrve.
+
+        kind:
+            "income"  -> t.tx_type = 'income'
+            "expense" -> t.tx_type = 'expense' ÉS nem számla kategória
+            "bill"    -> t.tx_type = 'expense' ÉS számla kategória (is_bill = 1)
+        """
+        if kind == "income":
+            type_clause = "t.tx_type = 'income'"
+        elif kind == "bill":
+            type_clause = "t.tx_type = 'expense' AND COALESCE(c.is_bill, 0) = 1"
+        else:  # "expense"
+            type_clause = "t.tx_type = 'expense' AND COALESCE(c.is_bill, 0) = 0"
+
+        sql = f"""
+            SELECT
+                t.tx_date AS tx_date,
+                t.name    AS name,
+                t.amount  AS amount
+            FROM transactions t
+            LEFT JOIN categories c ON c.id = t.category_id
+            WHERE t.year = ? AND t.month = ? AND {type_clause}
+            ORDER BY t.tx_date ASC, t.id ASC
+        """
+
+        conn = self.get_db_connection()
+        try:
+            cur = conn.cursor()
+            rows = cur.execute(sql, (int(year), int(month))).fetchall()
+            return rows
+        finally:
+            conn.close()
+
+
+
+
+
+
+
+
+    
+
     def _ensure_details_schema(self, cur: sqlite3.Cursor) -> None:
         # 1) transactions.has_details (idempotens)
         if not self._column_exists(cur, "transactions", "has_details"):

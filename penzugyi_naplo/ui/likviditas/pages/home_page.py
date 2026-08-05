@@ -68,6 +68,8 @@ from penzugyi_naplo.ui.likviditas.widgets.home_summary_panel import HomeSummaryP
 @dataclass
 class HomeSummaryRow:
     month_label: str
+    year: int
+    month: int
     planned_income: float
     actual_income: float
     income_diff: float
@@ -238,6 +240,8 @@ class HomePage(QWidget):
             rows.append(
                 HomeSummaryRow(
                     month_label=MONTHS_HU[month - 1],
+                    year=self._year,
+                    month=month,
                     planned_income=float(p_income),
                     actual_income=float(income),
                     income_diff=float(income_diff),
@@ -636,7 +640,7 @@ class HomePage(QWidget):
 
     def _open_month_details(self, event, row: HomeSummaryRow) -> None:
         if event.button() == Qt.LeftButton:
-            dlg = MonthDetailsDialog(row, self)
+            dlg = MonthDetailsDialog(row, self.ctx, self)
             dlg.exec()
 
 
