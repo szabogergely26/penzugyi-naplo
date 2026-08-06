@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QScrollArea,
     QSizePolicy,
     QVBoxLayout,
@@ -51,110 +50,18 @@ MONTH_NAMES = {
 }
 
 
-class MonthlyPaymentChip(QFrame):
-    """Egyszerű havi számla befizetés-blokkja, például KalászNet."""
-
-    def __init__(self, item: MonthlyAmount, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setObjectName("billPaymentChip")
-        
-        # Ne nyúljon túl szélesre a fizetési blokk,
-        # mert egy hónapon belül egymás mellett több ilyen is lehet.
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.setMinimumWidth(170)
-        self.setMaximumWidth(230)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(4)
-
-        title = QLabel("Befizetés")
-        title.setObjectName("billPaymentTitle")
-        layout.addWidget(title)
-
-        amount_label = QLabel("Összeg")
-        amount_label.setObjectName("billPaymentMetaLabel")
-        layout.addWidget(amount_label)
-
-        amount_value = QLabel(_format_huf(_get_attr(item, "amount", 0)))
-        amount_value.setObjectName("billPaymentAmount")
-        layout.addWidget(amount_value)
-
-
-class PeriodicPaymentChip(QFrame):
-    """Időszakos számla befizetés-blokkja, például MVMNext."""
-
-    def __init__(self, item: PeriodicAmount, index: int, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setObjectName("billPaymentChip")
-        
-        # Ne nyúljon túl szélesre a fizetési blokk,
-        # mert egy hónapon belül egymás mellett több ilyen is lehet.
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.setMinimumWidth(170)
-        self.setMaximumWidth(230)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(4)
-
-        title = QLabel(f"{index}. fizetés")
-        title.setObjectName("billPaymentTitle")
-        layout.addWidget(title)
-
-
-        # A hónapsor a fizetés/rögzítés hónapja alapján csoportosít.
-        # Ezért a kártyán külön kiírjuk a fizetés/rögzítés dátumát is,
-        # hogy ne keveredjen az elszámolási időszakkal.
-        payment_date = _get_payment_date(item)
-
-        payment_date_label = QLabel("Rögzítve / fizetve")
-        payment_date_label.setObjectName("billPaymentMetaLabel")
-        layout.addWidget(payment_date_label)
-
-        payment_date_value = QLabel(payment_date)
-        payment_date_value.setObjectName("billPaymentValue")
-        layout.addWidget(payment_date_value)
-
-
-
-
-
-
-
-
-
-
-
-
-        period_label = QLabel("Időszak")
-        period_label.setObjectName("billPaymentMetaLabel")
-        layout.addWidget(period_label)
-
-        start = _get_attr(item, "start", "—")
-        end = _get_attr(item, "end", "—")
-
-        period_value = QLabel(f"{start} – {end}")
-        period_value.setObjectName("billPaymentValue")
-        layout.addWidget(period_value)
-
-        amount_label = QLabel("Összeg")
-        amount_label.setObjectName("billPaymentMetaLabel")
-        layout.addWidget(amount_label)
-
-        amount_value = QLabel(_format_huf(_get_attr(item, "amount", 0)))
-        amount_value.setObjectName("billPaymentAmount")
-        layout.addWidget(amount_value)
-
-        invoice_number = _get_attr(item, "invoice_number", "")
-        if invoice_number:
-            invoice_label = QLabel(f"Számla sorszáma: {invoice_number}")
-            invoice_label.setObjectName("billPaymentValue")
-            layout.addWidget(invoice_label)
-
-
 class BillMonthRow(QFrame):
-    """Egy hónap sora a számlakártyán belül."""
+    """
+    Egy hónap tömör sora a számlakártyán belül.
+
+    Alap állapotban: hónap | "Fizetve [dátum]" pipával | összeg — egy sorban.
+    Kattintásra kinyílik alatta egy apró meta-sor (időszak, számla sorszám),
+    csak 'periodic' típusnál, ahol van ilyen adat.
+
+    Az 'esedékes' / 'lejárt' állapotok (sárga/piros) egyelőre nincsenek
+    bekötve, mert a fizetési határidő adat még nincs a modellben — ez egy
+    későbbi lépés. Most csak a ténylegesen fizetve tételeket jelenítjük meg.
+    """
 
     def __init__(
         self,
@@ -165,35 +72,141 @@ class BillMonthRow(QFrame):
     ) -> None:
         super().__init__(parent)
         self.setObjectName("billMonthRow")
+        self.setProperty("paid", bool(items))
 
-        # Hónap sor:
-        row = QHBoxLayout(self)
-        row.setContentsMargins(12, 6, 12, 6)
+        self._kind = kind
+        self._items = items
+        self._expanded = False
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        # --- fő sor (mindig látszik) ---
+        main_row = QFrame()
+        main_row.setObjectName("billMonthMainRow")
+
+        row = QHBoxLayout(main_row)
+        row.setContentsMargins(14, 12, 14, 12)
         row.setSpacing(12)
 
         month_label = QLabel(MONTH_NAMES.get(month_number, str(month_number)))
         month_label.setObjectName("billMonthName")
-        month_label.setFixedWidth(130)
-        month_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        month_label.setFixedWidth(80)
         row.addWidget(month_label)
 
-        payments_row = QHBoxLayout()
-        payments_row.setContentsMargins(0, 0, 0, 0)
-        payments_row.setSpacing(12)
+        status_text, amount_text = self._summarize(items, kind)
+
+        status_label = QLabel(status_text)
+        status_label.setObjectName(
+            "billMonthStatus" if items else "billMonthStatusEmpty"
+        )
+        row.addWidget(status_label, stretch=1)
+
+        amount_label = QLabel(amount_text)
+        amount_label.setObjectName("billMonthAmount")
+        amount_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(amount_label)
+
+        self._chevron = QLabel("\u25be")  # lefelé mutató nyíl
+        self._chevron.setObjectName("billMonthChevron")
+        self._chevron.setFixedWidth(16)
+        self._chevron.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        row.addWidget(self._chevron)
+
+        root.addWidget(main_row)
+
+        # --- meta sor (csak periodic + van adat + kattintásra) ---
+        self._meta_row = None
+        has_meta = kind == "periodic" and bool(items)
+
+        if has_meta:
+            main_row.setCursor(Qt.CursorShape.PointingHandCursor)
+            self._meta_row = self._build_meta_row(items)
+            self._meta_row.setVisible(False)
+            root.addWidget(self._meta_row)
+            main_row.mousePressEvent = lambda e: self._toggle_expanded()
+        else:
+            self._chevron.setVisible(False)
+
+    def _toggle_expanded(self) -> None:
+        if self._meta_row is None:
+            return
+
+        self._expanded = not self._expanded
+        self._meta_row.setVisible(self._expanded)
+        self._chevron.setText("\u25b4" if self._expanded else "\u25be")
+
+    def _build_meta_row(self, items: list) -> QFrame:
+        meta = QFrame()
+        meta.setObjectName("billMonthMetaRow")
+
+        lay = QVBoxLayout(meta)
+        lay.setContentsMargins(14, 6, 14, 10)
+        lay.setSpacing(6)
+
+        for item in items:
+            line = QHBoxLayout()
+            line.setSpacing(24)
+
+            start = _get_attr(item, "start", "—")
+            end = _get_attr(item, "end", "—")
+
+            period_label = QLabel("Időszak:")
+            period_label.setObjectName("billMonthMetaPeriodLabel")
+            line.addWidget(period_label)
+
+            period_value = QLabel(f"{start} – {end}")
+            period_value.setObjectName("billMonthMetaPeriodValue")
+            line.addWidget(period_value)
+
+            amount_value_raw = _get_attr(item, "amount", 0)
+
+            amount_label = QLabel("Összeg:")
+            amount_label.setObjectName("billMonthMetaAmountLabel")
+            line.addWidget(amount_label)
+
+            amount_value = QLabel(_format_huf(amount_value_raw))
+            amount_value.setObjectName("billMonthMetaAmountValue")
+            line.addWidget(amount_value)
+
+            invoice_number = _get_attr(item, "invoice_number", None)
+            if invoice_number:
+                invoice_label = QLabel("Számla sorszám:")
+                invoice_label.setObjectName("billMonthMetaInvoiceLabel")
+                line.addWidget(invoice_label)
+
+                invoice_value = QLabel(str(invoice_number))
+                invoice_value.setObjectName("billMonthMetaInvoiceValue")
+                line.addWidget(invoice_value)
+
+            line.addStretch(1)
+            lay.addLayout(line)
+
+        return meta
+
+    @staticmethod
+    def _summarize(items: list, kind: str) -> tuple[str, str]:
+        """Visszaadja a fő sorban megjelenő státusz-szöveget és az összeget."""
 
         if not items:
-            empty = QLabel("—")
-            empty.setObjectName("billEmptyMonth")
-            payments_row.addWidget(empty)
-        else:
-            for index, item in enumerate(items, start=1):
-                if kind == "periodic":
-                    payments_row.addWidget(PeriodicPaymentChip(item, index))
-                else:
-                    payments_row.addWidget(MonthlyPaymentChip(item))
+            return "Nincs még kiállítva", "—"
 
-        payments_row.addStretch(1)
-        row.addLayout(payments_row, stretch=1)
+        total = sum(float(_get_attr(it, "amount", 0) or 0) for it in items)
+        amount_text = _format_huf(total)
+
+        if kind == "monthly":
+            return "Fizetve", amount_text
+
+        dates = [
+            _get_payment_date(it)
+            for it in items
+            if _get_payment_date(it) != "—"
+        ]
+        if dates:
+            return f"Fizetve {dates[0]}", amount_text
+
+        return "Fizetve", amount_text
 
 
 class WideBillCard(QFrame):
@@ -232,11 +245,6 @@ class WideBillCard(QFrame):
         header_layout.addWidget(title)
 
         header_layout.addStretch(1)
-
-        details_btn = QPushButton("Részletek")
-        details_btn.setObjectName("billDetailsButton")
-        details_btn.clicked.connect(self._open_details)
-        header_layout.addWidget(details_btn)
 
         root.addWidget(header)
 

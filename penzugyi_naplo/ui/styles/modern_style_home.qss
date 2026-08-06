@@ -1087,61 +1087,106 @@ QFrame#odsImportSummaryBox {
     color: #1f2937;
 }
 
-#billDetailsButton {
-    background: #eef5ff;
-    border: 1px solid #cdddf2;
-    border-radius: 8px;
-    padding: 5px 12px;
-    color: #334155;
-    font-weight: 600;
-}
+/* --- Hónap sorok: fő sor mindig látszik, kattintásra kinyílik --- */
 
-#billDetailsButton:hover {
-    background: #dfeeff;
-}
-
+/* Alsó keret a hónapok alá*/
 #billMonthRow {
     background: #ffffff;
-    border-bottom: 1px solid #edf1f5;
+    border-bottom: 1px solid #e7eaec;
 }
 
+/* Ha fizetve van a hónap akkor a háttérszín:*/
+#billMonthRow[paid="true"] {
+    background: #eefaf1;
+}
+
+#billMonthMainRow {
+    min-height: 34px;
+    background: transparent;
+}
+
+/* Ez adja a hóver effektet*/
+#billMonthMainRow:hover {
+    background: rgba(15, 23, 42, 0.03);
+}
+
+/*Hónap neve, színe*/
 #billMonthName {
     font-size: 13px;
     font-weight: 700;
     color: #334155;
 }
 
-#billEmptyMonth {
+/* Hónap státusza - Fizetve felirat*/
+#billMonthStatus {
+    font-size: 13px;
+    color: #15803d;
+}
+
+/* - Fizetetlen hónap */
+#billMonthStatusEmpty {
+    font-size: 13px;
     color: #94a3b8;
-    font-size: 13px;
 }
 
-#billPaymentChip {
-    background: #fbfdff;
-    border: 1px solid #dbe5f0;
-    border-radius: 10px;
-}
-
-#billPaymentTitle {
-    font-size: 13px;
+/*A jobb oldali összeg mező*/
+#billMonthAmount {
+    font-size: 15px;
     font-weight: 700;
-    color: #1e293b;
+    color: #0f172a;
 }
 
-#billPaymentMetaLabel {
+/*Sor végén lévő nyíl*/
+#billMonthChevron {
     font-size: 11px;
+    color: #94a3b8;
+}
+
+/*Kinyitott alsó rész háttere*/
+#billMonthMetaRow {
+    background: rgba(15, 23, 42, 0.02);
+    border-bottom: 1px solid #edf1f5;
+}
+
+/*Időszak felirat*/
+#billMonthMetaPeriodLabel {
+    font-size: 12px;
     color: #64748b;
 }
 
-#billPaymentValue {
+/*Időszak értéke*/
+#billMonthMetaPeriodValue {
+    font-size: 15px;
+    font-weight: bold;
+    color: #64748b;
+}
+/* Összeg szó*/
+#billMonthMetaAmountLabel {
     font-size: 12px;
-    color: #334155;
+    color: #64748b;
 }
 
-#billPaymentAmount {
+/* Összeg értéke */
+#billMonthMetaAmountValue {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Számla felirat*/
+#billMonthMetaInvoiceLabel {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Számla érték*/
+#billMonthMetaInvoiceValue {
+    font-size: 12px;
+    color: #64748b;
+}
+
+#billEmptyMonth {
+    color: #94a3b8;
     font-size: 13px;
-    font-weight: 700;
-    color: #0f172a;
 }
 
 

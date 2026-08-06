@@ -580,6 +580,108 @@ QLabel#billsEmptyHint {
 }
 
 
+/* ---------------- WideBillCard / Számlák oldal (aktív nézet) ----------------- */
+
+#billCardHeader {
+    background: #f7f8fa;
+    border-bottom: 1px solid #e1e5eb;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+#billCardIcon {
+    background: #eef1f5;
+    border: 1px solid #dde2e9;
+    border-radius: 14px;
+    font-size: 15px;
+}
+
+#billMonthRow {
+    background: #ffffff;
+    border-bottom: 1px solid #edf0f3;
+}
+
+#billMonthRow[paid="true"] {
+    background: #eef8f0;
+}
+
+#billMonthMainRow {
+    min-height: 34px;
+    background: transparent;
+}
+
+#billMonthMainRow:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+#billMonthName {
+    font-size: 13px;
+    font-weight: 700;
+    color: #3a3f47;
+}
+
+#billMonthStatus {
+    font-size: 13px;
+    color: #2e7d46;
+}
+
+#billMonthStatusEmpty {
+    font-size: 13px;
+    color: #9aa1ab;
+}
+
+#billMonthAmount {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2328;
+}
+
+#billMonthChevron {
+    font-size: 11px;
+    color: #9aa1ab;
+}
+
+#billMonthMetaRow {
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid #edf0f3;
+}
+
+#billMonthMetaPeriodLabel {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+#billMonthMetaPeriodValue {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+#billMonthMetaAmountLabel {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+#billMonthMetaAmountValue {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+#billMonthMetaInvoiceLabel {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+#billMonthMetaInvoiceValue {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+#billEmptyMonth {
+    color: #9aa1ab;
+    font-size: 13px;
+}
+
+
 QLabel[periodicAmount="true"] {
     font-weight: 700;
 }
