@@ -18,6 +18,7 @@ from datetime import date
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -25,6 +26,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QVBoxLayout,
     QWidget,
+    QPushButton,
 )
 
 from penzugyi_naplo.ui.bills.bill_models import (
@@ -69,6 +71,7 @@ class BillMonthRow(QFrame):
         items: list[MonthlyAmount] | list[PeriodicAmount],
         kind: str,
         parent: QWidget | None = None,
+        db=None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("billMonthRow")
@@ -77,6 +80,7 @@ class BillMonthRow(QFrame):
         self._kind = kind
         self._items = items
         self._expanded = False
+        self._db = db
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -171,19 +175,49 @@ class BillMonthRow(QFrame):
             line.addWidget(amount_value)
 
             invoice_number = _get_attr(item, "invoice_number", None)
-            if invoice_number:
-                invoice_label = QLabel("Számla sorszám:")
-                invoice_label.setObjectName("billMonthMetaInvoiceLabel")
-                line.addWidget(invoice_label)
 
-                invoice_value = QLabel(str(invoice_number))
-                invoice_value.setObjectName("billMonthMetaInvoiceValue")
-                line.addWidget(invoice_value)
+            invoice_label = QLabel("Számla sorszám:")
+            invoice_label.setObjectName("billMonthMetaInvoiceLabel")
+            line.addWidget(invoice_label)
+
+            invoice_value = QLabel(str(invoice_number))
+            invoice_value.setObjectName("billMonthMetaInvoiceValue")
+            line.addWidget(invoice_value)
+
+            entry_id = _get_attr(item, "entry_id", None)
+
+            edit_btn = QPushButton("✎ Szerkesztés")
+            edit_btn.setObjectName("billMonthMetaEditButton")
+            edit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            edit_btn.clicked.connect(
+                lambda checked=False, eid=entry_id, val=invoice_number, val_label=invoice_value: (
+                    self._edit_invoice_number(eid, val, val_label)
+                )
+            )
+            line.addWidget(edit_btn)
 
             line.addStretch(1)
             lay.addLayout(line)
 
         return meta
+
+    def _edit_invoice_number(self, entry_id, current_value, value_label: QLabel) -> None:
+        if entry_id is None:
+            return
+
+        from .invoice_edit_dialog import InvoiceEditDialog
+
+        dlg = InvoiceEditDialog(
+            entry_id=entry_id,
+            current_invoice_number=current_value,
+            parent=self,
+            db=self._db,
+        )
+
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            new_value = dlg.new_invoice_number
+            value_label.setText(str(new_value) if new_value else "—")
+
 
     @staticmethod
     def _summarize(items: list, kind: str) -> tuple[str, str]:
@@ -214,7 +248,7 @@ class WideBillCard(QFrame):
 
     clicked = Signal(int)
 
-    def __init__(self, model: BillCardModel, parent: QWidget | None = None) -> None:
+    def __init__(self, model: BillCardModel, parent: QWidget | None = None, db=None) -> None:
         super().__init__(parent)
         self.setObjectName("billCard")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -222,6 +256,7 @@ class WideBillCard(QFrame):
         self.model = model
         self.bill_id = int(_get_attr(model, "id", 0))
         self.kind = str(_get_attr(model, "kind", "monthly"))
+        self._db = db
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -265,7 +300,7 @@ class WideBillCard(QFrame):
             if not items:
                 continue
 
-            months_layout.addWidget(BillMonthRow(month_number, items, self.kind))
+            months_layout.addWidget(BillMonthRow(month_number, items, self.kind, db=self._db))
 
         root.addWidget(months_container)
 
@@ -470,7 +505,7 @@ class BillsPage(QWidget):
             return
 
         for model in models:
-            card = WideBillCard(model)
+            card = WideBillCard(model, db=self.db)
             card.clicked.connect(self.billRequested.emit)
             self.cards_layout.addWidget(card)
 

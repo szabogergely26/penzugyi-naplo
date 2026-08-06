@@ -1047,6 +1047,32 @@ class TransactionDatabase:
             print(f"Hiba a frissítésnél: {e}")
             return False
 
+
+    def update_invoice_number(self, txn_id: int, invoice_number: str | None) -> bool:
+        """
+        Csak a számla sorszám mezőt frissíti egy tranzakción.
+        A sorszám üresen hagyva (None / üres string) törli a meglévő értéket.
+        """
+        try:
+            value = (invoice_number or "").strip() or None
+
+            conn = self.get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                """
+                UPDATE transactions
+                SET invoice_number = ?
+                WHERE id = ?
+                """,
+                (value, int(txn_id)),
+            )
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Hiba a számla sorszám frissítésénél: {e}")
+            return False
+
     def delete_transaction(self, txn_id: int) -> bool:
         conn = self.get_db_connection()
         try:
