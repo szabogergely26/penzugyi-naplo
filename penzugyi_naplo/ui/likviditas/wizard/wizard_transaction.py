@@ -610,7 +610,7 @@ class PageAmount(QWizardPage):
 
         # ---- Bill mód mezők (alapesetben rejtve) ----
 
-        self.lbl_date = QLabel("Fizetés dátuma (YYYY-MM-DD):")
+        self.lbl_date = QLabel("Elszámolt hónap dátuma (YYYY-MM-DD):")
         self.input_date = QLineEdit()
         self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
 
@@ -629,6 +629,22 @@ class PageAmount(QWizardPage):
         self.chk_is_correction = QCheckBox("Ez korrekció / jóváírás (nem önálló számla)")
         self.chk_is_correction.setObjectName("transactionWizardCorrectionCheckbox")
 
+        self.lbl_meter_value = QLabel("Fogyasztás (m³ vagy MJ):")
+        self.input_meter_value = QLineEdit()
+        self.input_meter_value.setPlaceholderText("Pl.: 123.4")
+
+        self.meter_unit_group = QButtonGroup(self)
+        self.rb_meter_m3 = QRadioButton("m³")
+        self.rb_meter_mj = QRadioButton("MJ")
+        self.rb_meter_m3.setChecked(True)
+        self.meter_unit_group.addButton(self.rb_meter_m3, 0)
+        self.meter_unit_group.addButton(self.rb_meter_mj, 1)
+
+        meter_unit_row = QHBoxLayout()
+        meter_unit_row.addWidget(self.rb_meter_m3)
+        meter_unit_row.addWidget(self.rb_meter_mj)
+        meter_unit_row.addStretch(1)
+
 
 
 
@@ -642,6 +658,10 @@ class PageAmount(QWizardPage):
         layout.addWidget(self.input_period_start)
         layout.addWidget(self.lbl_period_end)
         layout.addWidget(self.input_period_end)
+
+        layout.addWidget(self.lbl_meter_value)
+        layout.addWidget(self.input_meter_value)
+        layout.addLayout(meter_unit_row)
 
         # ---- közös mező ----
 
@@ -672,6 +692,13 @@ class PageAmount(QWizardPage):
 
         is_bill = mode == "bill"
         needs_period = is_bill and bill_requires_period(provider)
+
+        is_gas = False
+        if is_bill and provider == "MVMNext" and wiz is not None and wiz.page(6) is not None:
+            if hasattr(wiz.page(6), "is_gas"):
+                is_gas = wiz.page(6).is_gas()
+
+        needs_meter = is_bill and is_gas
 
         if is_bill:
             self.setTitle("Számlabefizetés összege")
@@ -705,11 +732,20 @@ class PageAmount(QWizardPage):
         self.input_invoice_number.setVisible(is_bill)
         self.chk_is_correction.setVisible(is_bill)
 
+        self.lbl_meter_value.setVisible(needs_meter)
+        self.input_meter_value.setVisible(needs_meter)
+        self.rb_meter_m3.setVisible(needs_meter)
+        self.rb_meter_mj.setVisible(needs_meter)
+
         if is_bill:
             self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
             self.input_amount.clear()
             self.input_invoice_number.clear()
             self.chk_is_correction.setChecked(False)
+
+            if needs_meter:
+                self.input_meter_value.clear()
+                self.rb_meter_m3.setChecked(True)
 
             if needs_period:
                 self.input_period_start.clear()
@@ -727,6 +763,8 @@ class PageAmount(QWizardPage):
         self.input_period_start.clear()
         self.input_period_end.clear()
         self.input_amount.clear()
+        self.input_meter_value.clear()
+        self.rb_meter_m3.setChecked(True)
 
 
 
@@ -830,6 +868,12 @@ class PageAmount(QWizardPage):
     def get_is_correction(self) -> bool:
         return self.chk_is_correction.isChecked()
 
+    def get_meter_value_raw(self) -> str:
+        return self.input_meter_value.text().strip()
+
+    def get_meter_unit(self) -> str:
+        return "MJ" if self.rb_meter_mj.isChecked() else "m3"
+
 # Itt már a core.utils.is_valid_date-et használjuk.
 # Fontos: ez az osztály feltételezi, hogy ugyanabban a fájlban már létezik:
 
@@ -895,6 +939,8 @@ class TransactionWizard(QWizard):
         period_end = None
         invoice_number = ""
         is_correction = False
+        meter_value: float | None = None
+        meter_unit: str | None = None
 
         # -------------------------------------------------
         # BILL ÁG
@@ -938,6 +984,20 @@ class TransactionWizard(QWizard):
 
             invoice_number = amount_page.get_invoice_number_raw()
             is_correction = amount_page.get_is_correction()
+
+            if provider == "MVMNext" and self.page(6).is_gas():
+                meter_value_raw = amount_page.get_meter_value_raw()
+                if meter_value_raw:
+                    try:
+                        meter_value = float(meter_value_raw.replace(",", "."))
+                    except ValueError:
+                        QMessageBox.critical(
+                            self,
+                            "Hiba",
+                            "A fogyasztás (m³/MJ) mező érvénytelen számot tartalmaz.",
+                        )
+                        return
+                    meter_unit = amount_page.get_meter_unit()
 
             if bill_requires_period(provider):
                 period_start_raw = amount_page.get_period_start_raw()
@@ -1033,6 +1093,8 @@ class TransactionWizard(QWizard):
             "period_end": period_end,
             "invoice_number": invoice_number,
             "is_correction": is_correction,
+            "meter_value": meter_value,
+            "meter_unit": meter_unit,
         }
 
 

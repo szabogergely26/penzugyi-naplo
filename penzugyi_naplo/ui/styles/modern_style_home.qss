@@ -1123,6 +1123,13 @@ QFrame#odsImportSummaryBox {
     color: #15803d;
 }
 
+/* Hónap státusza - 2+ önálló számla egy hónapban (pl. MVM), kiemelve */
+#billMonthStatusMulti {
+    font-size: 13px;
+    font-weight: 700;
+    color: #9f1239;
+}
+
 /* - Fizetetlen hónap */
 #billMonthStatusEmpty {
     font-size: 13px;
@@ -1182,6 +1189,26 @@ QFrame#odsImportSummaryBox {
 #billMonthMetaInvoiceValue {
     font-size: 12px;
     color: #64748b;
+}
+
+/* Fogyasztás (m3/MJ) felirat */
+#billMonthMetaMeterLabel {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Fogyasztás (m3/MJ) érték */
+#billMonthMetaMeterValue {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* "Számla 1" / "Számla 2" alcím, 2+ önálló számlánál */
+#billMonthMetaInvoiceTitle {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    margin-top: 4px;
 }
 
 #billEmptyMonth {

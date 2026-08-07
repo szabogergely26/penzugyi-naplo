@@ -688,6 +688,8 @@ class TransactionDatabase:
                     t.year,
                     t.month,
                     t.is_correction,
+                    t.meter_value,
+                    t.meter_unit,
                     c.name AS category_name
                 FROM transactions t
                 JOIN categories c ON t.category_id = c.id
@@ -714,6 +716,9 @@ class TransactionDatabase:
             amount = int(round(float(row["amount"] or 0)))
             month = int(row["month"] or 0)
             is_correction = bool(row["is_correction"])
+            meter_value_raw = row["meter_value"]
+            meter_value = float(meter_value_raw) if meter_value_raw is not None else None
+            meter_unit = str(row["meter_unit"] or "").strip() or None
 
             if category_name in MONTHLY_BILLS:
                 if 1 <= month <= 12:
@@ -739,6 +744,8 @@ class TransactionDatabase:
                             invoice_number=invoice_number,
                             is_paid=True,
                             is_correction=is_correction,
+                            meter_value=meter_value,
+                            meter_unit=meter_unit,
                         )
                     )
 
@@ -852,6 +859,10 @@ class TransactionDatabase:
         invoice_number = (data.get("invoice_number") or "").strip() or None
         is_correction = bool(data.get("is_correction", False))
 
+        raw_meter_value = data.get("meter_value", None)
+        meter_value = float(raw_meter_value) if raw_meter_value not in (None, "") else None
+        meter_unit = (data.get("meter_unit") or "").strip() or None
+
         if (period_start and not period_end) or (period_end and not period_start):
             raise ValueError("Az időszak kezdete és vége együtt adandó meg.")
 
@@ -872,9 +883,9 @@ class TransactionDatabase:
             INSERT INTO transactions (
                 tx_date, tx_type, amount, category_id, name, description,
                 created_at, year, month, payment_source, period_start, period_end,
-                invoice_number, is_correction
+                invoice_number, is_correction, meter_value, meter_unit
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 iso,
@@ -891,6 +902,8 @@ class TransactionDatabase:
                 period_end,
                 invoice_number,
                 int(is_correction),
+                meter_value,
+                meter_unit,
             ),
         )
 
@@ -2260,6 +2273,12 @@ class TransactionDatabase:
             cur.execute(
                 "ALTER TABLE transactions ADD COLUMN is_correction INTEGER NOT NULL DEFAULT 0"
             )
+
+        if "meter_value" not in columns:
+            cur.execute("ALTER TABLE transactions ADD COLUMN meter_value REAL")
+
+        if "meter_unit" not in columns:
+            cur.execute("ALTER TABLE transactions ADD COLUMN meter_unit TEXT")
 
 
 

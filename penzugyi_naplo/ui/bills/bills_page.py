@@ -106,12 +106,15 @@ class BillMonthRow(QFrame):
         month_label.setFixedWidth(80)
         row.addWidget(month_label)
 
-        status_text, amount_text = self._summarize(items, kind)
+        status_text, amount_text, is_multi_invoice = self._summarize(items, kind)
 
         status_label = QLabel(status_text)
-        status_label.setObjectName(
-            "billMonthStatus" if items else "billMonthStatusEmpty"
-        )
+        if is_multi_invoice:
+            status_label.setObjectName("billMonthStatusMulti")
+        else:
+            status_label.setObjectName(
+                "billMonthStatus" if items else "billMonthStatusEmpty"
+            )
         row.addWidget(status_label, stretch=1)
 
         amount_label = QLabel(amount_text)
@@ -179,9 +182,48 @@ class BillMonthRow(QFrame):
         lay.setContentsMargins(14, 6, 14, 10)
         lay.setSpacing(6)
 
+        # periodic típusnál, ha 2+ önálló (nem-korrekció) számla van a
+        # hónapban, minden tétel elé "Számla N" alcím kerül, hogy egyértelmű
+        # legyen a tagolás — korrekciós tételt nem számoljuk bele a sorszámba
+        main_count = 0
+        if kind == "periodic":
+            main_items_count = len(
+                [it for it in items if not _get_attr(it, "is_correction", False)]
+            )
+        else:
+            main_items_count = 0
+
         for item in items:
+            is_correction_item = bool(_get_attr(item, "is_correction", False))
+
+            has_invoice_title = False
+            if kind == "periodic" and main_items_count > 1 and not is_correction_item:
+                main_count += 1
+
+                title_row = QHBoxLayout()
+                title_row.setSpacing(0)
+                title_row.setContentsMargins(0, 0, 0, 0)
+
+                # Számla 1:  Számla 2: -feliratok a title_row = QHBoxLayout()-hoz viszonyítva
+                title_indent = QWidget()
+                title_indent.setFixedWidth(25)
+                title_row.addWidget(title_indent)
+
+                invoice_title = QLabel(f"Számla {main_count}")
+                invoice_title.setObjectName("billMonthMetaInvoiceTitle")
+                title_row.addWidget(invoice_title)
+                title_row.addStretch(1)
+
+                lay.addLayout(title_row)
+                has_invoice_title = True
+
             line = QHBoxLayout()
             line.setSpacing(24)
+
+            if has_invoice_title:
+                indent_spacer = QWidget()
+                indent_spacer.setFixedWidth(50)
+                line.addWidget(indent_spacer)
 
            # periodic (pl. MVM Villany/Gáz): Időszak + Összeg + Sorszám
             if kind == "periodic":
@@ -195,7 +237,7 @@ class BillMonthRow(QFrame):
                 start = _get_attr(item, "start", "—")
                 end = _get_attr(item, "end", "—")
 
-                period_label = QLabel("Időszak:")
+                period_label = QLabel("Elszámolási időszak:")
                 period_label.setObjectName("billMonthMetaPeriodLabel")
                 line.addWidget(period_label)
 
@@ -213,8 +255,21 @@ class BillMonthRow(QFrame):
                 amount_value.setObjectName("billMonthMetaAmountValue")
                 line.addWidget(amount_value)
 
+                meter_value = _get_attr(item, "meter_value", None)
+                meter_unit = _get_attr(item, "meter_unit", None)
+                if meter_value is not None:
+                    meter_label = QLabel("Fogyasztás:")
+                    meter_label.setObjectName("billMonthMetaMeterLabel")
+                    line.addWidget(meter_label)
+
+                    unit_text = meter_unit or ""
+                    meter_value_widget = QLabel(f"{meter_value:g} {unit_text}".strip())
+                    meter_value_widget.setObjectName("billMonthMetaMeterValue")
+                    line.addWidget(meter_value_widget)
+
             # monthly (pl. KalászNet): Összeg + Sorszám + Fizetve állapot
             # (Hónap a fő sorban van, de az összeg itt is kelleni fog,
+
             # mert egy hónapban több tétel is lehet, pl. korrekció)
             else:
                 paid = bool(_get_attr(item, "is_paid", False))
@@ -342,17 +397,25 @@ class BillMonthRow(QFrame):
 
 
     @staticmethod
-    def _summarize(items: list, kind: str) -> tuple[str, str]:
-        """Visszaadja a fő sorban megjelenő státusz-szöveget és az összeget.
+    def _summarize(items: list, kind: str) -> tuple[str, str, bool]:
+        """Visszaadja a fő sorban megjelenő státusz-szöveget, az összeget,
+        és egy jelzőt (is_multi_invoice), hogy a szöveget ki kell-e emelni.
 
         A fősor összege csak a "rendes" (nem korrekció/jóváírás) tételekből áll —
         egy esetleges korrekciós tétel (pl. KalászNet túlfizetés visszaírása)
         csak a kibontott nézetben jelenik meg, a fősor összegét nem módosítja.
         Ha van korrekciós tétel is a hónapban, a státusz-szöveg jelzi ezt.
+
+        periodic (pl. MVM) esetén más a helyzet: ott előfordulhat, hogy egy
+        hónapban KÉT ÖNÁLLÓ, egymástól független számla esik (eltérő díjjal,
+        eltérő fizetési határidővel) — ez nem korrekció, hanem két egyenrangú
+        tétel. Ilyenkor a "N külön számla" szöveg jelenik meg, kiemelve
+        (is_multi_invoice=True), hogy a felhasználó biztosan rákattintson és
+        lássa mindkettőt, mert az összesített összeg félrevezető lehet.
         """
 
         if not items:
-            return "Nincs még kiállítva", "—"
+            return "Nincs még kiállítva", "—", False
 
         main_items = [it for it in items if not _get_attr(it, "is_correction", False)]
         correction_items = [it for it in items if _get_attr(it, "is_correction", False)]
@@ -370,7 +433,14 @@ class BillMonthRow(QFrame):
             status = "Fizetve"
             if has_correction:
                 status += f" (+{len(correction_items)} tétel)"
-            return status, amount_text
+            return status, amount_text, False
+
+        # periodic (MVM Villany/Gáz): 2+ önálló számla egy hónapban
+        if len(main_items) > 1:
+            status = f"{len(main_items)} külön számla"
+            if has_correction:
+                status += f" (+{len(correction_items)} tétel)"
+            return status, amount_text, True
 
         dates = [
             _get_payment_date(it)
@@ -381,12 +451,12 @@ class BillMonthRow(QFrame):
             status = f"Fizetve {dates[0]}"
             if has_correction:
                 status += f" (+{len(correction_items)} tétel)"
-            return status, amount_text
+            return status, amount_text, False
 
         status = "Fizetve"
         if has_correction:
             status += f" (+{len(correction_items)} tétel)"
-        return status, amount_text
+        return status, amount_text, False
 
 
 class WideBillCard(QFrame):

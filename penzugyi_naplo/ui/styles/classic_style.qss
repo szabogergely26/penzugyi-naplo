@@ -441,6 +441,13 @@ QListWidget::item:selected {
     color: #3a7d44;
 }
 
+/* Hónap státusza - 2+ önálló számla egy hónapban (pl. MVM), kiemelve */
+#billMonthStatusMulti {
+    font-size: 13px;
+    font-weight: 700;
+    color: #9f1239;
+}
+
 #billMonthStatusEmpty {
     font-size: 13px;
     color: #999;
@@ -490,6 +497,26 @@ QListWidget::item:selected {
 #billMonthMetaInvoiceValue {
     font-size: 12px;
     color: #555;
+}
+
+/* Fogyasztás (m3/MJ) felirat */
+#billMonthMetaMeterLabel {
+    font-size: 12px;
+    color: #555;
+}
+
+/* Fogyasztás (m3/MJ) érték */
+#billMonthMetaMeterValue {
+    font-size: 12px;
+    color: #555;
+}
+
+/* "Számla 1" / "Számla 2" alcím, 2+ önálló számlánál */
+#billMonthMetaInvoiceTitle {
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    margin-top: 4px;
 }
 
 #billEmptyMonth {
