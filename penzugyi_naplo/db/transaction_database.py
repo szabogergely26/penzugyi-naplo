@@ -670,6 +670,9 @@ class TransactionDatabase:
         conn = self.get_db_connection()
         try:
             cur = conn.cursor()
+            self._ensure_bill_transaction_columns(cur)
+            conn.commit()
+
             rows = cur.execute(
                 """
                 SELECT
@@ -684,6 +687,7 @@ class TransactionDatabase:
                     t.tx_type,
                     t.year,
                     t.month,
+                    t.is_correction,
                     c.name AS category_name
                 FROM transactions t
                 JOIN categories c ON t.category_id = c.id
@@ -698,7 +702,7 @@ class TransactionDatabase:
         finally:
             conn.close()
 
-        monthly_map: dict[str, dict[int, dict[str, int | None]]] = defaultdict(dict)
+        monthly_map: dict[str, dict[int, list[dict[str, int | str | bool | None]]]] = defaultdict(lambda: defaultdict(list))
         periodic_map: dict[str, list[PeriodicAmount]] = defaultdict(list)
 
         for row in rows:
@@ -709,13 +713,19 @@ class TransactionDatabase:
             invoice_number = str(row["invoice_number"] or "").strip() or None
             amount = int(round(float(row["amount"] or 0)))
             month = int(row["month"] or 0)
+            is_correction = bool(row["is_correction"])
 
             if category_name in MONTHLY_BILLS:
                 if 1 <= month <= 12:
-                    monthly_map[category_name][month] = {
-                        "amount": amount,
-                        "entry_id": int(row["id"]),
-                    }
+                    monthly_map[category_name][month].append(
+                        {
+                            "amount": amount,
+                            "entry_id": int(row["id"]),
+                            "invoice_number": invoice_number,
+                            "is_paid": True,
+                            "is_correction": is_correction,
+                        }
+                    )
 
             elif category_name in PERIODIC_BILLS:
                 if 1 <= month <= 12:
@@ -728,6 +738,7 @@ class TransactionDatabase:
                             amount=amount,
                             invoice_number=invoice_number,
                             is_paid=True,
+                            is_correction=is_correction,
                         )
                     )
 
@@ -739,10 +750,14 @@ class TransactionDatabase:
             amounts = [
                 MonthlyAmount(
                     month=m,
-                    amount=month_dict[m]["amount"],
-                    entry_id=month_dict[m]["entry_id"],
+                    amount=entry["amount"],
+                    entry_id=entry["entry_id"],
+                    invoice_number=entry.get("invoice_number"),
+                    is_paid=entry.get("is_paid", False),
+                    is_correction=entry.get("is_correction", False),
                 )
                 for m in sorted(month_dict.keys())
+                for entry in month_dict[m]
             ]
 
             if amounts:
@@ -809,6 +824,8 @@ class TransactionDatabase:
         period_start: optional, 'YYYY-MM-DD'
         period_end: optional, 'YYYY-MM-DD'
         payment_source: későbbre, default: 'bank'
+        is_correction: optional, bool (default False) - számla korrekció/jóváírás jelzése,
+            csak monthly bill tételeknél releváns (pl. KalászNet túlfizetés visszaírása)
         """
         iso = _iso_date(data["date"])
         tx_type = _map_hu_to_type(data["type"])
@@ -833,6 +850,7 @@ class TransactionDatabase:
         period_end = _iso_date(raw_period_end) if raw_period_end else None
 
         invoice_number = (data.get("invoice_number") or "").strip() or None
+        is_correction = bool(data.get("is_correction", False))
 
         if (period_start and not period_end) or (period_end and not period_start):
             raise ValueError("Az időszak kezdete és vége együtt adandó meg.")
@@ -853,9 +871,10 @@ class TransactionDatabase:
             """
             INSERT INTO transactions (
                 tx_date, tx_type, amount, category_id, name, description,
-                created_at, year, month, payment_source, period_start, period_end, invoice_number
+                created_at, year, month, payment_source, period_start, period_end,
+                invoice_number, is_correction
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 iso,
@@ -870,7 +889,8 @@ class TransactionDatabase:
                 payment_source,
                 period_start,
                 period_end,
-                invoice_number
+                invoice_number,
+                int(is_correction),
             ),
         )
 
@@ -1071,6 +1091,65 @@ class TransactionDatabase:
             return True
         except Exception as e:
             print(f"Hiba a számla sorszám frissítésénél: {e}")
+            return False
+
+    def update_bill_entry(
+        self,
+        txn_id: int,
+        *,
+        date_str: str,
+        amount: float,
+        invoice_number: str | None,
+        is_correction: bool,
+    ) -> bool:
+        """
+        Egy már rögzített számlabefizetés (monthly típus, pl. KalászNet, Telekom)
+        utólagos szerkesztése: dátum, összeg, számla sorszám, korrekció jelölő.
+
+        Nem érinti a kategóriát/nevet/leírást, mert a bill-szerkesztő dialógus
+        ezeket nem teszi szerkeszthetővé (a számla típusa fix marad).
+        """
+        try:
+            iso = _iso_date(date_str)
+            y, m = _year_month_from_iso(iso)
+
+            amount = float(amount)
+            if amount < 0:
+                raise ValueError("B modell: amount nem lehet negatív.")
+
+            value_invoice = (invoice_number or "").strip() or None
+
+            conn = self.get_db_connection()
+            cur = conn.cursor()
+
+            self._ensure_bill_transaction_columns(cur)
+
+            cur.execute(
+                """
+                UPDATE transactions
+                SET tx_date = ?,
+                    year = ?,
+                    month = ?,
+                    amount = ?,
+                    invoice_number = ?,
+                    is_correction = ?
+                WHERE id = ?
+                """,
+                (
+                    iso,
+                    y,
+                    m,
+                    amount,
+                    value_invoice,
+                    int(bool(is_correction)),
+                    int(txn_id),
+                ),
+            )
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            print(f"Hiba a számlatétel frissítésénél: {e}")
             return False
 
     def delete_transaction(self, txn_id: int) -> bool:
@@ -2176,6 +2255,11 @@ class TransactionDatabase:
 
         if "invoice_number" not in columns:
             cur.execute("ALTER TABLE transactions ADD COLUMN invoice_number TEXT")
+
+        if "is_correction" not in columns:
+            cur.execute(
+                "ALTER TABLE transactions ADD COLUMN is_correction INTEGER NOT NULL DEFAULT 0"
+            )
 
 
 

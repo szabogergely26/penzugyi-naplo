@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QPushButton,
+    QMessageBox,
 )
 
 from penzugyi_naplo.ui.bills.bill_models import (
@@ -72,6 +73,9 @@ class BillMonthRow(QFrame):
         kind: str,
         parent: QWidget | None = None,
         db=None,
+        category_name: str = "",
+        initially_expanded: bool = False,
+        expanded_keys: set | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("billMonthRow")
@@ -79,7 +83,10 @@ class BillMonthRow(QFrame):
 
         self._kind = kind
         self._items = items
-        self._expanded = False
+        self._month_number = month_number
+        self._category_name = category_name
+        self._expanded_keys = expanded_keys
+        self._expanded = initially_expanded
         self._db = db
 
         root = QVBoxLayout(self)
@@ -120,14 +127,28 @@ class BillMonthRow(QFrame):
 
         root.addWidget(main_row)
 
-        # --- meta sor (csak periodic + van adat + kattintásra) ---
+        # --- meta sor (kattintásra kinyíló extra adatok) ---
+        # periodic: mindig van meta (Időszak, Összeg, Számla sorszám)
+        # monthly: csak akkor, ha a tételeken tényleg van sorszám vagy fizetve infó
+        #          (pl. KalászNet), különben nincs mit kinyitni
         self._meta_row = None
-        has_meta = kind == "periodic" and bool(items)
+
+        if kind == "periodic":
+            has_meta = bool(items)
+        else:
+            has_meta = bool(items) and (
+                len(items) > 1
+                or any(
+                    _get_attr(it, "invoice_number", None) or _get_attr(it, "is_paid", False)
+                    for it in items
+                )
+            )
 
         if has_meta:
             main_row.setCursor(Qt.CursorShape.PointingHandCursor)
-            self._meta_row = self._build_meta_row(items)
-            self._meta_row.setVisible(False)
+            self._meta_row = self._build_meta_row(items, kind)
+            self._meta_row.setVisible(self._expanded)
+            self._chevron.setText("\u25b4" if self._expanded else "\u25be")
             root.addWidget(self._meta_row)
             main_row.mousePressEvent = lambda e: self._toggle_expanded()
         else:
@@ -141,7 +162,16 @@ class BillMonthRow(QFrame):
         self._meta_row.setVisible(self._expanded)
         self._chevron.setText("\u25b4" if self._expanded else "\u25be")
 
-    def _build_meta_row(self, items: list) -> QFrame:
+        if self._expanded_keys is not None:
+            key = (self._category_name, self._month_number)
+            if self._expanded:
+                self._expanded_keys.add(key)
+            else:
+                self._expanded_keys.discard(key)
+
+
+
+    def _build_meta_row(self, items: list, kind: str) -> QFrame:
         meta = QFrame()
         meta.setObjectName("billMonthMetaRow")
 
@@ -153,26 +183,67 @@ class BillMonthRow(QFrame):
             line = QHBoxLayout()
             line.setSpacing(24)
 
-            start = _get_attr(item, "start", "—")
-            end = _get_attr(item, "end", "—")
+           # periodic (pl. MVM Villany/Gáz): Időszak + Összeg + Sorszám
+            if kind == "periodic":
+                is_correction = bool(_get_attr(item, "is_correction", False))
 
-            period_label = QLabel("Időszak:")
-            period_label.setObjectName("billMonthMetaPeriodLabel")
-            line.addWidget(period_label)
+                if is_correction:
+                    correction_tag = QLabel("Korrekció/jóváírás")
+                    correction_tag.setObjectName("billMonthMetaCorrectionTag")
+                    line.addWidget(correction_tag)
 
-            period_value = QLabel(f"{start} – {end}")
-            period_value.setObjectName("billMonthMetaPeriodValue")
-            line.addWidget(period_value)
+                start = _get_attr(item, "start", "—")
+                end = _get_attr(item, "end", "—")
 
-            amount_value_raw = _get_attr(item, "amount", 0)
+                period_label = QLabel("Időszak:")
+                period_label.setObjectName("billMonthMetaPeriodLabel")
+                line.addWidget(period_label)
 
-            amount_label = QLabel("Összeg:")
-            amount_label.setObjectName("billMonthMetaAmountLabel")
-            line.addWidget(amount_label)
+                period_value = QLabel(f"{start} – {end}")
+                period_value.setObjectName("billMonthMetaPeriodValue")
+                line.addWidget(period_value)
 
-            amount_value = QLabel(_format_huf(amount_value_raw))
-            amount_value.setObjectName("billMonthMetaAmountValue")
-            line.addWidget(amount_value)
+                amount_value_raw = _get_attr(item, "amount", 0)
+
+                amount_label = QLabel("Összeg:")
+                amount_label.setObjectName("billMonthMetaAmountLabel")
+                line.addWidget(amount_label)
+
+                amount_value = QLabel(_format_huf(amount_value_raw))
+                amount_value.setObjectName("billMonthMetaAmountValue")
+                line.addWidget(amount_value)
+
+            # monthly (pl. KalászNet): Összeg + Sorszám + Fizetve állapot
+            # (Hónap a fő sorban van, de az összeg itt is kelleni fog,
+            # mert egy hónapban több tétel is lehet, pl. korrekció)
+            else:
+                paid = bool(_get_attr(item, "is_paid", False))
+                is_correction = bool(_get_attr(item, "is_correction", False))
+
+                amount_value_raw = _get_attr(item, "amount", 0)
+
+                amount_label = QLabel("Összeg:")
+                amount_label.setObjectName("billMonthMetaAmountLabel")
+                line.addWidget(amount_label)
+
+                amount_value = QLabel(_format_huf(amount_value_raw))
+                amount_value.setObjectName("billMonthMetaAmountValue")
+                line.addWidget(amount_value)
+
+                if is_correction:
+                    correction_tag = QLabel("Korrekció/jóváírás")
+                    correction_tag.setObjectName("billMonthMetaCorrectionTag")
+                    line.addWidget(correction_tag)
+
+                paid_label = QLabel("Állapot:")
+                paid_label.setObjectName("billMonthMetaPaidLabel")
+                line.addWidget(paid_label)
+
+                paid_value = QLabel("Fizetve" if paid else "Nincs fizetve")
+                paid_value.setObjectName(
+                    "billMonthMetaPaidValueYes" if paid else "billMonthMetaPaidValueNo"
+                )
+                line.addWidget(paid_value)
 
             invoice_number = _get_attr(item, "invoice_number", None)
 
@@ -180,28 +251,37 @@ class BillMonthRow(QFrame):
             invoice_label.setObjectName("billMonthMetaInvoiceLabel")
             line.addWidget(invoice_label)
 
-            invoice_value = QLabel(str(invoice_number))
+            invoice_value = QLabel(str(invoice_number) if invoice_number else "—")
             invoice_value.setObjectName("billMonthMetaInvoiceValue")
             line.addWidget(invoice_value)
 
             entry_id = _get_attr(item, "entry_id", None)
 
+
+            # Szerkesztés / Törlés gombok (csak akkor, ha van entry_id)
             edit_btn = QPushButton("✎ Szerkesztés")
             edit_btn.setObjectName("billMonthMetaEditButton")
             edit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
             edit_btn.clicked.connect(
-                lambda checked=False, eid=entry_id, val=invoice_number, val_label=invoice_value: (
-                    self._edit_invoice_number(eid, val, val_label)
-                )
+                lambda checked=False, it=item, k=kind: self._edit_bill_entry(it, k)
             )
             line.addWidget(edit_btn)
+
+            delete_btn = QPushButton("🗑 Törlés")
+            delete_btn.setObjectName("billMonthMetaDeleteButton")
+            delete_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            delete_btn.clicked.connect(
+                lambda checked=False, it=item: self._delete_bill_entry(it)
+            )
+            line.addWidget(delete_btn)
 
             line.addStretch(1)
             lay.addLayout(line)
 
         return meta
 
-    def _edit_invoice_number(self, entry_id, current_value, value_label: QLabel) -> None:
+    def _edit_bill_entry(self, item, kind: str) -> None:
+        entry_id = _get_attr(item, "entry_id", None)
         if entry_id is None:
             return
 
@@ -209,28 +289,88 @@ class BillMonthRow(QFrame):
 
         dlg = InvoiceEditDialog(
             entry_id=entry_id,
-            current_invoice_number=current_value,
+            current_date=_get_attr(item, "start", None) if kind == "periodic" else None,
+            current_amount=_get_attr(item, "amount", 0) or 0,
+            current_invoice_number=_get_attr(item, "invoice_number", None),
+            current_is_correction=_get_attr(item, "is_correction", False),
+            editable_date=(kind == "monthly"),
             parent=self,
             db=self._db,
         )
 
         if dlg.exec() == QDialog.DialogCode.Accepted:
-            new_value = dlg.new_invoice_number
-            value_label.setText(str(new_value) if new_value else "—")
+            self._reload_bills_page()
+
+
+    def _delete_bill_entry(self, item) -> None:
+        entry_id = _get_attr(item, "entry_id", None)
+        if entry_id is None:
+            return
+
+        confirm = QMessageBox(self)
+        confirm.setIcon(QMessageBox.Icon.Warning)
+        confirm.setWindowTitle("Törlés megerősítése")
+        confirm.setText("Biztos törölni akarod ezt a számlatételt?")
+        confirm.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        confirm.setDefaultButton(QMessageBox.StandardButton.No)
+
+        if confirm.exec() != QMessageBox.StandardButton.Yes:
+            return
+
+        if self._db is None:
+            return
+
+        ok = self._db.delete_transaction(entry_id)
+
+        if not ok:
+            QMessageBox.critical(
+                self, "Hiba", "A törlés nem sikerült."
+            )
+            return
+
+        self._reload_bills_page()
+
+    def _reload_bills_page(self) -> None:
+        widget = self.parent()
+        while widget is not None and not hasattr(widget, "reload"):
+            widget = widget.parent()
+
+        if widget is not None:
+            widget.reload()
 
 
     @staticmethod
     def _summarize(items: list, kind: str) -> tuple[str, str]:
-        """Visszaadja a fő sorban megjelenő státusz-szöveget és az összeget."""
+        """Visszaadja a fő sorban megjelenő státusz-szöveget és az összeget.
+
+        A fősor összege csak a "rendes" (nem korrekció/jóváírás) tételekből áll —
+        egy esetleges korrekciós tétel (pl. KalászNet túlfizetés visszaírása)
+        csak a kibontott nézetben jelenik meg, a fősor összegét nem módosítja.
+        Ha van korrekciós tétel is a hónapban, a státusz-szöveg jelzi ezt.
+        """
 
         if not items:
             return "Nincs még kiállítva", "—"
 
-        total = sum(float(_get_attr(it, "amount", 0) or 0) for it in items)
+        main_items = [it for it in items if not _get_attr(it, "is_correction", False)]
+        correction_items = [it for it in items if _get_attr(it, "is_correction", False)]
+
+        # A fősor összege csak a rendes tételekből áll. Ha valamiért csak
+        # korrekciós tétel volna a hónapban (nem várt eset), essünk vissza
+        # az összes tételre, hogy legalább lássunk valamit.
+        total_source = main_items or items
+        total = sum(float(_get_attr(it, "amount", 0) or 0) for it in total_source)
         amount_text = _format_huf(total)
 
+        has_correction = bool(correction_items)
+
         if kind == "monthly":
-            return "Fizetve", amount_text
+            status = "Fizetve"
+            if has_correction:
+                status += f" (+{len(correction_items)} tétel)"
+            return status, amount_text
 
         dates = [
             _get_payment_date(it)
@@ -238,9 +378,15 @@ class BillMonthRow(QFrame):
             if _get_payment_date(it) != "—"
         ]
         if dates:
-            return f"Fizetve {dates[0]}", amount_text
+            status = f"Fizetve {dates[0]}"
+            if has_correction:
+                status += f" (+{len(correction_items)} tétel)"
+            return status, amount_text
 
-        return "Fizetve", amount_text
+        status = "Fizetve"
+        if has_correction:
+            status += f" (+{len(correction_items)} tétel)"
+        return status, amount_text
 
 
 class WideBillCard(QFrame):
@@ -248,7 +394,15 @@ class WideBillCard(QFrame):
 
     clicked = Signal(int)
 
-    def __init__(self, model: BillCardModel, parent: QWidget | None = None, db=None) -> None:
+    def __init__(
+            self, 
+            model: BillCardModel, 
+            parent: QWidget | None = None, 
+            db=None, expanded_keys=None
+        ) -> None:
+
+        self._expanded_keys = expanded_keys if expanded_keys is not None else set()
+        
         super().__init__(parent)
         self.setObjectName("billCard")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -300,7 +454,18 @@ class WideBillCard(QFrame):
             if not items:
                 continue
 
-            months_layout.addWidget(BillMonthRow(month_number, items, self.kind, db=self._db))
+            category_name = str(_get_attr(model, "name", ""))
+            is_expanded = (category_name, month_number) in self._expanded_keys
+
+            months_layout.addWidget(
+                BillMonthRow(
+                    month_number, items, self.kind,
+                    db=self._db,
+                    category_name=category_name,
+                    initially_expanded=is_expanded,
+                    expanded_keys=self._expanded_keys,
+                )
+            )
 
         root.addWidget(months_container)
 
@@ -381,6 +546,7 @@ class BillsPage(QWidget):
         self.db = db
 
         self._year: int | None = None
+        self._expanded_keys: set[tuple[str, int]] = set()
         self._all_years: bool = False
 
         root = QVBoxLayout(self)
@@ -472,6 +638,15 @@ class BillsPage(QWidget):
 
         self.reload()
 
+
+
+    def set_expanded(self, category_name: str, month_number: int, expanded: bool) -> None:
+        key = (category_name, month_number)
+        if expanded:
+            self._expanded_keys.add(key)
+        else:
+            self._expanded_keys.discard(key)
+
     def set_filter(self, *, year: int | None, all_years: bool) -> None:
         self._year = year
         self._all_years = all_years
@@ -505,7 +680,7 @@ class BillsPage(QWidget):
             return
 
         for model in models:
-            card = WideBillCard(model, db=self.db)
+            card = WideBillCard(model, db=self.db, expanded_keys=self._expanded_keys)
             card.clicked.connect(self.billRequested.emit)
             self.cards_layout.addWidget(card)
 
@@ -537,10 +712,21 @@ class BillsPage(QWidget):
             name="KalászNet",
             kind="monthly",
             monthly=[
-                MonthlyAmount(1, 6900),
-                MonthlyAmount(2, 6900),
-                MonthlyAmount(3, 6900),
-                MonthlyAmount(4, 7200 if year >= 2026 else 6900),
+                MonthlyAmount(
+                    1, 7170, invoice_number="VG2026/270191", is_paid=True
+                ),
+                MonthlyAmount(
+                    2, 7170, invoice_number="VG2026/270842", is_paid=True
+                ),
+                MonthlyAmount(
+                    3, 7170, invoice_number="VG2026/271503", is_paid=True
+                ),
+                MonthlyAmount(
+                    4,
+                    7200 if year >= 2026 else 6900,
+                    invoice_number="VG2026/272198",
+                    is_paid=True,
+                ),
             ],
         )
 

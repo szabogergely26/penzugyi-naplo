@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, cast
 from PySide6.QtCore import Qt, QLocale
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QCheckBox,
     QComboBox,
     QGridLayout,
     QLabel,
@@ -625,11 +626,15 @@ class PageAmount(QWizardPage):
         self.input_invoice_number = QLineEdit()
         self.input_invoice_number.setPlaceholderText("Pl.: 1234567890")
 
+        self.chk_is_correction = QCheckBox("Ez korrekció / jóváírás (nem önálló számla)")
+        self.chk_is_correction.setObjectName("transactionWizardCorrectionCheckbox")
+
 
 
 
         layout.addWidget(self.lbl_invoice_number)
         layout.addWidget(self.input_invoice_number)
+        layout.addWidget(self.chk_is_correction)
 
         layout.addWidget(self.lbl_date)
         layout.addWidget(self.input_date)
@@ -696,13 +701,15 @@ class PageAmount(QWizardPage):
         self.lbl_period_end.setVisible(needs_period)
         self.input_period_end.setVisible(needs_period)
 
-        self.lbl_invoice_number.setVisible(needs_period)
-        self.input_invoice_number.setVisible(needs_period)
+        self.lbl_invoice_number.setVisible(is_bill)
+        self.input_invoice_number.setVisible(is_bill)
+        self.chk_is_correction.setVisible(is_bill)
 
         if is_bill:
             self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
             self.input_amount.clear()
             self.input_invoice_number.clear()
+            self.chk_is_correction.setChecked(False)
 
             if needs_period:
                 self.input_period_start.clear()
@@ -715,6 +722,7 @@ class PageAmount(QWizardPage):
 
     def reset_bill_fields(self) -> None:
         self.input_invoice_number.clear()
+        self.chk_is_correction.setChecked(False)
         self.input_date.setText(datetime.now().strftime("%Y-%m-%d"))
         self.input_period_start.clear()
         self.input_period_end.clear()
@@ -819,6 +827,9 @@ class PageAmount(QWizardPage):
     def get_invoice_number_raw(self) -> str:
         return self.input_invoice_number.text().strip()
 
+    def get_is_correction(self) -> bool:
+        return self.chk_is_correction.isChecked()
+
 # Itt már a core.utils.is_valid_date-et használjuk.
 # Fontos: ez az osztály feltételezi, hogy ugyanabban a fájlban már létezik:
 
@@ -883,6 +894,7 @@ class TransactionWizard(QWizard):
         period_start = None
         period_end = None
         invoice_number = ""
+        is_correction = False
 
         # -------------------------------------------------
         # BILL ÁG
@@ -924,9 +936,10 @@ class TransactionWizard(QWizard):
             has_details = False
             amount = amount_page.get_amount()
 
-            if bill_requires_period(provider):
-                invoice_number = amount_page.get_invoice_number_raw()
+            invoice_number = amount_page.get_invoice_number_raw()
+            is_correction = amount_page.get_is_correction()
 
+            if bill_requires_period(provider):
                 period_start_raw = amount_page.get_period_start_raw()
                 period_end_raw = amount_page.get_period_end_raw()
 
@@ -1019,6 +1032,7 @@ class TransactionWizard(QWizard):
             "period_start": period_start,
             "period_end": period_end,
             "invoice_number": invoice_number,
+            "is_correction": is_correction,
         }
 
 
@@ -1027,6 +1041,7 @@ class TransactionWizard(QWizard):
             provider,
             target_name,
             invoice_number,
+            is_correction,
             period_start,
             period_end,
         )

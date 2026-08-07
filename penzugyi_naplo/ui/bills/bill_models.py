@@ -31,6 +31,9 @@ class MonthlyAmount:
     month: int  # 1..12
     amount: float
     entry_id: int | None = None
+    invoice_number: str | None = None
+    is_paid: bool = False
+    is_correction: bool = False
 
 
 @dataclass(frozen=True)
@@ -42,6 +45,7 @@ class PeriodicAmount:
     entry_id: int | None = None
     invoice_number: str | None = None
     is_paid: bool = False
+    is_correction: bool = False
 
 @dataclass(frozen=True)
 class BillCardModel:
