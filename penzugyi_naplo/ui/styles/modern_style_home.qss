@@ -1175,7 +1175,8 @@ QFrame#odsImportSummaryBox {
 
 /* Összeg értéke */
 #billMonthMetaAmountValue {
-    font-size: 12px;
+    font-size: 15px;
+    font-weight: bold;
     color: #64748b;
 }
 
@@ -1199,7 +1200,8 @@ QFrame#odsImportSummaryBox {
 
 /* Fogyasztás (m3/MJ) érték */
 #billMonthMetaMeterValue {
-    font-size: 12px;
+    font-size: 15px;
+    font-weight: bold;
     color: #64748b;
 }
 

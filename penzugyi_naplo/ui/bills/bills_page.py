@@ -204,7 +204,6 @@ class BillMonthRow(QFrame):
                 title_row.setSpacing(0)
                 title_row.setContentsMargins(0, 0, 0, 0)
 
-                # Számla 1:  Számla 2: -feliratok a title_row = QHBoxLayout()-hoz viszonyítva
                 title_indent = QWidget()
                 title_indent.setFixedWidth(25)
                 title_row.addWidget(title_indent)
@@ -255,15 +254,21 @@ class BillMonthRow(QFrame):
                 amount_value.setObjectName("billMonthMetaAmountValue")
                 line.addWidget(amount_value)
 
-                meter_value = _get_attr(item, "meter_value", None)
-                meter_unit = _get_attr(item, "meter_unit", None)
-                if meter_value is not None:
+                meter_m3 = _get_attr(item, "meter_m3", None)
+                meter_mj = _get_attr(item, "meter_mj", None)
+                if meter_m3 is not None or meter_mj is not None:
                     meter_label = QLabel("Fogyasztás:")
                     meter_label.setObjectName("billMonthMetaMeterLabel")
                     line.addWidget(meter_label)
 
-                    unit_text = meter_unit or ""
-                    meter_value_widget = QLabel(f"{meter_value:g} {unit_text}".strip())
+                    if meter_m3 is not None and meter_mj is not None:
+                        meter_text = f"{meter_m3:g} m³ ({meter_mj:g} MJ)"
+                    elif meter_m3 is not None:
+                        meter_text = f"{meter_m3:g} m³"
+                    else:
+                        meter_text = f"{meter_mj:g} MJ"
+
+                    meter_value_widget = QLabel(meter_text)
                     meter_value_widget.setObjectName("billMonthMetaMeterValue")
                     line.addWidget(meter_value_widget)
 

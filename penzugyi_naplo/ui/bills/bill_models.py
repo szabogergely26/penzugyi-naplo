@@ -46,8 +46,8 @@ class PeriodicAmount:
     invoice_number: str | None = None
     is_paid: bool = False
     is_correction: bool = False
-    meter_value: float | None = None  # pl. gáz fogyasztás, m3 vagy MJ
-    meter_unit: str | None = None  # "m3" | "MJ"
+    meter_m3: float | None = None  # gáz fogyasztás m3-ben, opcionális
+    meter_mj: float | None = None  # gáz fogyasztás MJ-ban, opcionális
 
 @dataclass(frozen=True)
 class BillCardModel:
