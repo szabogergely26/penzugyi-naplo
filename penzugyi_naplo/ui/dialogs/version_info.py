@@ -14,9 +14,9 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "-"
-APP_CHANNEL = "Fejlesztői verzió"
-BUILD_INFO = "2025. novembertől"
+APP_VERSION = "0.4.0"
+APP_CHANNEL = "Előzetes verzió"
+BUILD_INFO = "2026.08.07"
 
 
 VERSION_DESCRIPTION = """
