@@ -6,8 +6,8 @@
 # Itt szerkezd
 
 APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "0.2.0"
-APP_CHANNEL = "Stabil"
+APP_VERSION = "0.3.0"
+APP_CHANNEL = "Előzetes verzió"
 
 BUILD_INFO = "2025. november - 2026. június"
 
