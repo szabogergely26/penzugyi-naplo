@@ -1,7 +1,3 @@
 Package: penzugyi-naplo
 Pin: release n=stable
 Pin-Priority: 990
-
-Package: penzugyi-naplo-preview
-Pin: release n=preview
-Pin-Priority: -1
