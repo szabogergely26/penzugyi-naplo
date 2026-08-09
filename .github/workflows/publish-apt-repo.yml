@@ -101,14 +101,32 @@ jobs:
           mkdir -p "$BINARY_DIR"
 
           # A publikus APT kulcs kikerül a repo gyökerébe.
-          # Innen lehet majd letölteni:
-          # https://szabogergely26.github.io/penzugyi-naplo/penzugyi-naplo-archive-keyring.gpg
-          cp packaging/apt/penzugyi-naplo-archive-keyring.gpg "$REPO_DIR/"
+          # Suite-onként külön kulcsfájl (a build_deb.sh / build_deb_preview.sh
+          # is külön kulcsot vár), hogy a Preview és a Stabil kulcstartó
+          # ne keveredjen vagy írja felül egymást.
+          #   stable  -> penzugyi-naplo-archive-keyring.gpg
+          #   preview -> penzugyi-naplo-preview-archive-keyring.gpg
+          if [ "$SUITE" = "stable" ]; then
+            cp packaging/apt/penzugyi-naplo-archive-keyring.gpg "$REPO_DIR/"
+          else
+            cp packaging/apt/penzugyi-naplo-preview-archive-keyring.gpg "$REPO_DIR/"
+          fi
 
           # A .deb csomag átmásolása a Debian/Ubuntu-szerű pool struktúrába.
           # A fájlnév maga a "hivatalos" csomagnevet (PACKAGE_NAME) használja,
           # csak a POOL mappa helye különül el stable/preview között.
           cp "$DEB_FILE" "$POOL_DIR/${PACKAGE_NAME}_${VERSION}_all.deb"
+
+          # Fix nevű másolat a repo gyökerébe, közvetlen weboldali letöltéshez.
+          # Így a weboldal linkje soha nem változik, akárhányszor is épül új
+          # verzió -- nem kell verziószámot vagy fájlnevet frissíteni.
+          #   stable  -> penzugyi-naplo-stable.deb
+          #   preview -> penzugyi-naplo-preview.deb
+          if [ "$SUITE" = "stable" ]; then
+            cp "$DEB_FILE" "$REPO_DIR/penzugyi-naplo-stable.deb"
+          else
+            cp "$DEB_FILE" "$REPO_DIR/penzugyi-naplo-preview.deb"
+          fi
 
           echo "DEB_FILE=$DEB_FILE"
           ls -la "$POOL_DIR"
@@ -280,4 +298,3 @@ jobs:
             git commit -m "Publish APT repository: $SUITE"
             git push origin gh-pages
           fi
-          
