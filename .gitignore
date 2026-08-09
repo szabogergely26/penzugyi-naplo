@@ -52,10 +52,11 @@ penzugyi_naplo_importfix_bak/
 *.bak
 data/
 
-# Helyi Kate/KDE fejlesztői segédfájlok
-/start.sh
-/logging
-/sys
+# Helyi fejlesztői segédfájlok
+start.sh
+config
+logging
+sys
 
 # GPG / APT repository private keys
 *private-key*.asc
@@ -64,4 +65,5 @@ penzugyi-naplo-private-key.asc
 
 # Tömörített fájlok
 *.zip
+*.7zip
 *.tar.gz
