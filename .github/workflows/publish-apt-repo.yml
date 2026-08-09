@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - Preview
   workflow_dispatch:
 
 permissions:
@@ -18,6 +19,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Suite, csomagnév és build script meghatározása a branch alapján:
+      # main    -> stable  / penzugyi-naplo         / build_deb.sh
+      # Preview -> preview / penzugyi-naplo-preview / build_deb_preview.sh
+      # A csomagnév itt a ténylegesen megépülő .deb DEBIAN/control
+      # Package: mezőjével egyezik meg -- ez biztosítja, hogy a Preview
+      # csomag telepítéskor is önálló maradjon, ne ütközzön a stabillal,
+      # és a Preview build NE írja felül sem az éles "stable" APT
+      # repót, sem annak pool-mappáját.
+      - name: Determine suite from branch
+        id: suite
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "suite=stable" >> "$GITHUB_OUTPUT"
+            echo "package_name=penzugyi-naplo" >> "$GITHUB_OUTPUT"
+            echo "build_script=packaging/deb/build_deb.sh" >> "$GITHUB_OUTPUT"
+          else
+            echo "suite=preview" >> "$GITHUB_OUTPUT"
+            echo "package_name=penzugyi-naplo-preview" >> "$GITHUB_OUTPUT"
+            echo "build_script=packaging/deb/build_deb_preview.sh" >> "$GITHUB_OUTPUT"
+          fi
+
       # A .deb építéséhez, az APT index generálásához és a GPG aláíráshoz szükséges csomagok.
       - name: Install repository build dependencies
         run: |
@@ -27,27 +49,38 @@ jobs:
       # A csomagépítő script futtathatóvá tétele.
       - name: Make build script executable
         run: |
-          chmod +x packaging/deb/build_deb.sh
+          chmod +x ${{ steps.suite.outputs.build_script }}
 
       # A projekt .deb csomagjának elkészítése.
-      # A build_deb.sh jelenleg ezt hozza létre (fix név, verziószám nélkül):
-      # build/penzugyi-naplo.deb
+      # Fix név, verziószám nélkül: build/penzugyi-naplo.deb (stable)
+      # vagy build/penzugyi-naplo-preview.deb (preview).
       - name: Build deb package
         run: |
-          ./packaging/deb/build_deb.sh
+          ./${{ steps.suite.outputs.build_script }}
 
       # APT repository mappaszerkezet létrehozása.
       # Ebből lesz majd a GitHub Pages-re feltöltött csomagforrás.
       - name: Create APT repository structure
+        env:
+          SUITE: ${{ steps.suite.outputs.suite }}
+          PACKAGE_NAME: ${{ steps.suite.outputs.package_name }}
         run: |
           set -e
 
           # Alap csomag- és repository változók.
-          PACKAGE_NAME="penzugyi-naplo"
+          # PACKAGE_NAME: a ténylegesen megépített .deb DEBIAN/control
+          # Package: mezőjével egyező név (stable/preview elkülönítve) --
+          # ez adja a megépült .deb fájl nevét is, és ez alapján kerül
+          # a pool mappába.
           REPO_DIR="apt-repo"
           POOL_DIR="$REPO_DIR/pool/main/p/$PACKAGE_NAME"
-          DIST_DIR="$REPO_DIR/dists/stable"
+          DIST_DIR="$REPO_DIR/dists/$SUITE"
           BINARY_DIR="$DIST_DIR/main/binary-all"
+
+          echo "Suite ehhez a buildhez: $SUITE"
+          echo "Pool mappa: $POOL_DIR"
+
+          mkdir -p "$BINARY_DIR"
 
           # Megkeressük az előző lépésben elkészült .deb csomagot.
           DEB_FILE="$(find build -maxdepth 1 -type f -name "${PACKAGE_NAME}.deb" -print -quit)"
@@ -68,12 +101,32 @@ jobs:
           mkdir -p "$BINARY_DIR"
 
           # A publikus APT kulcs kikerül a repo gyökerébe.
-          # Innen lehet majd letölteni:
-          # https://szabogergely26.github.io/penzugyi-naplo/penzugyi-naplo-archive-keyring.gpg
-          cp packaging/apt/penzugyi-naplo-archive-keyring.gpg "$REPO_DIR/"
+          # Suite-onként külön kulcsfájl (a build_deb.sh / build_deb_preview.sh
+          # is külön kulcsot vár), hogy a Preview és a Stabil kulcstartó
+          # ne keveredjen vagy írja felül egymást.
+          #   stable  -> penzugyi-naplo-archive-keyring.gpg
+          #   preview -> penzugyi-naplo-preview-archive-keyring.gpg
+          if [ "$SUITE" = "stable" ]; then
+            cp packaging/apt/penzugyi-naplo-archive-keyring.gpg "$REPO_DIR/"
+          else
+            cp packaging/apt/penzugyi-naplo-preview-archive-keyring.gpg "$REPO_DIR/"
+          fi
 
           # A .deb csomag átmásolása a Debian/Ubuntu-szerű pool struktúrába.
+          # A fájlnév maga a "hivatalos" csomagnevet (PACKAGE_NAME) használja,
+          # csak a POOL mappa helye különül el stable/preview között.
           cp "$DEB_FILE" "$POOL_DIR/${PACKAGE_NAME}_${VERSION}_all.deb"
+
+          # Fix nevű másolat a repo gyökerébe, közvetlen weboldali letöltéshez.
+          # Így a weboldal linkje soha nem változik, akárhányszor is épül új
+          # verzió -- nem kell verziószámot vagy fájlnevet frissíteni.
+          #   stable  -> penzugyi-naplo-stable.deb
+          #   preview -> penzugyi-naplo-preview.deb
+          if [ "$SUITE" = "stable" ]; then
+            cp "$DEB_FILE" "$REPO_DIR/penzugyi-naplo-stable.deb"
+          else
+            cp "$DEB_FILE" "$REPO_DIR/penzugyi-naplo-preview.deb"
+          fi
 
           echo "DEB_FILE=$DEB_FILE"
           ls -la "$POOL_DIR"
@@ -86,30 +139,30 @@ jobs:
           # Ez mondja meg az APT-nek, milyen csomagok vannak a repository-ban.
 
           echo "==> Packages index generálása"
-          dpkg-scanpackages --arch all pool /dev/null > dists/stable/main/binary-all/Packages
+          dpkg-scanpackages --arch all pool /dev/null > "dists/$SUITE/main/binary-all/Packages"
 
           # Tömörített Packages index generálása.
 
           echo "==> Packages.gz generálása"
-          gzip -9 -k -f dists/stable/main/binary-all/Packages
+          gzip -9 -k -f "dists/$SUITE/main/binary-all/Packages"
 
-          # Innentől a stable disztribúció mappájában dolgozunk.
-          cd dists/stable
+          # Innentől a suite disztribúció mappájában dolgozunk.
+          cd "dists/$SUITE"
 
           # Release fájl létrehozása.
           # Ez a repository metaadatait és az indexfájlok ellenőrzőösszegeit fogja tartalmazni.
           # Release metaadat-fájl létrehozása.
           # Ezt olvassa az APT, amikor a repository adatait ellenőrzi.
-          
+
           echo "==> Release fájl létrehozása"
             {
               printf '%s\n' "Origin: Penzugyi Naplo"
               printf '%s\n' "Label: Penzugyi Naplo"
-              printf '%s\n' "Suite: stable"
-              printf '%s\n' "Codename: stable"
+              printf '%s\n' "Suite: $SUITE"
+              printf '%s\n' "Codename: $SUITE"
               printf '%s\n' "Architectures: all"
               printf '%s\n' "Components: main"
-              printf '%s\n' "Description: APT repository for Penzugyi Naplo"
+              printf '%s\n' "Description: APT repository for Penzugyi Naplo ($SUITE)"
               printf '%s\n' "Date: $(date -Ru)"
             } > Release
 
@@ -157,11 +210,12 @@ jobs:
       - name: Sign APT repository
         env:
           APT_GPG_PASSPHRASE: ${{ secrets.APT_GPG_PASSPHRASE }}
+          SUITE: ${{ steps.suite.outputs.suite }}
         run: |
           set -e
 
           # A Release fájl helye.
-          cd apt-repo/dists/stable
+          cd "apt-repo/dists/$SUITE"
 
           # Az importált GPG kulcs azonosítójának kinyerése.
           GPG_KEY_ID="$(gpg --list-secret-keys --keyid-format=long | awk '/sec/{print $2}' | cut -d'/' -f2 | head -n1)"
@@ -194,11 +248,11 @@ jobs:
       - name: Deploy APT repository to gh-pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUITE: ${{ steps.suite.outputs.suite }}
+          PACKAGE_NAME: ${{ steps.suite.outputs.package_name }}
         run: |
           set -e
 
-          PACKAGE_NAME="penzugyi-naplo"
-          SUITE="stable"
           REMOTE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
           # Meglévő gh-pages branch letöltése, hogy a másik suite ne vesszen el.
@@ -226,8 +280,9 @@ jobs:
 
           cd ..
 
-          # Csak az aktuális suite és csomag pool-részének frissítése.
-          # Így stable publikáláskor a preview megmarad.
+          # Csak az aktuális suite dists-mappáját és a hozzá tartozó,
+          # elkülönített pool-mappát frissítjük. Így stable publikáláskor
+          # a preview megmarad érintetlenül, és fordítva is.
           rm -rf "gh-pages/dists/$SUITE"
           rm -rf "gh-pages/pool/main/p/$PACKAGE_NAME"
 
