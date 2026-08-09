@@ -260,7 +260,14 @@ class AccountsPage(BasePage):
         font = value.font()
         if emphasized:
             font.setBold(True)
-            font.setPointSize(font.pointSize() + 1)
+            current_pt = font.pointSize()
+            if current_pt > 0:
+                font.setPointSize(current_pt + 1)
+            else:
+                # QSS-ben px-alapú betűméret esetén pointSize() -1-et ad vissza
+                current_px = font.pixelSize()
+                if current_px > 0:
+                    font.setPixelSize(current_px + 1)
         value.setFont(font)
 
         lay.addWidget(value)
