@@ -1,17 +1,17 @@
-Package: penzugyi-naplo
+Package: penzugyi-naplo-preview
 Version: 0.3.0
 Architecture: all
 Maintainer: Gergely Szabó <szabogergely26@gmail.com>
 Depends: python3, libpyside6-py3-6.8, python3-pyside6.qtcharts, python3-odf
-Filename: pool/main/p/penzugyi-naplo-preview/penzugyi-naplo_0.3.0_all.deb
-Size: 10188632
-MD5sum: 8d9d44e272447d356c0c156b40b3fa88
-SHA1: 29b1b9b963f731deafe90f062b203ae94adba849
-SHA256: 90a0415f77faabbd8fd2a6e57defd2cfad87fdba60572ae3b73c2d660ef22050
+Filename: pool/main/p/penzugyi-naplo-preview/penzugyi-naplo-preview_0.3.0_all.deb
+Size: 10233456
+MD5sum: acf485600eec5894d94ed1f601771e4c
+SHA1: de111710032e715ff511f7eaede744538fa2be2f
+SHA256: 2e4a2432395da924b581117876bcb4b7488dea720812dd2deb63e735a6011928
 Section: utils
 Priority: optional
-Description: Pénzügyi Napló
- Saját fejlesztésű, helyi adatbázist használó pénzügyi napló alkalmazás.
- Kezeli a bevételeket, kiadásokat, számlákat, statisztikákat és az aranyszámla
- nyilvántartást.
+Description: Pénzügyi Napló (Preview)
+ Saját fejlesztésű, helyi adatbázist használó pénzügyi napló alkalmazás
+ előzetes (preview) kiadása. A stabil verzió mellett, azzal
+ párhuzamosan telepíthető, önálló alkalmazásként.
 
