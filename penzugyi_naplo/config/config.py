@@ -7,8 +7,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QSettings, QStandardPaths
 
-APP_NAME: str = "PenzugyiNaplo"
-ORG_NAME: str = "PenzugyiNaplo"
+APP_NAME: str = "PenzugyiNaploPreview"
+ORG_NAME: str = "PenzugyiNaploPreview"
 
 SETTINGS_KEY_DEV_MODE: str = "app/dev_mode"
 

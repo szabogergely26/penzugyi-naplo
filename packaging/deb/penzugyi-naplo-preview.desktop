@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Pénzügyi Napló Preview
+Comment=Saját fejlesztésű pénzügyi napló alkalmazás (Preview / előzetes verzió)
+Exec=penzugyi-naplo-preview
+Icon=penzugyi-naplo-preview
+Terminal=false
+Categories=Office;Finance;
+StartupNotify=true

@@ -13,10 +13,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-APP_NAME = "Pénzügyi Napló"
-APP_VERSION = "0.4.0"
-APP_CHANNEL = "Előzetes verzió"
-BUILD_INFO = "2026.08.07"
+from penzugyi_naplo.app_version import APP_CHANNEL, APP_NAME, APP_VERSION
+
+BUILD_INFO = "2026.08.07 - 2026.08.09"  # TODO: Automatikus build info generálás
 
 
 VERSION_DESCRIPTION = """
