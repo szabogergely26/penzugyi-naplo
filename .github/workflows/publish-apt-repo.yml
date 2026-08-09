@@ -19,20 +19,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Suite és pool-mappanév meghatározása a branch alapján:
-      # main    -> stable  / pool/main/p/penzugyi-naplo
-      # Preview -> preview / pool/main/p/penzugyi-naplo-preview
-      # Ez biztosítja, hogy a Preview build NE írja felül sem az éles
-      # "stable" APT repót, sem annak pool-mappáját.
+      # Suite, csomagnév és build script meghatározása a branch alapján:
+      # main    -> stable  / penzugyi-naplo         / build_deb.sh
+      # Preview -> preview / penzugyi-naplo-preview / build_deb_preview.sh
+      # A csomagnév itt a ténylegesen megépülő .deb DEBIAN/control
+      # Package: mezőjével egyezik meg -- ez biztosítja, hogy a Preview
+      # csomag telepítéskor is önálló maradjon, ne ütközzön a stabillal,
+      # és a Preview build NE írja felül sem az éles "stable" APT
+      # repót, sem annak pool-mappáját.
       - name: Determine suite from branch
         id: suite
         run: |
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "suite=stable" >> "$GITHUB_OUTPUT"
-            echo "pool_package_name=penzugyi-naplo" >> "$GITHUB_OUTPUT"
+            echo "package_name=penzugyi-naplo" >> "$GITHUB_OUTPUT"
+            echo "build_script=packaging/deb/build_deb.sh" >> "$GITHUB_OUTPUT"
           else
             echo "suite=preview" >> "$GITHUB_OUTPUT"
-            echo "pool_package_name=penzugyi-naplo-preview" >> "$GITHUB_OUTPUT"
+            echo "package_name=penzugyi-naplo-preview" >> "$GITHUB_OUTPUT"
+            echo "build_script=packaging/deb/build_deb_preview.sh" >> "$GITHUB_OUTPUT"
           fi
 
       # A .deb építéséhez, az APT index generálásához és a GPG aláíráshoz szükséges csomagok.
@@ -44,30 +49,31 @@ jobs:
       # A csomagépítő script futtathatóvá tétele.
       - name: Make build script executable
         run: |
-          chmod +x packaging/deb/build_deb.sh
+          chmod +x ${{ steps.suite.outputs.build_script }}
 
       # A projekt .deb csomagjának elkészítése.
-      # A build_deb.sh jelenleg ezt hozza létre (fix név, verziószám nélkül):
-      # build/penzugyi-naplo.deb
+      # Fix név, verziószám nélkül: build/penzugyi-naplo.deb (stable)
+      # vagy build/penzugyi-naplo-preview.deb (preview).
       - name: Build deb package
         run: |
-          ./packaging/deb/build_deb.sh
+          ./${{ steps.suite.outputs.build_script }}
 
       # APT repository mappaszerkezet létrehozása.
       # Ebből lesz majd a GitHub Pages-re feltöltött csomagforrás.
       - name: Create APT repository structure
         env:
           SUITE: ${{ steps.suite.outputs.suite }}
-          POOL_PACKAGE_NAME: ${{ steps.suite.outputs.pool_package_name }}
+          PACKAGE_NAME: ${{ steps.suite.outputs.package_name }}
         run: |
           set -e
 
           # Alap csomag- és repository változók.
-          # PACKAGE_NAME: a ténylegesen megépített .deb fájl neve (build_deb.sh adja).
-          # POOL_PACKAGE_NAME: hova kerüljön a pool mappában (stable/preview elkülönítve).
-          PACKAGE_NAME="penzugyi-naplo"
+          # PACKAGE_NAME: a ténylegesen megépített .deb DEBIAN/control
+          # Package: mezőjével egyező név (stable/preview elkülönítve) --
+          # ez adja a megépült .deb fájl nevét is, és ez alapján kerül
+          # a pool mappába.
           REPO_DIR="apt-repo"
-          POOL_DIR="$REPO_DIR/pool/main/p/$POOL_PACKAGE_NAME"
+          POOL_DIR="$REPO_DIR/pool/main/p/$PACKAGE_NAME"
           DIST_DIR="$REPO_DIR/dists/$SUITE"
           BINARY_DIR="$DIST_DIR/main/binary-all"
 
@@ -225,7 +231,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUITE: ${{ steps.suite.outputs.suite }}
-          POOL_PACKAGE_NAME: ${{ steps.suite.outputs.pool_package_name }}
+          PACKAGE_NAME: ${{ steps.suite.outputs.package_name }}
         run: |
           set -e
 
@@ -260,7 +266,7 @@ jobs:
           # elkülönített pool-mappát frissítjük. Így stable publikáláskor
           # a preview megmarad érintetlenül, és fordítva is.
           rm -rf "gh-pages/dists/$SUITE"
-          rm -rf "gh-pages/pool/main/p/$POOL_PACKAGE_NAME"
+          rm -rf "gh-pages/pool/main/p/$PACKAGE_NAME"
 
           rsync -a apt-repo/ gh-pages/
 

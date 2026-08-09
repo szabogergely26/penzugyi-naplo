@@ -15,6 +15,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # main    -> stable build script  -> penzugyi-naplo.deb
+      # Preview -> preview build script -> penzugyi-naplo-preview.deb
+      - name: Determine build script from branch
+        id: build
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "script=packaging/deb/build_deb.sh" >> "$GITHUB_OUTPUT"
+            echo "artifact_name=penzugyi-naplo-deb" >> "$GITHUB_OUTPUT"
+          else
+            echo "script=packaging/deb/build_deb_preview.sh" >> "$GITHUB_OUTPUT"
+            echo "artifact_name=penzugyi-naplo-preview-deb" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -22,11 +35,11 @@ jobs:
 
       - name: Make build script executable
         run: |
-          chmod +x packaging/deb/build_deb.sh
+          chmod +x ${{ steps.build.outputs.script }}
 
       - name: Build deb package
         run: |
-          ./packaging/deb/build_deb.sh
+          ./${{ steps.build.outputs.script }}
 
       - name: Collect deb artifact
         run: |
@@ -37,5 +50,5 @@ jobs:
       - name: Upload deb artifact
         uses: actions/upload-artifact@v4
         with:
-          name: penzugyi-naplo-deb
+          name: ${{ steps.build.outputs.artifact_name }}
           path: artifacts/*.deb
