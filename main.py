@@ -62,10 +62,32 @@ def main() -> int:
     ami a teljes alkalmazásra vonatkozik.
     """
 
+     # Windows: egyedi AppUserModelID beállítása, MÉG a QApplication
+    # létrehozása előtt. Enélkül Windows a tálcán a python.exe
+    # generikus ikonját mutatja, még akkor is, ha a címsorban
+    # (setWindowIcon) helyesen a saját ikonunk jelenik meg - ez a két
+    # dolog Windows-on két különböző mechanizmuson keresztül működik.
+    # Linuxon/macOS-en ez az ág egyszerűen kimarad, nem árt semmit.
+    if sys.platform == "win32":
+        import ctypes
+
+        try:
+            result = ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "PenzugyiNaplo.PenzugyiNaplo.App.1"
+            )
+            print("AUMID beállítva, eredménykód:", result)
+        except Exception:
+            # Nem kritikus - ha valamiért nem sikerül (pl. régi Windows
+            # verzió), az app enélkül is elindul, csak a tálca-ikon
+            # marad a generikus.
+            pass
+
+
+
 
     app = QApplication(sys.argv)
 
-    app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon_main.png"
+    app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon_main.ico"
     app_icon = QIcon(str(app_icon_path))
 
     print("APP ICON PATH:", app_icon_path)
