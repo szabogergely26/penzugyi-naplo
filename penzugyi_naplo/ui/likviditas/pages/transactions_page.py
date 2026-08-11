@@ -419,9 +419,9 @@ class TransactionsPage(QWidget):
             else:
                 # QSS-ben px-alapú betűméret esetén pointSize() -1-et ad vissza
                 current_px = font.pixelSize()
-            if current_px > 0:
-                font.setPixelSize(current_px + 5)  # kb. +4pt megfelelője px-ben
-                detail_item.setFont(font)
+                if current_px > 0:
+                    font.setPixelSize(current_px + 5)  # kb. +4pt megfelelője px-ben
+                    detail_item.setFont(font)
 
             if has_details:
                 detail_item.setToolTip("Tételrészletek elérhetők")
