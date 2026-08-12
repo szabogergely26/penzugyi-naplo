@@ -31,8 +31,9 @@ import logging
 import sys
 from pathlib import Path
 
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication 
+from PySide6.QtCore import QtMsgType, qInstallMessageHandler
+from PySide6.QtGui import QFont, QIcon
+from PySide6.QtWidgets import QApplication
 
 import penzugyi_naplo.config.config as config
 
@@ -55,6 +56,32 @@ if str(ROOT_DIR) not in sys.path:
 # - Importok vége -
 
 
+def _qt_message_handler(msg_type, context, message: str) -> None:
+    """
+    Qt üzenet-szűrő.
+
+    A QSS-stílusaink mindenhol px-ben adják meg a font-size-t, pt-alapú
+    alap-font nélkül. Emiatt Qt belső stíluslap-feldolgozása időnként egy
+    "ismeretlen" pontméretet -1-gyel próbál beállítani (ez maga a Qt/PySide
+    CSS-motorja, nem a mi kódunk hívja), és ez a jól ismert, ártalmatlan
+    "QFont::setPointSize: Point size <= 0 (-1)" figyelmeztetést dobja
+    minden oldalváltásnál. Ez nem hibát, csak konzolzajt jelent, ezért itt
+    szűrjük ki, minden más Qt üzenetet változatlanul továbbengedve.
+    """
+    if "QFont::setPointSize" in message and "-1" in message:
+        return
+    if msg_type == QtMsgType.QtDebugMsg:
+        print(message)
+    elif msg_type == QtMsgType.QtInfoMsg:
+        print(message)
+    elif msg_type == QtMsgType.QtWarningMsg:
+        print("WARNING:", message)
+    elif msg_type == QtMsgType.QtCriticalMsg:
+        print("CRITICAL:", message)
+    elif msg_type == QtMsgType.QtFatalMsg:
+        print("FATAL:", message)
+
+
 def main() -> int:
     """
     Application entry point. - Belépési pont az alkalmazáshoz:
@@ -63,7 +90,15 @@ def main() -> int:
     """
 
 
+    qInstallMessageHandler(_qt_message_handler)
+
     app = QApplication(sys.argv)
+
+    # Érvényes, pt-alapú alap-font beállítása, mielőtt bármilyen QSS
+    # (amely mindenhol px-ben ad meg font-size-t) alkalmazásra kerülne.
+    # Enélkül Qt-nek nincs érvényes pontméret-fallback-je, ami hozzájárul
+    # a "QFont::setPointSize: Point size <= 0 (-1)" figyelmeztetésekhez.
+    app.setFont(QFont("Segoe UI", 9))
 
     app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon.png"
     app_icon = QIcon(str(app_icon_path))
