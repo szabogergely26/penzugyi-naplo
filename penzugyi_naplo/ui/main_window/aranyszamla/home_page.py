@@ -470,7 +470,10 @@ class AranyszamlaHomePage(QWidget):
             empty_label.setObjectName("aranyszamlaHintText")
             empty_label.setWordWrap(True)
             self.physical_cards_layout.addWidget(empty_label)
-            self.physical_cards_layout.addStretch(1)
+            # QGridLayout-nak nincs addStretch()-je (az csak QBoxLayout-oknál
+            # létezik) - a sor-nyújtás a grid-es megfelelője: az üres címke
+            # alatti sor "nyeli el" a felesleges helyet.
+            self.physical_cards_layout.setRowStretch(1, 1)
             return
 
         columns = 4
