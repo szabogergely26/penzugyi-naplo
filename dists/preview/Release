@@ -5,13 +5,13 @@ Codename: preview
 Architectures: all
 Components: main
 Description: APT repository for Penzugyi Naplo (preview)
-Date: Tue, 11 Aug 2026 07:16:59 +0000
+Date: Wed, 12 Aug 2026 16:55:20 +0000
 MD5Sum:
- 22547257f7702b8c3619b70b71a661bd              732 main/binary-all/Packages
- 98e40828802d0b8b3a2072fc7f0507c2              530 main/binary-all/Packages.gz
+ 499714285260506a651e0f34d7add399              732 main/binary-all/Packages
+ a748cb2d4e5478547608d15b551408da              530 main/binary-all/Packages.gz
 SHA1:
- 79e3289b38b74113f6ca90b0c0f2faba44e5208c              732 main/binary-all/Packages
- 5330a6fe6dc7758b93c66900ecfbf48bfa7837af              530 main/binary-all/Packages.gz
+ fbfddb131f4931a5abc57d0fe86bed9ec9b1a39a              732 main/binary-all/Packages
+ 270bc82c0292a32bb062465e88df275be5162295              530 main/binary-all/Packages.gz
 SHA256:
- 87bafb954dd24ae4d119c1b5cfb88965f0d72dd15ff93f92832e401c4b572f5a              732 main/binary-all/Packages
- 342d786fb9e44805fdfc7b0d4324cc96b4127cdb996b8703013361ba08cf4e79              530 main/binary-all/Packages.gz
+ db159eb2577033492cf41dd72e011d29113500138f58d7155e15ec77f5015c6a              732 main/binary-all/Packages
+ 7afdba0f150bb13c0d051cf96a4528961264a5e98edc1ce443f80543fafd0f2b              530 main/binary-all/Packages.gz
