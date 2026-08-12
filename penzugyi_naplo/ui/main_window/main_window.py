@@ -47,6 +47,8 @@ Fontos:
 from __future__ import annotations
 
 
+import gc
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -911,13 +913,45 @@ class MainWindow(QMainWindow):
         if ret != QMessageBox.StandardButton.Yes:
             return
 
+        from penzugyi_naplo.db.transaction_database import TransactionDatabase
+
         db_path = Path(self.db.db_name)
-        self.db.close() if hasattr(self.db, "close") else None
+
+        # Régi TransactionDatabase-példány elengedése és egy explicit
+        # gc.collect(), hogy minden esetlegesen még élő sqlite3 kapcsolat
+        # (pl. egy éppen véget érő "with ... as conn:" blokkból) biztosan
+        # felszabaduljon, mielőtt a fájlt töröljük. Windows alatt egy nyitva
+        # felejtett kapcsolat zárolva tartja a fájlt, ez okozta a
+        # "PermissionError: ... más folyamat használja" hibát.
+        if hasattr(self.db, "close"):
+            self.db.close()
+        self.db = None
+        gc.collect()
 
         if db_path.exists():
-            db_path.unlink()
+            last_error: Optional[PermissionError] = None
+            for _ in range(5):
+                try:
+                    db_path.unlink()
+                    last_error = None
+                    break
+                except PermissionError as exc:
+                    last_error = exc
+                    gc.collect()
+                    time.sleep(0.2)
 
-        from penzugyi_naplo.db.transaction_database import TransactionDatabase
+            if last_error is not None:
+                QMessageBox.critical(
+                    self,
+                    "Adatbázis törlése sikertelen",
+                    "Az adatbázis-fájl más folyamat által zárolva van, ezért nem törölhető.\n\n"
+                    "Zárd be az adatbázist esetleg megnyitó egyéb programokat "
+                    "(pl. DB Browser for SQLite, VSCode SQLite kiterjesztés), majd próbáld újra.\n\n"
+                    f"Részletek: {last_error}",
+                )
+                # Az app működőképes maradjon: visszaállítjuk a kapcsolatot a meglévő fájlra.
+                self.db = TransactionDatabase(str(db_path))
+                return
 
         self.db = TransactionDatabase(str(db_path))
         self.reload_all_pages()
