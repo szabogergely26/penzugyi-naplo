@@ -60,6 +60,7 @@ Tudatosan NEM UI-függő:
 from __future__ import annotations
 from typing import Any
 
+import contextlib
 import os
 import sqlite3
 from collections import defaultdict
@@ -206,6 +207,28 @@ class TransactionDatabase:
         conn.execute("PRAGMA foreign_keys = ON;")
         return conn
 
+    @contextlib.contextmanager
+    def _conn(self):
+        """
+        Context manager, ami valóban lezárja a kapcsolatot.
+
+        FONTOS: az sqlite3.Connection saját __enter__/__exit__-je
+        (amit a "with self.get_db_connection() as conn:" forma használt)
+        CSAK commit/rollback-et csinál kilépéskor, a fájl-handle-t NEM zárja be.
+        Emiatt minden így nyitott kapcsolat élve maradt a garbage collectorig,
+        ami Windows alatt zárolva tartotta az adatbázis-fájlt (pl. törlésnél
+        "A folyamat nem fér hozzá a fájlhoz" hiba).
+        """
+        conn = self.get_db_connection()
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     # Helper:
     def _column_exists(self, cur: sqlite3.Cursor, table: str, column: str) -> bool:
         cols = [
@@ -231,7 +254,7 @@ class TransactionDatabase:
         # Biztos ami biztos: legyen tábla (főleg régi DB-nél / dev DB-nél)
         self.ensure_account_valuations_table()
 
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             conn.execute(
                 """
                 INSERT INTO account_valuations(date, account_type, value)
@@ -249,7 +272,7 @@ class TransactionDatabase:
         # Biztos ami biztos
         self.ensure_account_valuations_table()
 
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             cur = conn.cursor()
             cur.execute(
                 """
@@ -561,7 +584,7 @@ class TransactionDatabase:
         """)
 
     def ensure_wallet_balances(self) -> None:
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS wallet_balances (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -582,7 +605,7 @@ class TransactionDatabase:
             raise ValueError(f"Invalid wallet_type: {wallet_type}")
 
         self.ensure_wallet_balances()
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             conn.execute(
                 "INSERT INTO wallet_balances(date, wallet_type, value) VALUES (?, ?, ?)",
                 (date_iso, wallet_type, float(value)),
@@ -595,7 +618,7 @@ class TransactionDatabase:
             raise ValueError(f"Invalid wallet_type: {wallet_type}")
 
         self.ensure_wallet_balances()
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             cur = conn.cursor()
 
             if year is None:
@@ -642,7 +665,7 @@ class TransactionDatabase:
         return rows
 
     def get_category_id_by_name(self, name: str) -> int | None:
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             row = conn.execute(
                 "SELECT id FROM categories WHERE name = ?",
                 (str(name),),
@@ -1926,7 +1949,7 @@ class TransactionDatabase:
         year=YYYY esetén: adott év utolsó ismert értékei
         """
         
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             cur = conn.cursor()
             self._ensure_account_valuations_table(cur)
             self._ensure_payment_source_column(cur)
@@ -1952,7 +1975,7 @@ class TransactionDatabase:
 
 
     def ensure_account_valuations_table(self) -> None:
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             self._ensure_account_valuations_table(conn.cursor())
 
 
@@ -2030,7 +2053,7 @@ class TransactionDatabase:
         )
 
     def ensure_bills_schema(self) -> None:
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             cur = conn.cursor()
             self._ensure_bills_schema(cur)
             conn.commit()
@@ -2046,7 +2069,7 @@ class TransactionDatabase:
         # biztosítsuk a táblát/indexet
         self.ensure_account_valuations_table()
 
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             cur = conn.cursor()
 
             if year is None:
@@ -2151,7 +2174,7 @@ class TransactionDatabase:
         self.ensure_wallet_balances()
         self.ensure_account_valuations_table()
 
-        with self.get_db_connection() as conn:
+        with self._conn() as conn:
             cur = conn.cursor()
             cur.execute(
                 """
