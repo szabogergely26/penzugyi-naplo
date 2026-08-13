@@ -14,10 +14,10 @@ from PySide6.QtWidgets import (
 )
 
 from penzugyi_naplo.app_version import (
+    BUILD_INFO,
+    APP_CHANNEL,
     APP_NAME,
     APP_VERSION,
-    APP_CHANNEL,
-    BUILD_INFO,
 )
 
 
