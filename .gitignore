@@ -36,7 +36,7 @@ __pycache__/
 # Packaging / build outputs
 build/
 dist/
-*.spec
+/*.spec
 
 # Coverage / reports
 .coverage
@@ -67,3 +67,10 @@ penzugyi-naplo-private-key.asc
 *.zip
 *.7zip
 *.tar.gz
+
+
+# Windows csomagolás — build output és IDE-generált fájlok
+/windows/
+packaging/windows/*-SetupFiles/
+packaging/windows/*-cache/
+packaging/windows/*.aip
