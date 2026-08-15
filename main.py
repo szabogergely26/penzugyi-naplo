@@ -100,7 +100,7 @@ def main() -> int:
     # a "QFont::setPointSize: Point size <= 0 (-1)" figyelmeztetésekhez.
     app.setFont(QFont("Segoe UI", 9))
 
-    app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon_preview.png"
+    app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon.png"
     app_icon = QIcon(str(app_icon_path))
 
     print("APP ICON PATH:", app_icon_path)
