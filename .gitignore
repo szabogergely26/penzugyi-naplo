@@ -38,6 +38,11 @@ build/
 dist/
 *.spec
 
+# Windows installer build output (InnoSetup) — csak a kimenet, NEM a forrás!
+# A packaging/windows/*.iss, ikonok, háttérképek MARADNAK verziózva.
+windows/*.exe
+windows/Output/
+
 # Coverage / reports
 .coverage
 htmlcov/
@@ -67,3 +72,8 @@ penzugyi-naplo-private-key.asc
 *.zip
 *.7zip
 *.tar.gz
+
+
+# InnoSetup build cache és becsomagolt exe-k (nem forrás!)
+packaging/windows/*-SetupFiles/
+packaging/windows/*-cache/
