@@ -8,29 +8,29 @@ Codename: stable
 Architectures: all
 Components: main
 Description: APT repository for Penzugyi Naplo (stable)
-Date: Sat, 15 Aug 2026 10:49:49 +0000
+Date: Sat, 15 Aug 2026 11:10:44 +0000
 MD5Sum:
- 859aadce2c54f60906f55cd1e94abac0              682 main/binary-all/Packages
- d253329a7b1cd6097ada0ec4c6b488d2              502 main/binary-all/Packages.gz
+ 3cbc58d4ddcf5e9f2c525e9ed3fb6586              682 main/binary-all/Packages
+ 452cc076a8a948bef2795bc591c6ec8a              503 main/binary-all/Packages.gz
 SHA1:
- 8e1cb756aba0a833b04abd8264610bb2d6e90588              682 main/binary-all/Packages
- 954fd87182c513f9f75f33a362863a8a3cdf74ca              502 main/binary-all/Packages.gz
+ cba54c799971d98c09befc88adaed6f99d436b7f              682 main/binary-all/Packages
+ 3771f0f1a34f2b4b025bbe2543410a0ed58027d5              503 main/binary-all/Packages.gz
 SHA256:
- 7b62e5e8b8fdfa86d85f6141a0eda5d933768e60d2375c737847ea8b8dbdca9e              682 main/binary-all/Packages
- f5b18e43654e862467d386eacac4a7f9bf47380b0a6323b30fae87c2a2b1862a              502 main/binary-all/Packages.gz
+ 24e8254f606cd818b7c35bc3cf5cd56dfd9d4e6868cbf24a5773289fe7d12fd9              682 main/binary-all/Packages
+ 834921d5132e3aba1fa824d3f31690e8c7529f628c06435d2dcb88630b16991e              503 main/binary-all/Packages.gz
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEE6DsWr2L478SLjQtG12tgxGKnF+cFAmqARE0ACgkQ12tgxGKn
-F+fr8Q//bULog+jOMgciE00eTWLXc2p/24Olh+36vWOv6Ssv9/0AWXZduGQ0ik58
-uHp3Qw877rtMrnBsiLm5LLuNi9RyJc8XRYeYjpsxJPCN66K+lluoz5U6XCUDutyO
-uWlHPjP9IPCUQ4WMr1t51+PCxY7kK4RLNYd8daLklyHed0mP5hzuCs6YBY+Bzjz6
-RCVPY+YNbL8E6Gp6xFMUOSniW5EyOpHBhsKs2TBRAqOoqGm+jTaI199YVDvnL7zj
-yzWI3uZJTMPyCbn9IPZCKsdgb9a20L8Dr3pDeST+QjrWeC9arUDZUNMQutRu95r+
-mdNlVAsFlNLFixNX7je4jy/rr9jdwR1sUkfo8tXnbpO5cNcu7ReyEJKVNH0BbKeO
-/TBSUtjUmFSawC47Nb4zwjUxP9JlaskBocGlrJkj/GGZCcrA1gJuVxTqS2KnMozB
-LGzV0TJ31aWUb51w3+6fjyBS9FzwySWCsrpIJQgINu6bFJDTjclK8uaozg1WDWtt
-oDtuhSvyFBpCHJ/KZExyNxVsle5HTDreVOz6wAr6QzqPdRA1L3eEv4L59GNkuT9u
-deeCctiu4OwrYEZg7M3e7bbxuyET5jnQ7AIjhaImvBlXIEjZEwg/I9BHEmIaMzJj
-Di0r3pdJbwWSttZdPAeGaJe5Pp6R04sUn3ruVBcrButjoLW0+vA=
-=SMVy
+iQIzBAEBCgAdFiEE6DsWr2L478SLjQtG12tgxGKnF+cFAmqASTQACgkQ12tgxGKn
+F+e0vBAAuCTneX2DvXXZUDQBmEHH8WGkuogKMB7fe0NFl8glKxt/9qoMWwBzFF8+
+7NYQucZnhiIe7DAtO4e5L3u6BMH074JOFynjw03NKrI5vspo923rjIklJrYaNQqy
+e25qOQCGlXyHBQ6fh1NdCo/pgyc7iibR8RXvDeWFlbqti3hr1IxRY5zFOBLA9JtS
+dvxB8WDbrVhyOlINQN7awRECkydf4j/MMmiGqn1DUoEIEJ1CrwkIEC+FB8GEMQhV
+N8iANEyMYMRBv6K0FHvwbykVuvTeuVIiN4cjI7TsSKLn4s+P6AC1UIktxc5CfxZD
+Skmdw1JjYMk3YyYS64j9OTMNqKcf4tcl+so7y0XCLF1ZxQUAPxRHW8jPs9AUlnXe
+3ArlunLbVLXceKo6UnFb4lAjlJfldTMtysLDahUeDCtl2bxuaaaMxZayhLRuzKmT
+7W/A39LPmWP0gHrDb1BBzMETgBqdEmMmVIPCAOg/Bj1/PNRbixcEs7Vd34NG3EeM
+jr3smXJxMwwCThM7f+zI9fcs0c/Ce2vq4iJf08x+5RJv+c63oFl07zOUB6jFqOuS
+e8BCyGBBZ0xPJ+q3Vr6cPUhoi5PSsUj7p1iZ/5jP7baZTFvl2NJ7JKWQ/Iujsi2G
+cVNFTlSVuSV4ztMUlFOG0Z79XDIkeRziixoj94qpcRbvzQEn7y0=
+=KtdM
 -----END PGP SIGNATURE-----
