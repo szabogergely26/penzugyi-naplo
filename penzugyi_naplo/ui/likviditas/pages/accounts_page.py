@@ -262,7 +262,7 @@ class AccountsPage(BasePage):
             font.setBold(True)
             current_pt = font.pointSize()
             if current_pt > 0:
-                font.setPointSize(current_pt + 1)
+                font.setPointSize(current_pt + 2)
             else:
                 # QSS-ben px-alapú betűméret esetén pointSize() -1-et ad vissza
                 current_px = font.pixelSize()

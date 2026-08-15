@@ -2,16 +2,19 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 ; Non-commercial use only
 
-#define MyAppName "Penzugyi Naplo"
-#define MyAppVersion "2.0"
-#define MyAppPublisher "Szaboger Company."
-#define MyAppURL "https://www.example.com/"
+#define MyAppName "Pénzügyi Napló"
+#define MyAppVersion "0.2.0"
+#define MyAppPublisher "Szaboger Corp"
+#define MyAppURL "https://szabogergely26.github.io/"
 #define MyAppExeName "PenzugyiNaplo.exe"
+#define MyAppAssocName MyAppName + " File"
+#define MyAppAssocExt ".myp"
+#define MyAppAssocKey StringChange(MyAppAssocName, " ", "") + MyAppAssocExt
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{C57181D3-5691-4D45-8D65-44AE6745DBEC}
+AppId={{7FE739A9-AE9A-407C-A09F-7A3B1D69284A}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
@@ -31,16 +34,17 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ; Uncomment the following line to use a 64-bit installer.
 ;SetupArchitecture=x64
-DisableProgramGroupPage=yes
+ChangesAssociations=yes
+DefaultGroupName={#MyAppName}
+AllowNoIcons=yes
 LicenseFile=C:\Users\szabo\Projektek\penzugyi-naplo\license.txt
-; Remove the following line to run in administrative install mode (install for all users).
-PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=C:\Users\szabo\Projektek\penzugyi-naplo\dist\installer
+; Uncomment the following line to run in non administrative install mode (install for current user only).
+;PrivilegesRequired=lowest
+OutputDir=C:\Users\szabo\Projektek\penzugyi-naplo\windows
 OutputBaseFilename=PenzugyiNaplo_Setup
 SetupIconFile=C:\Users\szabo\Projektek\penzugyi-naplo\icons\app_icon_main.ico
 SolidCompression=yes
-WizardStyle=classic
+WizardStyle=modern windows11
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -49,19 +53,83 @@ Name: "hungarian"; MessagesFile: "compiler:Languages\Hungarian.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
-;figyelj arra hogy a source útvonal és a DestDir útvonal azonos legyen !!
 [Files]
-; a PenzugyiNaplo.exe-t másolja csak a {app} gyökerébe
 Source: "C:\Users\szabo\Projektek\penzugyi-naplo\dist\PenzugyiNaplo\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-
-; az _internal mappa teljes tartalmát másolja , a * miatt az összes fájlt és almappát
 Source: "C:\Users\szabo\Projektek\penzugyi-naplo\dist\PenzugyiNaplo\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+Source: "C:\Users\szabo\Projektek\penzugyi-naplo\packaging\windows\pictures\installer_background_fullscreen_picture_1920x1200.bmp"; DestDir: "{tmp}"; Flags: dontcopy
+
+[Registry]
+Root: HKA; Subkey: "Software\Classes\{#MyAppAssocExt}\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppAssocKey}"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}"; ValueType: string; ValueName: ""; ValueData: "{#MyAppAssocName}"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
+[Code]
+function GetSystemMetrics(nIndex: Integer): Integer;
+  external 'GetSystemMetrics@user32.dll stdcall';
+
+const
+  SM_CXSCREEN = 0;
+  SM_CYSCREEN = 1;
+
+var
+  BackForm: TSetupForm;
+  BackImage: TBitmapImage;
+  
+  
+  procedure InitializeWizard();
+var
+  ScreenW, ScreenH: Integer;
+begin
+  ScreenW := GetSystemMetrics(SM_CXSCREEN);
+  ScreenH := GetSystemMetrics(SM_CYSCREEN);
+
+  { A kép kicsomagolása egy ideiglenes mappába }
+  ExtractTemporaryFile('installer_background_fullscreen_picture_1920x1200.bmp');
+
+  { Teljes képernyős háttér-ablak létrehozása, a tényleges felbontáshoz igazítva }
+  BackForm := CreateCustomForm(ScreenW, ScreenH, False, False);
+  BackForm.BorderStyle := bsNone;
+  BackForm.Left := 0;
+  BackForm.Top := 0;
+  
+  { A háttérkép ráhúzása a teljes ablakra }
+  BackImage := TBitmapImage.Create(BackForm);
+  BackImage.Parent := BackForm;
+  BackImage.Left := 0;
+  BackImage.Top := 0;
+  { Szándékosan a képernyő TELJES méretéhez igazítjuk (nem ClientWidth/Height-hez),
+    mert ha a formnak bármilyen apró keret/margó eltérése van, a ClientWidth/Height
+    kisebb lehet a képernyőnél, és a kép nem éri el a jobb/alsó szélt. }
+  BackImage.Width := ScreenW;
+  BackImage.Height := ScreenH;
+  BackImage.Stretch := True;
+  BackImage.Bitmap.LoadFromFile(ExpandConstant('{tmp}\installer_background_fullscreen_picture_1920x1200.bmp'));
+
+  
+
+  { Megjelenítjük a hátteret }
+  BackForm.Show;
+
+  { A Wizard-ablakot középre igazítjuk a háttér fölé.
+    Szándékosan ScreenW/ScreenH-t használjuk itt is (nem BackForm.Width/Height-et),
+    hogy ugyanabból a forrásból számoljunk, mint a BackImage méretezésénél —
+    így a kép és a Wizard pozíciója nem tud elcsúszni egymáshoz képest. }
+  WizardForm.Left := BackForm.Left + (ScreenW - WizardForm.Width) div 2;
+  WizardForm.Top := BackForm.Top + (ScreenH - WizardForm.Height) div 2;
+end;
+
+procedure DeinitializeSetup();
+begin
+  if Assigned(BackForm) then
+    BackForm.Free;
+end;
