@@ -5,13 +5,13 @@ Codename: stable
 Architectures: all
 Components: main
 Description: APT repository for Penzugyi Naplo (stable)
-Date: Sat, 15 Aug 2026 11:10:44 +0000
+Date: Sat, 15 Aug 2026 11:25:48 +0000
 MD5Sum:
- 3cbc58d4ddcf5e9f2c525e9ed3fb6586              682 main/binary-all/Packages
- 452cc076a8a948bef2795bc591c6ec8a              503 main/binary-all/Packages.gz
+ 114d067c8e9f50369369021d18de8d74              682 main/binary-all/Packages
+ ac622deef6550f0fd93403095045b914              502 main/binary-all/Packages.gz
 SHA1:
- cba54c799971d98c09befc88adaed6f99d436b7f              682 main/binary-all/Packages
- 3771f0f1a34f2b4b025bbe2543410a0ed58027d5              503 main/binary-all/Packages.gz
+ 5d01a62197fb26a80ee5950d9d1fdc7dbefadd4b              682 main/binary-all/Packages
+ fed844af32d2b199d4442c3de85b4fafc2ddaa5b              502 main/binary-all/Packages.gz
 SHA256:
- 24e8254f606cd818b7c35bc3cf5cd56dfd9d4e6868cbf24a5773289fe7d12fd9              682 main/binary-all/Packages
- 834921d5132e3aba1fa824d3f31690e8c7529f628c06435d2dcb88630b16991e              503 main/binary-all/Packages.gz
+ 6528c49833db8fdaca49231496e046de96d9383e8080a97a06f1c157a3840d8f              682 main/binary-all/Packages
+ faf100c869180e0649712c3bcbf0c98290a32bcdbf598263ce2b18b20eb1c494              502 main/binary-all/Packages.gz
