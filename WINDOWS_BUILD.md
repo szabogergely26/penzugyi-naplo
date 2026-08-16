@@ -131,7 +131,68 @@ windows\PenzugyiNaplo_Preview_Setup.exe    (előzetes)
 | Inno Setup: `Reading file (LicenseFile)` → Compile aborted | A `.iss` egy `.txt` fájlra hivatkozik, de csak `.md` van a lemezen (vagy fordítva) | Ellenőrizd hogy a `LicenseFile=` sor a ténylegesen létező fájlnévre mutat |
 | Inno Setup: "`...bmp` does not exist" | Elgépelt fájlnév, vagy a kép nincs a `packaging\windows\pictures\` mappában | Ellenőrizd a fájlnevet karakterről karakterre a `common.iss`-ben és a lemezen |
 | A telepített program Névjegye/ablakcíme a **másik** variant nevét mutatja | A `dist\PenzugyiNaplo\` egy korábbi, elavult build maradványa | Futtasd újra a 3. lépést (PyInstaller) a jelenlegi branch forrásából, **mielőtt** az Inno Setup-ot fordítod |
-| Windows SmartScreen: "Az Intelligens alkalmazáskezelés letiltott egy alkalmazást" | A telepítő nincs digitálisan aláírva (code signing certificate) | Ez várt viselkedés aláíratlan, ismeretlen kiadótól származó programoknál. A "További információ" → "Futtatás mindenképp" opcióval felülbírálható, saját felelősségre. Végleges, széles körű terjesztéshez code signing certificate szükséges (ez egy külön, fizetős lépés, jelenleg nem része ennek a projektnek). |
+| "Az Intelligens alkalmazáskezelés letiltott egy alkalmazást, amely esetleg nem biztonságos" | Ez **nem** a klasszikus SmartScreen, hanem a **Smart App Control (SAC)** — lásd külön szakasz lent | Lásd "Smart App Control (SAC) — mit tegyél, ha letiltja a programot" szakasz lent |
+| Klasszikus kék "Windows protected your PC" képernyő, "More info" gombbal | A hagyományos SmartScreen — a telepítő/exe nincs digitálisan aláírva, és még nincs elég "reputációja" | A "További információ" → "Futtatás mindenképp" opcióval felülbírálható, saját felelősségre. |
+
+---
+
+## Smart App Control (SAC) — mit tegyél, ha letiltja a programot
+
+Ha a fenti "Intelligens alkalmazáskezelés" üzenetet kapod, az nem azt jelenti,
+hogy a build hibás vagy a program vírusos — ez egy Windows 11-es funkció,
+ami **kizárólag aláíratlan** futtatható fájlokat (exe, dll, telepítő) tilt le,
+függetlenül attól, hogy honnan származnak.
+
+**Miért fordulhat elő akkor is, ha te magad fordítod a saját gépeden?**
+
+A SAC két módban működhet:
+- **Evaluation (kiértékelő) mód** — ez az alapállapot egy friss Windows 11
+  telepítésen. Ilyenkor a rendszer csak figyel, nem tilt le semmit.
+- **Enforce (kikényszerítő) mód** — a rendszer egy idő után automatikusan
+  átválthat erre a módra a háttérben, akár egyetlen felhasználó/gép
+  beavatkozása nélkül is. Innentől **minden** aláíratlan futtatható
+  (a te saját maga fordította exe-d is) blokkolva lehet — nem számít, hogy
+  sosem töltötted le internetről, helyben fordítottad.
+
+Tehát ha most még simán megy nálad a fordítás, majd egyszer csak nem — ez
+valószínűleg nem a kód vagy a build hibája, hanem a SAC módváltása.
+
+**Ellenőrzés és kikapcsolás:**
+
+1. `Windows Security` (Windows Biztonság) → `App & browser control`
+   (Alkalmazás- és böngészővezérlés) → `Smart App Control settings`
+   (Intelligens alkalmazáskezelés beállításai).
+2. Ha az állapot `On` (Be), állítsd `Off`-ra (Ki) — akár csak ideiglenesen,
+   a teszteléshez.
+3. Ha a Windows Security appban nem jelenik meg ez az opció (régebbi build),
+   a registry-n keresztül is állítható:
+   ```
+   regedit.exe
+   HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\CI\Policy
+   VerifiedAndReputablePolicyState → állítsd 0-ra (kikapcsolás)
+   ```
+   majd indítsd újra a gépet.
+
+> **Fontos:** 2026 áprilisa előtti Windows-verziókon a SAC kikapcsolása
+> **véglegesnek** számított — csak tiszta Windows-telepítéssel lehetett
+> visszakapcsolni. A 2026 áprilisi kumulatív frissítés (KB5083769) óta a
+> be/ki kapcsolás bármikor, újratelepítés nélkül elvégezhető a fenti úton.
+> Ha a géped ennél régebbi frissítési állapotban van, a kikapcsolás előtt
+> érdemes ezt figyelembe venni.
+
+**Ha valaki más (nem te) fut bele ebbe, amikor a te forráskódodból fordít:**
+Ez elméletileg őt is érintheti, ha az ő gépén a SAC Enforce módban fut —
+ez nem a te buildeden vagy az ő fordításán múlik, hanem kizárólag azon,
+hogy az adott gépen a SAC épp melyik módban van. Ha valaki jelzi ezt a
+problémát, a fenti lépések neki is működnek.
+
+**Miért nem oldja meg ezt tartósan/mindenkinek a fenti lépés?**
+A SAC kikapcsolása csak az adott gépen, ideiglenesen oldja fel a blokkolást.
+Egy szélesebb körben, idegen felhasználóknak szánt, aláíratlan telepítő
+tartós, felhasználói beavatkozás nélküli terjesztéséhez **code signing
+certificate** kellene (kb. 200+ USD/év, OV szinten) — ez jelenleg tudatosan
+**nincs** ennek a projektnek a tervei között, ezért marad a forráskódos
+fordítás mint elsődleges Windows-út.
 
 ---
 
