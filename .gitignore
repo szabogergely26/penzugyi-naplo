@@ -14,8 +14,7 @@ venv/
 logs/
 *.log
 
-# VSCode settings (ha nem akarod verziózni)
-.vscode/
+
 
 # OS junk
 .DS_Store
@@ -54,15 +53,10 @@ data/
 
 
 # Helyi fejlesztői segédfájlok
-start.sh
-config
 logging
 sys
 
-# GPG / APT repository private keys
-*private-key*.asc
-*.private.asc
-penzugyi-naplo-private-key.asc
+
 
 # Tömörített fájlok
 *.zip

@@ -13,7 +13,6 @@ ORG_NAME: str = "PenzugyiNaplo"
 SETTINGS_KEY_DEV_MODE: str = "app/dev_mode"
 
 
-
 SETTINGS_KEY_STYLE_MODE: str = "ui/style_mode"
 
 STYLE_CLASSIC: str = "classic"
@@ -33,6 +32,46 @@ DB_FILENAME_PROD: str = "transactions.sqlite3"
 DB_FILENAME_DEV: str = "transactions_dev.sqlite3"
 
 
+# -----------------------------
+# Globális alkalmazás-font
+# -----------------------------
+#
+# Ez az EGYETLEN hely, ahol az app betűtípusát megadjuk.
+# A main.py ezt olvassa be és app.setFont(...)-tal állítja be, mielőtt
+# bármilyen QSS betöltődne - így minden oldal, dialógus és widget
+# ugyanazt a fontot kapja, függetlenül attól, hogy az adott gépen
+# éppen mi a rendszer alapértelmezett betűtípusa.
+#
+# Fontos: "Segoe UI" Windows-specifikus font, Linuxon nem létezik -
+# ha ez volt beállítva, Qt egy előre nem kiszámítható rendszer-fallback-re
+# váltott, ami gépenként/frissítésenként eltérő megjelenést okozott.
+#
+# APP_FONT_FALLBACKS: sorrendben kipróbált betűtípus-lista.
+# Az első elérhető (a gépen ténylegesen telepített) fontot használja Qt,
+# az utolsó elem (DejaVu Sans) szinte minden Linux disztribúción
+# alapból telepítve van, ez a végső biztonsági háló.
+APP_FONT_FALLBACKS: tuple[str, ...] = (
+    "Noto Sans",
+    "Ubuntu",
+    "Cantarell",
+    "DejaVu Sans",
+)
+
+APP_FONT_SIZE_PT: int = 9
+
+
+def app_font_family() -> str:
+    """
+    Az app-ban használt betűtípus neve.
+
+    Jelenleg az APP_FONT_FALLBACKS első elemét adja vissza - a tényleges
+    "van-e telepítve" ellenőrzést és a lista bejárását a main.py végzi
+    QFontDatabase segítségével, mert az Qt-inicializálást igényel.
+    Itt csak a preferencia-sorrend forrása van megadva.
+    """
+    return APP_FONT_FALLBACKS[0]
+
+
 # A keresés alapértelmezett hatóköre.
 # Ezt a Beállítások ablak menti, a keresősáv pedig induláskor visszaolvassa.
 SETTINGS_KEY_SEARCH_SCOPE = "search/default_scope"
@@ -47,19 +86,10 @@ SEARCH_SCOPE_ALL_YEARS = "all_years"
 DEFAULT_SEARCH_SCOPE = SEARCH_SCOPE_ACTIVE_YEAR
 
 
-
-
-
-
-
-
-
-
-
-
 # -----------------------------
 # Settings
 # -----------------------------
+
 
 def settings() -> QSettings:
     return QSettings(ORG_NAME, APP_NAME)
@@ -76,6 +106,7 @@ def set_dev_mode(enabled: bool) -> None:
 # -----------------------------
 # Project detection
 # -----------------------------
+
 
 def repo_root() -> Path:
     """
@@ -106,6 +137,7 @@ def is_dev_project() -> bool:
 # Data directories
 # -----------------------------
 
+
 def stable_data_dir() -> Path:
     base = Path(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
     base.mkdir(parents=True, exist_ok=True)
@@ -126,6 +158,7 @@ def active_data_dir() -> Path:
 # DB
 # -----------------------------
 
+
 def active_db_filename() -> str:
     return DB_FILENAME_DEV if is_dev_mode() else DB_FILENAME_PROD
 
@@ -133,9 +166,11 @@ def active_db_filename() -> str:
 def active_db_path() -> Path:
     return active_data_dir() / active_db_filename()
 
+
 # ------------------------------
 # DB files
 # -----------------------------
+
 
 def prod_db_path() -> Path:
     return active_data_dir() / DB_FILENAME_PROD
@@ -143,7 +178,6 @@ def prod_db_path() -> Path:
 
 def dev_db_path() -> Path:
     return active_data_dir() / DB_FILENAME_DEV
-
 
 
 # ---------------------------------

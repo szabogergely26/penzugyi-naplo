@@ -32,15 +32,15 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QtMsgType, qInstallMessageHandler
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtGui import QFont, QFontDatabase, QIcon
 from PySide6.QtWidgets import QApplication
 
 import penzugyi_naplo.config.config as config
 
 from penzugyi_naplo.core.logging_utils import Log, DebugFlags
 
-from penzugyi_naplo.db.transaction_database import TransactionDatabase  
-from penzugyi_naplo.ui.main_window import MainWindow  
+from penzugyi_naplo.db.transaction_database import TransactionDatabase
+from penzugyi_naplo.ui.main_window import MainWindow
 
 
 # VSCode "Run file" esetére: a projekt gyökerét tegyük sys.path-ra
@@ -48,9 +48,6 @@ PKG_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PKG_DIR.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
-
-
-
 
 
 # - Importok vége -
@@ -82,13 +79,38 @@ def _qt_message_handler(msg_type, context, message: str) -> None:
         print("FATAL:", message)
 
 
+def _resolve_app_font() -> QFont:
+    """
+    Az app globális fontjának kiválasztása.
+
+    Végigmegy a config.APP_FONT_FALLBACKS listán, és az első ténylegesen
+    telepített betűtípust használja (QFontDatabase.families() alapján
+    ellenőrizve). Ha egyik sem elérhető - ami rendkívül valószínűtlen,
+    mert a lista utolsó eleme (DejaVu Sans) szinte minden Linux
+    disztribúción alapból ott van -, Qt saját alapértelmezett fontjára
+    esik vissza.
+
+    Ez váltja ki a korábbi, Windows-specifikus "Segoe UI" hardcode-olást,
+    ami Linuxon egy kiszámíthatatlan rendszer-fallback-hez vezetett
+    gépenként/frissítésenként eltérő megjelenéssel.
+    """
+    available = set(QFontDatabase.families())
+
+    for family in config.APP_FONT_FALLBACKS:
+        if family in available:
+            return QFont(family, config.APP_FONT_SIZE_PT)
+
+    # Egyik preferált font sem található - Qt alapértelmezett családja,
+    # de a méretet így is egységesen tartjuk.
+    return QFont(QApplication.font().family(), config.APP_FONT_SIZE_PT)
+
+
 def main() -> int:
     """
     Application entry point. - Belépési pont az alkalmazáshoz:
     Ide kerül minden olyan inicializáció,
     ami a teljes alkalmazásra vonatkozik.
     """
-
 
     qInstallMessageHandler(_qt_message_handler)
 
@@ -98,7 +120,11 @@ def main() -> int:
     # (amely mindenhol px-ben ad meg font-size-t) alkalmazásra kerülne.
     # Enélkül Qt-nek nincs érvényes pontméret-fallback-je, ami hozzájárul
     # a "QFont::setPointSize: Point size <= 0 (-1)" figyelmeztetésekhez.
-    app.setFont(QFont("Segoe UI", 9))
+    #
+    # A betűtípus forrása: config.APP_FONT_FALLBACKS (egyetlen hely,
+    # ahol az app fontja meg van adva) - itt csak a tényleges, a gépen
+    # elérhető font kiválasztása történik.
+    app.setFont(_resolve_app_font())
 
     app_icon_path = Path(__file__).resolve().parent / "icons" / "app_icon.png"
     app_icon = QIcon(str(app_icon_path))
@@ -116,14 +142,12 @@ def main() -> int:
     dev_mode = config.is_dev_mode()
 
     log = Log(
-    DebugFlags(
-        enabled=dev_mode,
-        trace_page_stack=False,
+        DebugFlags(
+            enabled=dev_mode,
+            trace_page_stack=False,
         )
     )
     log.session_start("Pénzügyi Napló - app start")
-
-
 
     # 2) aktív DB path
     path = config.active_db_path()
@@ -140,7 +164,6 @@ def main() -> int:
     win = MainWindow(db=db, dev_mode=dev_mode)
     win.setWindowIcon(app_icon)
     win.showMaximized()
-    
 
     log.info("APP EXEC START")
     rc = app.exec()
