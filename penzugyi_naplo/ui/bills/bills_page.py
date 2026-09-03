@@ -22,12 +22,12 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
+    QPushButton,
     QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
-    QPushButton,
-    QMessageBox,
 )
 
 from penzugyi_naplo.ui.bills.bill_models import (
@@ -35,7 +35,6 @@ from penzugyi_naplo.ui.bills.bill_models import (
     MonthlyAmount,
     PeriodicAmount,
 )
-
 
 MONTH_NAMES = {
     1: "Január",

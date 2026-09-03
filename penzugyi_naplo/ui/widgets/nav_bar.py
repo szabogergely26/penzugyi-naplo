@@ -24,8 +24,6 @@ Topology (UI):
 
 from __future__ import annotations
 
-from typing import Optional
-
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSizePolicy, QWidget
 
@@ -35,7 +33,7 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSizePolicy, QWidget
 class NavBar(QWidget):
     pageRequested = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.setObjectName("navBar")  # <-- EZ KELL

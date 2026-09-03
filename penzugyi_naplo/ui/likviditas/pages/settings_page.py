@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 from shutil import copy2
-from typing import Optional
 
 from PySide6.QtCore import QProcess, QSettings
 from PySide6.QtWidgets import (
@@ -24,23 +23,22 @@ from PySide6.QtWidgets import (
 
 from penzugyi_naplo.config.config import (
     APP_NAME,
+    DEFAULT_STYLE_MODE,
     ORG_NAME,
     SETTINGS_KEY_STYLE_MODE,
     STYLE_CLASSIC,
     STYLE_MODERN,
     STYLE_MODERN_HOME,
-    DEFAULT_STYLE_MODE,
     active_db_path,
     dev_db_path,
     is_dev_mode,
     prod_db_path,
     set_dev_mode,
-
 )
 
 
 class SettingsPage(QWidget):
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self._settings = QSettings(ORG_NAME, APP_NAME)

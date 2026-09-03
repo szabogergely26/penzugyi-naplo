@@ -30,11 +30,11 @@ Kapcsolódás:
 
 from __future__ import annotations
 
-import sys
 import shutil
+import sys
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, Qt, QProcess
+from PySide6.QtCore import QProcess, QSettings, Qt
 from PySide6.QtWidgets import (
     QButtonGroup,
     QComboBox,
@@ -42,25 +42,23 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QRadioButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
-    QMessageBox,
 )
-
-
 
 from penzugyi_naplo.config.config import (
     APP_NAME,
+    DEFAULT_STYLE_MODE,
     ORG_NAME,
     SETTINGS_KEY_DEV_MODE,
     SETTINGS_KEY_STYLE_MODE,
     STYLE_CLASSIC,
     STYLE_MODERN,
     STYLE_MODERN_HOME,
-    DEFAULT_STYLE_MODE,
 )
 
 

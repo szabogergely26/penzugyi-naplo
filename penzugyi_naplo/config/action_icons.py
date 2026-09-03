@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from PySide6.QtGui import QIcon
 
-
 ACTION_ICON_NAMES: dict[str, str] = {
     "act_new_tx": "list-add",
     "act_backup_db": "document-save",

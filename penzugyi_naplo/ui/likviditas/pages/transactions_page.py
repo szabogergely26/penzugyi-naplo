@@ -37,12 +37,12 @@ Topology (UI):
 
 from __future__ import annotations
 
-
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer, QSettings
+from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QHBoxLayout,
     QHeaderView,
@@ -54,17 +54,15 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
-    QComboBox,
 )
 
+from penzugyi_naplo.config.config import APP_NAME, ORG_NAME
 from penzugyi_naplo.ui.likviditas.dialogs.transaction_details_dialog import (
     TransactionDetailsDialog,
 )
 from penzugyi_naplo.ui.likviditas.dialogs.transaction_edit_dialog import (
     TransactionEditDialog,
 )
-
-from penzugyi_naplo.config.config import APP_NAME, ORG_NAME
 
 # -Importok vége -
 
@@ -77,7 +75,7 @@ class SortKeyItem(QTableWidgetItem):
         super().__init__(text)
         self.setData(Qt.ItemDataRole.UserRole, sort_key)
 
-    def __lt__(self, other: "QTableWidgetItem") -> bool:
+    def __lt__(self, other: QTableWidgetItem) -> bool:
         a = self.data(Qt.ItemDataRole.UserRole)
         b = other.data(Qt.ItemDataRole.UserRole)
         if a is not None and b is not None:

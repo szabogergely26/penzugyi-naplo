@@ -17,13 +17,11 @@ Topology (UI):
 
 from __future__ import annotations
 
-from typing import Optional
-
 from PySide6.QtWidgets import QWidget
 
 
 class BasePage(QWidget):
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._active_year: int | None = None
 

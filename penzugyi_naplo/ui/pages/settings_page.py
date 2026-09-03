@@ -33,22 +33,22 @@ from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
     QVBoxLayout,
-    QDialog,
 )
 
 from penzugyi_naplo.config.config import (
-    APP_NAME, 
+    APP_NAME,
+    DEFAULT_STYLE_MODE,
     ORG_NAME,
     SETTINGS_KEY_STYLE_MODE,
     STYLE_CLASSIC,
     STYLE_MODERN,
     STYLE_MODERN_HOME,
-    DEFAULT_STYLE_MODE,
-    )
+)
 
 # ------ Importok vége -----
 

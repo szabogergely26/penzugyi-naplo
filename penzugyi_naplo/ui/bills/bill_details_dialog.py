@@ -10,13 +10,13 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
-    QLabel,
-    QPushButton,
     QHeaderView,
+    QLabel,
+    QMessageBox,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
-    QMessageBox,
 )
 
 from .bill_models import BillCardModel

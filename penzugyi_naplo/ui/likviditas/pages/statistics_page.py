@@ -27,7 +27,7 @@ Topology (UI):
 from __future__ import annotations
 
 import sqlite3
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 from PySide6.QtCharts import (
@@ -52,9 +52,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-
-
 
 # ----- Importok vége ----
 
@@ -415,7 +412,7 @@ class StatisticsPage(QWidget):
         selection = self.period_combo.currentText() if hasattr(self, "period_combo") else "Aktív év"
 
         # Use timezone-aware current date to avoid naive datetime usage
-        today = datetime.now(tz=timezone.utc).date()
+        today = datetime.now(tz=UTC).date()
 
         if selection == "Aktív év":
             return None, None, "year"

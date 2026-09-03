@@ -36,12 +36,9 @@ from PySide6.QtGui import QFont, QFontDatabase, QIcon
 from PySide6.QtWidgets import QApplication
 
 import penzugyi_naplo.config.config as config
-
-from penzugyi_naplo.core.logging_utils import Log, DebugFlags
-
+from penzugyi_naplo.core.logging_utils import DebugFlags, Log
 from penzugyi_naplo.db.transaction_database import TransactionDatabase
 from penzugyi_naplo.ui.main_window import MainWindow
-
 
 # VSCode "Run file" esetére: a projekt gyökerét tegyük sys.path-ra
 PKG_DIR = Path(__file__).resolve().parent
@@ -67,9 +64,7 @@ def _qt_message_handler(msg_type, context, message: str) -> None:
     """
     if "QFont::setPointSize" in message and "-1" in message:
         return
-    if msg_type == QtMsgType.QtDebugMsg:
-        print(message)
-    elif msg_type == QtMsgType.QtInfoMsg:
+    if msg_type == QtMsgType.QtDebugMsg or msg_type == QtMsgType.QtInfoMsg:
         print(message)
     elif msg_type == QtMsgType.QtWarningMsg:
         print("WARNING:", message)

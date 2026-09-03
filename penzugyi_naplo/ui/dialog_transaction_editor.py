@@ -32,6 +32,7 @@ Nem felelőssége:
 
 from __future__ import annotations
 
+from core.utils import format_number_hu, is_valid_date, parse_amount
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -42,8 +43,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QVBoxLayout,
 )
-
-from core.utils import format_number_hu, is_valid_date, parse_amount
 
 # - Importok vége -
 

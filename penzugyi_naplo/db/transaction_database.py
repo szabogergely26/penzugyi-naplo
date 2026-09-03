@@ -58,22 +58,20 @@ Tudatosan NEM UI-függő:
 """
 
 from __future__ import annotations
-from typing import Any
 
 import os
 import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Any
 
+from penzugyi_naplo.db.gold_database import ensure_gold_tables
 from penzugyi_naplo.ui.bills.bill_models import (
     BillCardModel,
     MonthlyAmount,
     PeriodicAmount,
 )
-
-from penzugyi_naplo.db.gold_database import ensure_gold_tables
-
 
 # ----------------------------
 # B modell:
@@ -203,7 +201,7 @@ class _TrackedConnection:
     iratkozik fel (lásd TransactionDatabase.on_save).
     """
 
-    def __init__(self, raw_conn: sqlite3.Connection, owner: "TransactionDatabase") -> None:
+    def __init__(self, raw_conn: sqlite3.Connection, owner: TransactionDatabase) -> None:
         self._raw = raw_conn
         self._owner = owner
 
@@ -212,7 +210,7 @@ class _TrackedConnection:
         self._notified_this_block = True
         self._owner._notify_saved()
 
-    def __enter__(self) -> "_TrackedConnection":
+    def __enter__(self) -> _TrackedConnection:
         # "with self.get_db_connection() as conn:" minta támogatása.
         # A sqlite3.Connection saját __enter__-je a nyers connection-t adná
         # vissza (megkerülve ezt a wrappert), ezért itt kézzel visszaadjuk
@@ -934,9 +932,9 @@ class TransactionDatabase:
         invoice_number = (data.get("invoice_number") or "").strip() or None
         is_correction = bool(data.get("is_correction", False))
 
-        raw_meter_m3 = data.get("meter_m3", None)
+        raw_meter_m3 = data.get("meter_m3")
         meter_m3 = float(raw_meter_m3) if raw_meter_m3 not in (None, "") else None
-        raw_meter_mj = data.get("meter_mj", None)
+        raw_meter_mj = data.get("meter_mj")
         meter_mj = float(raw_meter_mj) if raw_meter_mj not in (None, "") else None
 
         if (period_start and not period_end) or (period_end and not period_start):

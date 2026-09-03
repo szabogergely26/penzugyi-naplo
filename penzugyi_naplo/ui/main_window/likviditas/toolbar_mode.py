@@ -20,7 +20,7 @@ Fontos:
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QSize, QSettings, QTimer
+from PySide6.QtCore import QSettings, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QToolBar
 

@@ -33,30 +33,27 @@ Fontos:
 
 from __future__ import annotations
 
-
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
-
 from PySide6.QtWidgets import (
+    QComboBox,
+    QFileDialog,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
     QLabel,
+    QLineEdit,
+    QMessageBox,
     QPushButton,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWizardPage,
-    QComboBox,
-    QMessageBox,
-    QLineEdit,
-    QFileDialog,
-    QHBoxLayout,
-    QGridLayout,
-    QFrame
 )
-
 
 from penzugyi_naplo.importers.ods_transaction_importer import OdsTransactionImporter
 
@@ -75,7 +72,7 @@ class IntroPage(QWizardPage):
     Csak elmagyarázza, hogy a varázsló mit fog csinálni.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard
@@ -121,7 +118,7 @@ class FileSelectPage(QWizardPage):
         és van-e benne legalább egy munkalap.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard
@@ -260,7 +257,7 @@ class SheetSelectPage(QWizardPage):
         Ez az oldal csak kiválasztja, melyik munkalappal dolgozzon tovább a wizard.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard
@@ -396,7 +393,7 @@ class RowSetupPage(QWizardPage):
         Csak előkészíti a következő előnézeti oldalt.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard
@@ -804,7 +801,7 @@ class PreviewPage(QWizardPage):
         Csak a wizard.preview_rows listát tölti fel.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard

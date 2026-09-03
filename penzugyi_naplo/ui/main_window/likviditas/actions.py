@@ -20,6 +20,7 @@ from PySide6.QtGui import QAction, QActionGroup
 
 from penzugyi_naplo.config.action_icons import apply_action_icons
 
+
 def create_likviditas_actions(window) -> None:
     """Likviditás nézethez tartozó actionök létrehozása."""
 

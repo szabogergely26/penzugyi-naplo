@@ -34,7 +34,7 @@ Topology (UI):
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     pass
@@ -58,8 +58,6 @@ from penzugyi_naplo.core.app_context import AppContext
 from penzugyi_naplo.ui.likviditas.dialogs.home_table_dialog import HomeTableDialog
 from penzugyi_naplo.ui.likviditas.dialogs.month_details_dialog import MonthDetailsDialog
 from penzugyi_naplo.ui.likviditas.widgets.home_summary_panel import HomeSummaryPanel
-
-
 
 # - Importok vége - #
 
@@ -146,7 +144,7 @@ class HomePage(QWidget):
     - Aktív év szerint frissül (MainWindow set_year hívja)
     """
 
-    def __init__(self, ctx: AppContext, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, ctx: AppContext, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.ctx = ctx
         self.dev_mode = self.ctx.dev_mode

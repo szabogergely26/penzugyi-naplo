@@ -95,12 +95,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QColor
-
+from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsDropShadowEffect,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -109,7 +108,6 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
-    QGraphicsDropShadowEffect,
 )
 
 from penzugyi_naplo.db.gold_database import (
@@ -117,7 +115,6 @@ from penzugyi_naplo.db.gold_database import (
     get_gold_summary,
     list_gold_physical_items,
 )
-
 
 
 class PhysicalGoldItemCard(QFrame):
