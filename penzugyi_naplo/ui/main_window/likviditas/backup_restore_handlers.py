@@ -23,6 +23,31 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 from penzugyi_naplo.db.transaction_database import TransactionDatabase
 
 
+def _reopen_db(window, db_path: Path) -> None:
+    """
+    Közös segédfüggvény: DB újranyitása egy adott fájlon, és a MainWindow
+    ehhez tartozó állapotainak frissítése.
+
+    Ide tartozik:
+        - window.db / window.ctx.db lecserélése az új példányra
+        - a statusbar "Mentve" jelzésének újra-feliratkoztatása,
+          mert egy új TransactionDatabase példánynak üres a
+          feliratkozó-listája (lásd TransactionDatabase.on_save)
+        - oldalak újrakötése az új DB-re
+
+    Ezt a három lépést eddig backup/restore műveletenként külön-külön
+    kellett volna megismételni; így egy helyen van, egy új restore-szerű
+    művelet sem felejtheti ki a statusbar bekötését.
+    """
+    window.db = TransactionDatabase(str(db_path))
+    window.ctx.db = window.db
+
+    if hasattr(window, "_on_db_saved"):
+        window.db.on_save(window._on_db_saved)
+
+    window._rebind_db_to_pages()
+
+
 def handle_backup_database(window) -> None:
     """Adatbázis biztonsági mentése fájlba."""
 
@@ -68,9 +93,7 @@ def handle_backup_database(window) -> None:
         )
 
     finally:
-        window.db = TransactionDatabase(str(db_path))
-        window.ctx.db = window.db
-        window._rebind_db_to_pages()
+        _reopen_db(window, db_path)
 
 
 def handle_restore_database(window) -> None:
@@ -124,8 +147,11 @@ def handle_restore_database(window) -> None:
         window.db = TransactionDatabase(str(db_path))
         window.ctx.db = window.db
 
+        if hasattr(window, "_on_db_saved"):
+            window.db.on_save(window._on_db_saved)
+
         window._rebind_db_to_pages()
-        window.reload_all_pages()
+        window.reload_all_pages()  # ez frissíti a statusbar "Utoljára betöltve" részét is
 
         QMessageBox.information(
             window,
@@ -141,8 +167,6 @@ def handle_restore_database(window) -> None:
         )
 
         try:
-            window.db = TransactionDatabase(str(db_path))
-            window.ctx.db = window.db
-            window._rebind_db_to_pages()
+            _reopen_db(window, db_path)
         except Exception:
             pass

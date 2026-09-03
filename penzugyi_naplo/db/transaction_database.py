@@ -186,6 +186,58 @@ class TransactionRow:
     category_id: int
 
 
+class _TrackedConnection:
+    """
+    Vékony wrapper egy sqlite3.Connection köré.
+
+    Cél: a TransactionDatabase minden write-ja ugyanazon a
+    get_db_connection()-ön keresztül megy, ezért itt, a commit()
+    elkapásával egyetlen ponton tudjuk jelezni "mentés történt".
+
+    Minden más metódushívást (cursor, execute, close, stb.)
+    változtatás nélkül továbbenged a valódi kapcsolatnak,
+    így a meglévő 20+ write metódust nem kellett egyenként módosítani.
+
+    Tudatosan NEM Qt-függő (nincs signal/slot itt) - a db réteg
+    marad UI-mentes. A MainWindow egy sima Python callback-kel
+    iratkozik fel (lásd TransactionDatabase.on_save).
+    """
+
+    def __init__(self, raw_conn: sqlite3.Connection, owner: "TransactionDatabase") -> None:
+        self._raw = raw_conn
+        self._owner = owner
+
+    def commit(self) -> None:
+        self._raw.commit()
+        self._notified_this_block = True
+        self._owner._notify_saved()
+
+    def __enter__(self) -> "_TrackedConnection":
+        # "with self.get_db_connection() as conn:" minta támogatása.
+        # A sqlite3.Connection saját __enter__-je a nyers connection-t adná
+        # vissza (megkerülve ezt a wrappert), ezért itt kézzel visszaadjuk
+        # magunkat, hogy a blokkon belüli conn.commit() is nálunk fusson át.
+        self._notified_this_block = False
+        self._raw.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # A sqlite3.Connection __exit__-je hiba nélkül automatikusan commit-ol.
+        # Ha a blokkon belül már volt explicit conn.commit() hívás (ami a mi
+        # commit()-unkon ment át és már értesített), itt nem értesítünk újra.
+        was_already_notified = getattr(self, "_notified_this_block", False)
+        result = self._raw.__exit__(exc_type, exc_val, exc_tb)
+        if exc_type is None and not was_already_notified:
+            self._owner._notify_saved()
+        self._notified_this_block = False
+        return result
+
+    def __getattr__(self, name: str):
+        # Minden egyéb hívás (cursor, execute, close, rollback, row_factory...)
+        # simán a valódi sqlite3.Connection-re megy.
+        return getattr(self._raw, name)
+
+
 class TransactionDatabase:
     """
     SQLite tranzakció adatbázis.
@@ -197,14 +249,36 @@ class TransactionDatabase:
 
     def __init__(self, db_name: str = "finance_data.db") -> None:
         self.db_name = os.path.abspath(db_name)
+
+        # Utolsó sikeres mentés időpontja (str, "%Y-%m-%d %H:%M:%S") vagy None,
+        # ha még nem történt mentés ebben a folyamatban.
+        self.last_save_ts: str | None = None
+
+        # Feliratkozók listája, akiket értesítünk minden sikeres commit()-nál.
+        # Sima Python callable-ök (pl. statusbar frissítő függvény) - nincs Qt import itt.
+        self._on_save_callbacks: list = []
+
         self.initialize_db()
         self.ensure_account_valuations_table()
+
+    def on_save(self, callback) -> None:
+        """
+        Feliratkozás: a callback minden sikeres commit() után lefut,
+        egyetlen argumentummal (az új last_save_ts string-gel).
+        """
+        self._on_save_callbacks.append(callback)
+
+    def _notify_saved(self) -> None:
+        """Belső: last_save_ts frissítése és feliratkozók értesítése."""
+        self.last_save_ts = _now_ts()
+        for callback in list(self._on_save_callbacks):
+            callback(self.last_save_ts)
 
     def get_db_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_name)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
-        return conn
+        return _TrackedConnection(conn, self)
 
     # Helper:
     def _column_exists(self, cur: sqlite3.Cursor, table: str, column: str) -> bool:

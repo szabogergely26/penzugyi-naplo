@@ -54,19 +54,17 @@ from PySide6.QtCore import QEvent, QSettings, Qt, QTimer
 from PySide6.QtWidgets import (
     QPushButton,
     QButtonGroup,
-
-
     QDialog,
-
     QHBoxLayout,
     QLabel,
     QMainWindow,
-
     QMessageBox,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
+
+from datetime import datetime
 
 from penzugyi_naplo.config.config import (
     APP_NAME,
@@ -95,7 +93,6 @@ from penzugyi_naplo.ui.shared.nav_bar import NavBar
 from penzugyi_naplo.ui.shared.widgets.year_tabs_bar import YearTabsBar
 from penzugyi_naplo.ui.dialogs.log_viewer_dialog import LogViewerDialog
 from penzugyi_naplo.ui.dialogs.version_history_dialog import VersionHistoryDialog
-
 
 
 from penzugyi_naplo.ui.main_window.likviditas.register_pages import (
@@ -127,7 +124,6 @@ from penzugyi_naplo.ui.main_window.likviditas.backup_restore_handlers import (
 )
 
 
-
 # - Aranyszámla importok:
 
 from penzugyi_naplo.ui.main_window.aranyszamla.register_pages import (
@@ -145,8 +141,6 @@ from penzugyi_naplo.ui.main_window.aranyszamla.wizard.gold_trade_wizard import (
 # from pénzügyi_napló.db.transaction_database import TransactionDatabase
 
 
-
-
 class MainWindow(QMainWindow):
     """
     MainWindow váz:
@@ -162,9 +156,6 @@ class MainWindow(QMainWindow):
     ) -> None:
         super().__init__(parent)
 
-
-
-
         # --- Core állapot ---
         self.db: TransactionDatabase = db
         self.dev_mode = dev_mode
@@ -175,7 +166,6 @@ class MainWindow(QMainWindow):
             dev_mode=self.dev_mode,
         )
 
-
         # --- Debug/log (csak dev módban aktív) ---
         self.log = Log(
             DebugFlags(
@@ -183,7 +173,6 @@ class MainWindow(QMainWindow):
                 trace_page_stack=False,  # ezt csak akkor kapcsold be, ha kell
             )
         )
-
 
         self.pages: dict[str, QWidget] = {}
 
@@ -203,10 +192,6 @@ class MainWindow(QMainWindow):
         self._main_layout.setContentsMargins(0, 0, 0, 0)
         self._main_layout.setSpacing(0)
 
-
-
-
-
         # --- MODULVÁLASZTÓ PANEL ---
         self._module_panel = QWidget(self._central)
         self._module_panel.setObjectName("modulePanel")
@@ -215,7 +200,6 @@ class MainWindow(QMainWindow):
         self._module_layout = QVBoxLayout(self._module_panel)
         self._module_layout.setContentsMargins(8, 8, 8, 8)
         self._module_layout.setSpacing(12)
-
 
         # Alapértelmezett induló modul: Likviditás.
         self.current_module = "likviditas"
@@ -226,7 +210,6 @@ class MainWindow(QMainWindow):
 
         # Ha True, akkor az oldalsáv csak hover miatt van ideiglenesen kinyitva.
         self.module_sidebar_hover_expanded = False
-
 
         # Hamburger gomb a bal oldali modulválasztó sávhoz.
         # Később ez fogja nyitni/csukni az oldalsávot.
@@ -256,22 +239,16 @@ class MainWindow(QMainWindow):
         self.btn_module_aranyszamla.setObjectName("moduleButton")
         self.btn_module_aranyszamla.setMinimumHeight(54)
 
-
-
         self.module_button_group = QButtonGroup(self)
         self.module_button_group.setExclusive(True)
         self.module_button_group.addButton(self.btn_module_likviditas)
         self.module_button_group.addButton(self.btn_module_aranyszamla)
 
-
         self._module_layout.addWidget(self.btn_module_likviditas)
         self._module_layout.addWidget(self.btn_module_aranyszamla)
 
-
         # A gombok alatt is legyen hely, így középen maradnak.
         self._module_layout.addStretch(1)
-
-
 
         # --- BAL PANEL ---
         self._left_panel = QWidget(self._central)
@@ -314,7 +291,6 @@ class MainWindow(QMainWindow):
         # --- Actions + menü ---
         self._create_actions()
 
-
         self._build_menubar()
 
         # --- Standard / menüsoros eszköztár ---
@@ -323,7 +299,6 @@ class MainWindow(QMainWindow):
             Qt.ToolBarArea.TopToolBarArea,
             self.likviditas_standard_toolbar,
         )
-
 
         # --- LEFT: Year tabs (EGYSZER) ---
 
@@ -337,8 +312,6 @@ class MainWindow(QMainWindow):
             parent=self._left_panel,
         )
         self._left_layout.addWidget(self.year_tabs)
-
-
 
         # --- FULL WIDTH: ribbon ---
         self._build_ribbon()
@@ -355,6 +328,15 @@ class MainWindow(QMainWindow):
         self._build_pages()
         self._root_layout.addWidget(self.page_stack, 1)
 
+        # --- Globális statusbar: "Utolsó mentés" / "Utoljára betöltve" ---
+        self._build_statusbar()
+
+        # DB mentés-eseményeire feliratkozás (lásd TransactionDatabase.on_save).
+        # Minden sikeres commit() után ez frissíti a statusbar "Mentve" részét.
+        self.db.on_save(self._on_db_saved)
+
+        # Kezdeti "betöltve" időbélyeg: az app indulásakor most töltöttük be a DB-t.
+        self._mark_data_loaded()
 
         # --- Signalok + kezdő állapot ---
         self._connect_core_signals()
@@ -369,8 +351,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1440, 900)
 
         # Indításkor teljes méretű / maximalizált ablak.
-        #self.showMaximized()
-
+        # self.showMaximized()
 
         self.load_style_mode()
 
@@ -389,8 +370,6 @@ class MainWindow(QMainWindow):
         if self.dev_mode:
             self.log.flags.trace_page_stack = True
 
-
-
         # Hamburger menü események:
 
         # Egér ráhúzás / elhagyás figyelése az összecsukott oldalsávnál.
@@ -398,9 +377,6 @@ class MainWindow(QMainWindow):
 
         # kattintáskori művelet
         self.sidebar_toggle_button.clicked.connect(self.toggle_module_sidebar)
-
-
-
 
     def toggle_module_sidebar(self) -> None:
         """
@@ -422,7 +398,6 @@ class MainWindow(QMainWindow):
             self._set_module_sidebar_expanded(persistent=True)
         else:
             self._set_module_sidebar_collapsed()
-
 
     # segéd metódusok a sidebar-hoz:
 
@@ -452,7 +427,6 @@ class MainWindow(QMainWindow):
             self.sidebar_toggle_button.setToolTip("Oldalsáv rögzített kibontása")
             self.log.d("MODULE SIDEBAR: hover expanded")
 
-
     def _set_module_sidebar_collapsed(self) -> None:
         """
         Modulválasztó oldalsáv összecsukása.
@@ -468,8 +442,6 @@ class MainWindow(QMainWindow):
 
         self.sidebar_toggle_button.setToolTip("Oldalsáv kibontása")
         self.log.d("MODULE SIDEBAR: collapsed")
-
-
 
     def eventFilter(self, watched: object, event: QEvent) -> bool:
         """
@@ -492,14 +464,6 @@ class MainWindow(QMainWindow):
                 return False
 
         return super().eventFilter(watched, event)
-
-
-
-
-
-
-
-
 
     def apply_style_mode(self, mode: str) -> None:
         mode = (mode or "").strip().lower()
@@ -541,8 +505,6 @@ class MainWindow(QMainWindow):
             "Gold QSS:",
             str(gold_qss_path),
         )
-
-
 
     def load_style_mode(self) -> None:
         s = QSettings(ORG_NAME, APP_NAME)
@@ -602,9 +564,6 @@ class MainWindow(QMainWindow):
             if hasattr(bills, "reload"):
                 bills.reload()
 
-
-
-
     def _sync_left_year_offset(self) -> None:
         """
         Az év-sávot a jobb oldali modulon belüli navbar alá igazítja.
@@ -619,11 +578,85 @@ class MainWindow(QMainWindow):
 
         self._left_header_spacer.setFixedHeight(h + 16)
 
-
-
     def _build_navbar(self) -> None:
         self.navbar = NavBar(parent=self._right_panel)
 
+    def _build_statusbar(self) -> None:
+        """
+        Globális, oldalfüggetlen statusbar felépítése.
+
+        Jelenleg két állandó címke:
+            - "Utolsó mentés: ..."
+            - "Utoljára betöltve: ..."
+
+        Terv szerint később oldalanként bővíthető lesz (pl. jobb oldali
+        extra státusz-widget), ezért a bal oldali két címke egy külön
+        QWidget-be van szervezve, amit a QMainWindow beépített
+        statusBar()-jába teszünk - így később könnyen tehetünk mellé
+        oldal-specifikus tartalmat is, anélkül hogy ezt a részt bántani
+        kellene.
+        """
+
+        status_bar = self.statusBar()
+        status_bar.setObjectName("appStatusBar")
+
+        self._status_container = QWidget(status_bar)
+        status_layout = QHBoxLayout(self._status_container)
+        status_layout.setContentsMargins(8, 0, 8, 0)
+        status_layout.setSpacing(24)
+
+        self.status_last_saved_label = QLabel("Utolsó mentés: —")
+        self.status_last_saved_label.setObjectName("statusLastSavedLabel")
+        self.status_last_saved_label.setToolTip(
+            "Az adatbázis utolsó módosításának időpontja "
+            "(bármelyik oldalon történt mentés, nem a fájl-szintű biztonsági mentés/backup)."
+        )
+
+        self.status_last_loaded_label = QLabel("Utoljára betöltve: —")
+        self.status_last_loaded_label.setObjectName("statusLastLoadedLabel")
+
+        status_layout.addStretch(1)
+        status_layout.addWidget(self.status_last_saved_label)
+        status_layout.addWidget(self.status_last_loaded_label)
+
+        status_bar.addWidget(self._status_container, 1)
+
+    @staticmethod
+    def _format_status_ts(raw_ts: str) -> str:
+        """
+        DB-beli időbélyeg ("%Y-%m-%d %H:%M:%S") megjelenítő formátumra hozása.
+
+        Ha a formátum bármi miatt nem illeszkedik, az eredeti string-et
+        adjuk vissza, hogy a statusbar sose omoljon össze emiatt.
+        """
+        try:
+            dt = datetime.strptime(raw_ts, "%Y-%m-%d %H:%M:%S")
+            return dt.strftime("%Y.%m.%d %H:%M:%S")
+        except (ValueError, TypeError):
+            return raw_ts
+
+    def _on_db_saved(self, raw_ts: str) -> None:
+        """
+        A TransactionDatabase minden sikeres commit() után ezt hívja meg
+        (lásd db.on_save feliratkozás a konstruktorban).
+        """
+        self.status_last_saved_label.setText(
+            f"Utolsó mentés: {self._format_status_ts(raw_ts)}"
+        )
+
+    def _mark_data_loaded(self) -> None:
+        """
+        "Utoljára betöltve" időbélyeg frissítése a mostani pillanatra.
+
+        Hívási pontok: app indítás, adatbázis visszaállítás/reset,
+        illetve minden olyan hely, ahol ténylegesen új adat kerül
+        betöltésre a DB-ből (lásd reload_all_pages, on_restore_database,
+        on_reset_database).
+        """
+        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.status_last_loaded_label.setText(
+            f"Utoljára betöltve: {self._format_status_ts(now_ts)}"
+        )
 
     def _register_core_pages(self) -> None:
         """
@@ -649,8 +682,6 @@ class MainWindow(QMainWindow):
         self.navbar.pageRequested.connect(self.set_page)
         self.btn_module_likviditas.clicked.connect(self.switch_to_likviditas_module)
         self.btn_module_aranyszamla.clicked.connect(self.switch_to_aranyszamla_module)
-
-
 
     def add_page(self, key: str, page: QWidget) -> None:
         """Oldal regisztrálása a stackbe."""
@@ -707,8 +738,6 @@ class MainWindow(QMainWindow):
         elif hasattr(page, "refresh"):
             page.refresh()
 
-
-
     def _sync_module_buttons(self) -> None:
         """
         A bal oldali modulválasztó gombok vizuális állapotának frissítése.
@@ -732,7 +761,6 @@ class MainWindow(QMainWindow):
         self.btn_module_aranyszamla.style().unpolish(self.btn_module_aranyszamla)
         self.btn_module_aranyszamla.style().polish(self.btn_module_aranyszamla)
 
-
     def _sync_module_ui(self) -> None:
         """
         Az aktív modulhoz tartozó főablak-UI állapot szinkronizálása.
@@ -752,10 +780,6 @@ class MainWindow(QMainWindow):
         self._left_panel.setVisible(is_likviditas)
         self.navbar.setVisible(is_likviditas)
 
-
-
-
-
     def switch_to_likviditas_module(self) -> None:
         """
         Likviditás modul aktiválása.
@@ -767,9 +791,6 @@ class MainWindow(QMainWindow):
         # Likviditás kezdőoldal visszaállítása:
         self.set_page("home")
 
-
-
-
     def switch_to_aranyszamla_module(self) -> None:
         """
         Aranyszámla modul aktiválása.
@@ -779,11 +800,8 @@ class MainWindow(QMainWindow):
         self.current_module = "aranyszamla"
         self._sync_module_ui()
 
-
         # Aranyszámla kezdőoldal visszaállítása:
-        self.set_page("aranyszamla_home")        
-
-
+        self.set_page("aranyszamla_home")
 
     def set_active_year(self, year: int) -> None:
         self.state.active_year = int(year)
@@ -804,19 +822,13 @@ class MainWindow(QMainWindow):
         """Likviditás nézethez tartozó actionök létrehozása."""
         create_likviditas_actions(self)
 
-
-
-
     def _build_menubar(self) -> None:
         """Klasszikus menüsor felépítése."""
         build_likviditas_menubar(self)
 
-
     def _build_ribbon(self) -> None:
         """Ribbon felépítése."""
         build_likviditas_ribbon(self)
-
-
 
     def set_toolbar_mode(self, mode: str) -> None:
         """Toolbar mód beállítása."""
@@ -826,12 +838,9 @@ class MainWindow(QMainWindow):
         """Toolbar mód betöltése QSettings-ből."""
         load_likviditas_toolbar_mode(self)
 
-
     def on_import(self) -> None:
         """ODS tranzakció import indítása."""
         handle_ods_import(self)
-
-
 
     def on_export(self) -> None:
         QMessageBox.information(self, "Export", "Export funkció még nincs megírva.")
@@ -848,15 +857,12 @@ class MainWindow(QMainWindow):
                 page.reload()
 
     def on_backup_database(self) -> None:
-         """Adatbázis biztonsági mentése."""
-         handle_backup_database(self)
-
+        """Adatbázis biztonsági mentése."""
+        handle_backup_database(self)
 
     def on_restore_database(self) -> None:
         """Adatbázis betöltése"""
         handle_restore_database(self)
-
-
 
     def on_new_transaction(self) -> None:
         """Az aktív modulhoz tartozó új művelet varázslóját nyitja meg."""
@@ -872,8 +878,6 @@ class MainWindow(QMainWindow):
             # Minden regisztrált oldal frissül, amely támogatja a reload() függvényt.
             self.reload_all_pages()
 
-
-
     def on_new_gold_trade(self) -> None:
         """Aranyszámla modul: vétel/eladás varázsló megnyitása."""
 
@@ -886,9 +890,6 @@ class MainWindow(QMainWindow):
 
             if aranyszamla_page and hasattr(aranyszamla_page, "refresh"):
                 aranyszamla_page.refresh()
-
-
-
 
     def _build_pages(self) -> None:
         """Oldal-stack felépítése és az alap oldalak regisztrálása."""
@@ -918,6 +919,12 @@ class MainWindow(QMainWindow):
         from penzugyi_naplo.db.transaction_database import TransactionDatabase
 
         self.db = TransactionDatabase(str(db_path))
+
+        # Fontos: új TransactionDatabase példány = új, üres feliratkozó-lista,
+        # ezért a statusbar "Mentve" jelzését újra be kell kötni rá,
+        # különben a reset utáni mentések nem frissítenék a statusbart.
+        self.db.on_save(self._on_db_saved)
+
         self.reload_all_pages()
 
         # oldalak újrakötése
@@ -930,9 +937,6 @@ class MainWindow(QMainWindow):
 
         QMessageBox.information(self, "Számla részletek", f"Bill ID: {bill_id}")
 
-
-
-
     def reload_all_pages(self) -> None:
         """
         Az összes regisztrált oldal újrakötése és frissítése.
@@ -940,7 +944,6 @@ class MainWindow(QMainWindow):
         Új oldalnál elég reload() metódust adni az oldalnak,
         és automatikusan részt vesz a központi frissítésben.
         """
-
 
         for page in self.pages.values():
             bind_db = getattr(page, "bind_db", None)
@@ -952,6 +955,9 @@ class MainWindow(QMainWindow):
             if callable(reload_method):
                 reload_method()
 
+        # Ez a metódus ténylegesen újratölti az oldalakat a DB-ből,
+        # ezért itt frissítjük az "Utoljára betöltve" időbélyeget is.
+        self._mark_data_loaded()
 
     def show_settings_dialog(self) -> None:
         """
@@ -972,23 +978,11 @@ class MainWindow(QMainWindow):
         # a MainWindow stylesheetjét. Itt kézzel ráadjuk az aktuális témát.
         dialog.setStyleSheet(self.styleSheet())
 
-
-
         dialog.exec()
-
-
-
-
-
-
-
-
-
 
     def _show_about(self):
         dlg = AboutDialog(self)
         dlg.exec()
-
 
     def _show_version_info(self):
         dlg = VersionInfoDialog(self)
@@ -997,7 +991,6 @@ class MainWindow(QMainWindow):
     def show_log_viewer(self) -> None:
         dialog = LogViewerDialog(self)
         dialog.exec()
-
 
     def _show_version_history(self) -> None:
         dialog = VersionHistoryDialog(self)

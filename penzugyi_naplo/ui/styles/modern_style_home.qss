@@ -1386,3 +1386,32 @@ QRadioButton#transactionWizardPlainRadio::indicator:checked {
         stop: 1 #ffffff
     );
 }
+
+/* ------------------------------------------------------------ */
+/* Globális statusbar (Utolsó mentés / Utoljára betöltve)        */
+/* ------------------------------------------------------------ */
+
+QStatusBar#appStatusBar {
+    background-color: #f7f9fc;
+    border-top: 1px solid #dfe4ea;
+}
+
+QLabel#statusLastSavedLabel,
+QLabel#statusLastLoadedLabel {
+    color: #6d5c4d;
+    padding: 2px 4px;
+}
+
+/* ------------------------------------------------------------ */
+/* Tooltip - globális, hogy minden widgeten (pl. statusbar        */
+/* címkéken) olvasható kontraszttal jelenjen meg, a rendszer       */
+/* sötét témájú alapértelmezése helyett.                          */
+/* ------------------------------------------------------------ */
+
+QToolTip {
+    background-color: #243042;
+    color: #ffffff;
+    border: 1px solid #12637a;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
