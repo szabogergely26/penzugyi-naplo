@@ -59,7 +59,7 @@ class NavBar(QWidget):
         b.setObjectName("navButton")
         b.setCheckable(True)
         b.setAutoExclusive(True)
-        b.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        b.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         b.clicked.connect(lambda checked, k=key: self.pageRequested.emit(k))
         return b
 

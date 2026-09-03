@@ -33,7 +33,7 @@ class LogViewerDialog(QDialog):
         self.log_path = Path(get_log_file_path())
 
         self.path_label = QLabel()
-        self.path_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.path_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.path_label.setWordWrap(True)
 
         self.editor = QPlainTextEdit()

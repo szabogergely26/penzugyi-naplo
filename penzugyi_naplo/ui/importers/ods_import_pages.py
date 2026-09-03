@@ -415,7 +415,7 @@ class RowSetupPage(QWizardPage):
             "és honnan indulnak az adatok."
             "</span>"
         )
-        self.warning_label.setTextFormat(Qt.RichText)
+        self.warning_label.setTextFormat(Qt.TextFormat.RichText)
         self.warning_label.setWordWrap(True)
 
         # Magyarázó blokk.
@@ -434,7 +434,7 @@ class RowSetupPage(QWizardPage):
 
             "<b>A feldolgozott import-előnézet</b> a következő oldalon jelenik meg."
         )
-        self.info_label.setTextFormat(Qt.RichText)
+        self.info_label.setTextFormat(Qt.TextFormat.RichText)
         self.info_label.setWordWrap(True)
 
 
@@ -475,14 +475,14 @@ class RowSetupPage(QWizardPage):
             header_text_label,
             data_start_text_label,
         ):
-            label.setTextFormat(Qt.RichText)
+            label.setTextFormat(Qt.TextFormat.RichText)
 
         summary_layout.addWidget(self.sheet_info_label, 0, 0)
-        summary_layout.addWidget(header_text_label, 0, 1, alignment=Qt.AlignRight)
+        summary_layout.addWidget(header_text_label, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
         summary_layout.addWidget(self.header_row_spin, 0, 2)
 
         summary_layout.addWidget(self.loaded_rows_label, 1, 0)
-        summary_layout.addWidget(data_start_text_label, 1, 1, alignment=Qt.AlignRight)
+        summary_layout.addWidget(data_start_text_label, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
         summary_layout.addWidget(self.data_start_row_spin, 1, 2)
 
         summary_layout.setColumnStretch(0, 1)

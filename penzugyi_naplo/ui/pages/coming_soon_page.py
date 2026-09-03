@@ -16,7 +16,7 @@ class ComingSoonPage(QWidget):
 
         h1 = QLabel(title)
         h1.setObjectName("comingSoonTitle")
-        h1.setAlignment(Qt.AlignLeft)
+        h1.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         box = QFrame()
         box.setObjectName("comingSoonBox")
@@ -36,5 +36,5 @@ class ComingSoonPage(QWidget):
         box_lay.addWidget(hint)
 
         lay.addWidget(h1)
-        lay.addWidget(box, 0, Qt.AlignTop)
+        lay.addWidget(box, 0, Qt.AlignmentFlag.AlignTop)
         lay.addStretch(1)

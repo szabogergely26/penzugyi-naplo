@@ -60,7 +60,7 @@ class YearTabsBar(QWidget):
         self._all_years_button.setObjectName("yearTabButton")
         self._all_years_button.setCheckable(True)
         self._all_years_button.setAutoExclusive(True)
-        self._all_years_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._all_years_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self._all_years_button.clicked.connect(
             lambda checked: self.set_all_years_active(emit=True)
         )
@@ -73,7 +73,7 @@ class YearTabsBar(QWidget):
             btn.setObjectName("yearTabButton")
             btn.setCheckable(True)
             btn.setAutoExclusive(True)  # egyszerre csak 1 legyen aktív
-            btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             btn.clicked.connect(
                 lambda checked, year=y: self.set_active_year(year, emit=True)
             )
@@ -178,7 +178,7 @@ class YearTabsBar(QWidget):
         self._all_years_button.setObjectName("yearTabButton")
         self._all_years_button.setCheckable(True)
         self._all_years_button.setAutoExclusive(True)
-        self._all_years_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._all_years_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self._all_years_button.clicked.connect(
             lambda checked: self.set_all_years_active(emit=True)    
         )
@@ -199,7 +199,7 @@ class YearTabsBar(QWidget):
             btn.setObjectName("yearTabButton")
             btn.setCheckable(True)
             btn.setAutoExclusive(True)
-            btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             btn.clicked.connect(
                 lambda checked, year=y: self.set_active_year(year, emit=True)
             )

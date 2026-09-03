@@ -89,8 +89,8 @@ class SettingsDialog(QDialog):
         
         
         sep = QFrame(self)
-        sep.setFrameShape(QFrame.HLine)
-        sep.setFrameShadow(QFrame.Sunken)
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
         root.addWidget(sep)
 
         # --- 1) Felület: Menüsor / Szalag ---

@@ -195,11 +195,11 @@ class MainWindow(QMainWindow):
         self.sidebar_toggle_button = QPushButton("☰")
         self.sidebar_toggle_button.setObjectName("sidebarToggleButton")
         self.sidebar_toggle_button.setFixedSize(36, 36)
-        self.sidebar_toggle_button.setCursor(Qt.PointingHandCursor)
+        self.sidebar_toggle_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.sidebar_toggle_button.setToolTip("Oldalsáv összecsukása / kibontása")
 
         # A hamburger mindig a modulpanel tetején legyen.
-        self._module_layout.addWidget(self.sidebar_toggle_button, 0, Qt.AlignHCenter)
+        self._module_layout.addWidget(self.sidebar_toggle_button, 0, Qt.AlignmentFlag.AlignHCenter)
 
         # Kis térköz a hamburger alatt.
         self._module_layout.addSpacing(40)
@@ -619,9 +619,7 @@ class MainWindow(QMainWindow):
         A TransactionDatabase minden sikeres commit() után ezt hívja meg
         (lásd db.on_save feliratkozás a konstruktorban).
         """
-        self.status_last_saved_label.setText(
-            f"Utolsó mentés: {self._format_status_ts(raw_ts)}"
-        )
+        self.status_last_saved_label.setText(f"Utolsó mentés: {self._format_status_ts(raw_ts)}")
 
     def _mark_data_loaded(self) -> None:
         """
@@ -826,12 +824,12 @@ class MainWindow(QMainWindow):
 
     def _rebind_db_to_pages(self) -> None:
         # ahol van bind_db, ott új DB-t adunk át
-        for key, page in self.pages.items():
+        for page in self.pages.values():
             if hasattr(page, "bind_db"):
                 page.bind_db(self.db)
 
         # és frissítsünk mindent, ami tud reload-ot
-        for key, page in self.pages.items():
+        for page in self.pages.values():
             if hasattr(page, "reload"):
                 page.reload()
 

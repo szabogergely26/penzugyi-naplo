@@ -35,8 +35,8 @@ def v_separator(
     
     sep = QFrame(parent)
     sep.setObjectName(object_name)
-    sep.setFrameShape(QFrame.VLine)
-    sep.setFrameShadow(QFrame.Plain)
+    sep.setFrameShape(QFrame.Shape.VLine)
+    sep.setFrameShadow(QFrame.Shadow.Plain)
     return sep
 
 

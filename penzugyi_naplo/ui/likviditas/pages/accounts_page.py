@@ -46,15 +46,15 @@ if TYPE_CHECKING:
 
 def _hline(parent: QWidget | None = None) -> QFrame:
     line = QFrame(parent)
-    line.setFrameShape(QFrame.HLine)
-    line.setFrameShadow(QFrame.Sunken)
+    line.setFrameShape(QFrame.Shape.HLine)
+    line.setFrameShadow(QFrame.Shadow.Sunken)
     return line
 
 
 def _vline(parent: QWidget | None = None) -> QFrame:
     line = QFrame(parent)
-    line.setFrameShape(QFrame.VLine)
-    line.setFrameShadow(QFrame.Sunken)
+    line.setFrameShape(QFrame.Shape.VLine)
+    line.setFrameShadow(QFrame.Shadow.Sunken)
     return line
 
 

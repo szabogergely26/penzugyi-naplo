@@ -182,7 +182,7 @@ class SettingsPage(QWidget):
         layout.addWidget(self.chk_dev_mode)
 
         sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
+        sep.setFrameShape(QFrame.Shape.HLine)
         layout.addWidget(sep)
 
         # DB paths

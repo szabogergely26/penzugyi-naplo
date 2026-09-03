@@ -99,7 +99,7 @@ class TransactionEditor(QDialog):
         self.layout.addLayout(form_layout)
 
         # --- Buttons ---
-        button_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         button_box.accepted.connect(self.save_changes)
         button_box.rejected.connect(self.reject)
         self.layout.addWidget(button_box)

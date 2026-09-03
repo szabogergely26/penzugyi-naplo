@@ -167,7 +167,7 @@ class HomePage(QWidget):
         title = QLabel("Kezdőoldal")
         title.setObjectName("pageTitle")
         title.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        title.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        title.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
         subtitle = QLabel("Havi összesítők az aktív év tranzakcióiból.")
         subtitle.setObjectName("pageSubtitle")
@@ -175,7 +175,7 @@ class HomePage(QWidget):
 
         content = QFrame()
         content.setObjectName("homeContent")
-        content.setFrameShape(QFrame.NoFrame)
+        content.setFrameShape(QFrame.Shape.NoFrame)
 
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -188,7 +188,7 @@ class HomePage(QWidget):
         btn = QPushButton("Táblázatos nézet")
         btn.setObjectName("secondaryButton")
         btn.setMaximumWidth(180)
-        btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         btn.clicked.connect(self.open_table_dialog)
 
         content_layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignRight)
@@ -276,7 +276,7 @@ class HomePage(QWidget):
     def _build_cards_view(self) -> QWidget:
         wrapper = QFrame()
         wrapper.setObjectName("homeCardsWrapper")
-        wrapper.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        wrapper.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         layout = QVBoxLayout(wrapper)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -366,7 +366,7 @@ class HomePage(QWidget):
         card = QFrame()
         card.setObjectName("monthSummaryCard")
         card.setProperty("hoverable", True)
-        card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         card.setMinimumHeight(200)
 
         layout = QVBoxLayout(card)
@@ -383,7 +383,7 @@ class HomePage(QWidget):
         card = QFrame()
         card.setObjectName("monthSummaryCard")
         card.setProperty("hoverable", True)
-        card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         card.setMinimumHeight(200)
 
         layout = QVBoxLayout(card)
@@ -578,7 +578,7 @@ class HomePage(QWidget):
 
         outer_card = QFrame()
         outer_card.setObjectName("homeTableCard")
-        outer_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        outer_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         outer_layout = QVBoxLayout(outer_card)
         outer_layout.setContentsMargins(12, 12, 12, 12)
@@ -589,7 +589,7 @@ class HomePage(QWidget):
         outer_layout.addWidget(title)
 
         rows_host = QWidget()
-        rows_host.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        rows_host.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         rows_layout = QVBoxLayout(rows_host)
         rows_layout.setContentsMargins(0, 0, 0, 0)
@@ -598,7 +598,7 @@ class HomePage(QWidget):
 
         for i in range(0, len(rows), 2):
             row_wrap = QWidget()
-            row_wrap.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            row_wrap.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
             row_layout = QHBoxLayout(row_wrap)
             row_layout.setContentsMargins(0, 0, 0, 0)
@@ -612,7 +612,7 @@ class HomePage(QWidget):
                 row_layout.addWidget(right_card, 1)
             else:
                 spacer = QWidget()
-                spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+                spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
                 row_layout.addWidget(spacer, 1)
 
             row_wrap.setMinimumHeight(210)   # vagy 220
@@ -620,7 +620,7 @@ class HomePage(QWidget):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True) 
-        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setWidget(rows_host)
 
@@ -637,7 +637,7 @@ class HomePage(QWidget):
 
 
     def _open_month_details(self, event, row: HomeSummaryRow) -> None:
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             dlg = MonthDetailsDialog(row, self.ctx, self)
             dlg.exec()
 

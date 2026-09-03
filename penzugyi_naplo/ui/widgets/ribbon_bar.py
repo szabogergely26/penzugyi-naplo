@@ -76,13 +76,13 @@ class RibbonBar(QWidget):
         # --- Elválasztók (két külön példány) ---
         line_top = QFrame(self)
         line_top.setObjectName("ribbonLineTop")
-        line_top.setFrameShape(QFrame.HLine)
-        line_top.setFrameShadow(QFrame.Sunken)
+        line_top.setFrameShape(QFrame.Shape.HLine)
+        line_top.setFrameShadow(QFrame.Shadow.Sunken)
 
         line_bottom = QFrame(self)
         line_bottom.setObjectName("ribbonLineBottom")
-        line_bottom.setFrameShape(QFrame.HLine)
-        line_bottom.setFrameShadow(QFrame.Sunken)
+        line_bottom.setFrameShape(QFrame.Shape.HLine)
+        line_bottom.setFrameShadow(QFrame.Shadow.Sunken)
 
         # --- Layout ---
         root = QVBoxLayout(self)
@@ -97,8 +97,8 @@ class RibbonBar(QWidget):
         self.tabbar.currentChanged.connect(self.stack.setCurrentIndex)
 
         # Magasság: legyen stabil, de ne roppanjon
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        self.stack.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.stack.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
         self._expanded_height = 128
         self._collapsed_extra_height = 45
@@ -134,12 +134,12 @@ class RibbonBar(QWidget):
         btn = QToolButton(tab_page)
         btn.setDefaultAction(action)
         btn.setToolButtonStyle(
-            Qt.ToolButtonTextUnderIcon
+            Qt.ToolButtonStyle.ToolButtonTextUnderIcon
             if text_under_icon
-            else Qt.ToolButtonTextBesideIcon
+            else Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
         btn.setAutoRaise(False)
-        btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         # a stretch elé szúrjuk (utolsó elem a stretch)
         lay.insertWidget(lay.count() - 1, btn)
@@ -172,9 +172,9 @@ class RibbonBar(QWidget):
         lay.insertSpacing(lay.count() - 1, spacing)
 
         sep = QFrame(tab_page)
-        sep.setFrameShape(QFrame.VLine)
-        sep.setFrameShadow(QFrame.Sunken)
-        sep.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        sep.setFrameShape(QFrame.Shape.VLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
+        sep.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
 
         lay.insertWidget(lay.count() - 1, sep)
         lay.insertSpacing(lay.count() - 1, spacing)

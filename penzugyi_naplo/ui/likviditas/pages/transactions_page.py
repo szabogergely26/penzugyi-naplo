@@ -216,16 +216,16 @@ class TransactionsPage(QWidget):
         header = self.table.horizontalHeader()
 
         # méretezések – importált régi adatokhoz is stabil
-        header.setSectionResizeMode(0, QHeaderView.Fixed)        # Jelzés
-        header.setSectionResizeMode(1, QHeaderView.Fixed)        # Dátum
-        header.setSectionResizeMode(2, QHeaderView.Interactive)  # Név
-        header.setSectionResizeMode(3, QHeaderView.Fixed)        # Kategória
-        header.setSectionResizeMode(4, QHeaderView.Fixed)        # Egységár
-        header.setSectionResizeMode(5, QHeaderView.Fixed)        # Db
-        header.setSectionResizeMode(6, QHeaderView.Fixed)        # Összesen
-        header.setSectionResizeMode(7, QHeaderView.Interactive)  # Leírás
-        header.setSectionResizeMode(8, QHeaderView.Fixed)        # Típus
-        header.setSectionResizeMode(9, QHeaderView.Fixed)        # Műveletek
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)        # Jelzés
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)        # Dátum
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)  # Név
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)        # Kategória
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)        # Egységár
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)        # Db
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)        # Összesen
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Interactive)  # Leírás
+        header.setSectionResizeMode(8, QHeaderView.ResizeMode.Fixed)        # Típus
+        header.setSectionResizeMode(9, QHeaderView.ResizeMode.Fixed)        # Műveletek
 
         self.table.setColumnWidth(0, 28)     # Jelzés
         self.table.setColumnWidth(1, 105)    # Dátum
