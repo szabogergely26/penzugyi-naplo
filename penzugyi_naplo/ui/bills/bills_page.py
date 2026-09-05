@@ -314,9 +314,6 @@ class BillMonthRow(QFrame):
             invoice_value.setObjectName("billMonthMetaInvoiceValue")
             line.addWidget(invoice_value)
 
-            entry_id = _get_attr(item, "entry_id", None)
-
-
             # Szerkesztés / Törlés gombok (csak akkor, ha van entry_id)
             edit_btn = QPushButton("✎ Szerkesztés")
             edit_btn.setObjectName("billMonthMetaEditButton")
