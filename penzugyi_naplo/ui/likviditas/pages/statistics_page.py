@@ -597,10 +597,7 @@ class StatisticsPage(QWidget):
 
         saving = income_total - expense_total
 
-        if income_total > 0:
-            saving_rate = (saving / income_total) * 100
-        else:
-            saving_rate = 0.0
+        saving_rate = (saving / income_total) * 100 if income_total > 0 else 0.0
 
         period_label = self._period_label(
             active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
@@ -645,10 +642,7 @@ class StatisticsPage(QWidget):
         """
         saving = income_total - expense_total
 
-        if income_total > 0:
-            saving_rate = (saving / income_total) * 100
-        else:
-            saving_rate = 0.0
+        saving_rate = (saving / income_total) * 100 if income_total > 0 else 0.0
 
         label = period_label if period_label is not None else str(year)
 

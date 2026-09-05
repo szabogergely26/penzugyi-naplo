@@ -143,10 +143,7 @@ class GoldTradeWizard(QWizard):
         note = str(self.field("note") or "").strip()
 
         if is_product_purchase:
-            if note:
-                note = f"Termékvásárlás: {note}"
-            else:
-                note = "Termékvásárlás"
+            note = f"Termékvásárlás: {note}" if note else "Termékvásárlás"
 
 
 
