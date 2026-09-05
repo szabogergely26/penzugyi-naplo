@@ -421,6 +421,56 @@ QHeaderView::section {
     font-weight: 600;
 }
 
+/* ========== Excel-szerű oszlopszűrő menü (jobb-klikk a fejlécen) ========== */
+/* Tranzakciók oldal: Dátum / Kategória / Típus oszlop fejlécére jobb-klikkre
+   megnyíló, checkbox-listás szűrő menü. Lásd:
+   penzugyi_naplo/ui/shared/widgets/column_filter_menu.py */
+
+#columnFilterMenu {
+    background-color: #ffffff;
+    border: 1px solid #d9e2ec;
+    border-radius: 10px;
+    padding: 4px;
+}
+
+#columnFilterScrollArea {
+    background: transparent;
+    border: none;
+}
+
+#columnFilterCheckbox,
+#columnFilterYearCheckbox,
+#columnFilterMonthCheckbox {
+    color: #243042;
+    padding: 3px 4px;
+    border-radius: 6px;
+}
+
+#columnFilterCheckbox:hover,
+#columnFilterYearCheckbox:hover,
+#columnFilterMonthCheckbox:hover {
+    background-color: #eef4fb;
+}
+
+/* "Év" sor a Dátum-szűrőben - vastagabb, kicsit erősebb szín, hogy
+   vizuálisan is elüljön a hónap-sorok fölötti csoport-fejlécként */
+#columnFilterYearCheckbox {
+    color: #1d2a3a;
+    font-weight: 700;
+}
+
+#columnFilterQuickButton {
+    color: #1d4ed8;
+    font-weight: 600;
+    padding: 2px 8px;
+    border: none;
+    background: transparent;
+}
+
+#columnFilterQuickButton:hover {
+    text-decoration: underline;
+}
+
 
 
 
