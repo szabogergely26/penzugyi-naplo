@@ -455,10 +455,10 @@ class PageDetails(QWizardPage):
                 QMessageBox.warning(
                     self,
                     "Hibás sor",
-                    "Hibás részlet sor a(z) %d. sorban.\n\n"
+                    f"Hibás részlet sor a(z) {idx}. sorban.\n\n"
                     "Használható formátumok:\n"
                     "  tételnév;egységár*db   (pl. rágó;349*3)\n"
-                    "  tételnév;egységár      (pl. kávé;450)" % idx,
+                    "  tételnév;egységár      (pl. kávé;450)",
                 )
                 return False
         return True
