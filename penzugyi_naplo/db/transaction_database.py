@@ -806,22 +806,21 @@ class TransactionDatabase:
                         }
                     )
 
-            elif category_name in PERIODIC_BILLS:
-                if 1 <= month <= 12:
-                    periodic_map[category_name].append(
-                        PeriodicAmount(
-                            entry_id=int(row["id"]),
-                            month=month,
-                            start=period_start or tx_date,
-                            end=period_end or tx_date,
-                            amount=amount,
-                            invoice_number=invoice_number,
-                            is_paid=True,
-                            is_correction=is_correction,
-                            meter_m3=meter_m3,
-                            meter_mj=meter_mj,
-                        )
+            elif category_name in PERIODIC_BILLS and 1 <= month <= 12:
+                periodic_map[category_name].append(
+                    PeriodicAmount(
+                        entry_id=int(row["id"]),
+                        month=month,
+                        start=period_start or tx_date,
+                        end=period_end or tx_date,
+                        amount=amount,
+                        invoice_number=invoice_number,
+                        is_paid=True,
+                        is_correction=is_correction,
+                        meter_m3=meter_m3,
+                        meter_mj=meter_mj,
                     )
+                )
 
         models: list[BillCardModel] = []
 
