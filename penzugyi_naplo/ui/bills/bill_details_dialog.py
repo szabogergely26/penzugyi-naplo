@@ -10,13 +10,13 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
-    QLabel,
-    QPushButton,
     QHeaderView,
+    QLabel,
+    QMessageBox,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
-    QMessageBox,
 )
 
 from .bill_models import BillCardModel
@@ -28,8 +28,7 @@ class BillDetailsDialog(QDialog):
     def __init__(self, model: BillCardModel, parent=None, db=None) -> None:
         super().__init__(parent)
         self.model = model
-        self.db=db
-        
+        self.db = db
 
         self.setWindowTitle(f"Számla részletek – {model.name}")
         self.resize(920, 520)
@@ -44,12 +43,14 @@ class BillDetailsDialog(QDialog):
 
         self.table = QTableWidget(self)
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels([
-            "Hónap",
-            "Időszak",
-            "Összeg",
-            "Megjegyzés",
-        ])
+        self.table.setHorizontalHeaderLabels(
+            [
+                "Hónap",
+                "Időszak",
+                "Összeg",
+                "Megjegyzés",
+            ]
+        )
 
         self.table.verticalHeader().setVisible(False)
         self.table.setAlternatingRowColors(True)
@@ -67,7 +68,6 @@ class BillDetailsDialog(QDialog):
 
         btn_row = QHBoxLayout()
         btn_row.addStretch()
-
 
         # Gombok az ablak alján:
 
@@ -106,9 +106,6 @@ class BillDetailsDialog(QDialog):
             self.table.setItem(row_idx, 2, item_amount)
             self.table.setItem(row_idx, 3, item_note)
 
-
-
-
     def _build_rows(self) -> list[dict[str, str]]:
         rows: list[dict[str, str]] = []
 
@@ -126,15 +123,12 @@ class BillDetailsDialog(QDialog):
 
         elif self.model.kind == "periodic":
             for item in self.model.periodic or []:
-                if item.start and item.end:
-                    period_text = f"{item.start} – {item.end}"
-                else:
-                    period_text = ""
+                period_text = f"{item.start} – {item.end}" if item.start and item.end else ""
 
                 note_parts = []
 
                 if item.invoice_number:
-                   note_parts.append(f"Számla sorszám: {item.invoice_number}")
+                    note_parts.append(f"Számla sorszám: {item.invoice_number}")
 
                 if item.is_paid:
                     note_parts.append("Fizetve")
@@ -155,16 +149,12 @@ class BillDetailsDialog(QDialog):
 
         return rows
 
-
-
-
     @staticmethod
     def _fmt_amount(value: object) -> str:
         try:
             return f"{float(value):,.0f} Ft".replace(",", " ")
         except Exception:
             return "0 Ft"
-        
 
     def _delete_selected_row(self) -> None:
         row = self.table.currentRow()
@@ -191,13 +181,9 @@ class BillDetailsDialog(QDialog):
         msg.setWindowTitle("Számlabejegyzés törlése")
         msg.setText("Biztosan törlöd ezt a számlabejegyzést?")
         msg.setInformativeText(
-            f"Hónap: {month_text}\n"
-            f"Időszak: {period_text}\n"
-            f"Összeg: {amount_text}"
+            f"Hónap: {month_text}\nIdőszak: {period_text}\nÖsszeg: {amount_text}"
         )
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg.setDefaultButton(QMessageBox.StandardButton.No)
 
         if msg.exec() != QMessageBox.StandardButton.Yes:

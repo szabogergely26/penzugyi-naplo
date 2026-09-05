@@ -44,11 +44,13 @@ class PageBillProvider(QWizardPage):
         self.setTitle("Számlabefizetés")
         self.setSubTitle("Válaszd ki a célszámlát / szolgáltatót.")
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "🧾",
-            "Számlabefizetés",
-            "Válaszd ki, melyik számlát vagy szolgáltatót fizeted be.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "🧾",
+                "Számlabefizetés",
+                "Válaszd ki, melyik számlát vagy szolgáltatót fizeted be.",
+            )
         )
 
         label = QLabel("Célszámla / szolgáltató")
@@ -103,11 +105,13 @@ class PageBillMvmType(QWizardPage):
         self.setTitle("MVMNext")
         self.setSubTitle("Válaszd ki: villany vagy gáz.")
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "⚡",
-            "MVMNext",
-            "Válaszd ki, hogy villany vagy gáz számlát rögzítesz.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "⚡",
+                "MVMNext",
+                "Válaszd ki, hogy villany vagy gáz számlát rögzítesz.",
+            )
         )
 
         label = QLabel("Milyen MVMNext számlát fizetsz?")
@@ -144,11 +148,13 @@ class PageAmount(QWizardPage):
         self.setSubTitle("Adja meg a tranzakció értékét (csak pozitív számot).")
         self.setFinalPage(True)
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "💵",
-            "Összeg rögzítése",
-            "Add meg a tranzakció értékét.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "💵",
+                "Összeg rögzítése",
+                "Add meg a tranzakció értékét.",
+            )
         )
 
         # ---- Bill mód mezők (alapesetben rejtve) ----
@@ -294,7 +300,8 @@ class PageAmount(QWizardPage):
                     QMessageBox.warning(
                         self,
                         "Hiba",
-                        "Érvénytelen időszak kezdete! Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
+                        "Érvénytelen időszak kezdete! "
+                        "Használj YYYY-M-D vagy YYYY-MM-DD formátumot.",
                     )
                     return False
 

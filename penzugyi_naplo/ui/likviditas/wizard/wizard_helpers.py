@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import re
 
-from PySide6.QtCore import Qt, QLocale
+from PySide6.QtCore import QLocale, Qt
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -29,7 +29,6 @@ from PySide6.QtWidgets import (
 )
 
 from penzugyi_naplo.core.utils import parse_amount
-
 
 # ---------------------------------------------------------------------------
 # Részletek sor parszolás

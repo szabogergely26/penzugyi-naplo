@@ -33,12 +33,10 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-
 from datetime import datetime
-from typing import Optional
 
 
-def is_valid_date(date_str: str) -> Optional[str]:
+def is_valid_date(date_str: str) -> str | None:
     """
     Ellenőrzi, hogy a dátum 'YYYY-M-D' vagy 'YYYY-MM-DD' formátumú-e,
     és normalizálja 'YYYY-MM-DD' formátumra.

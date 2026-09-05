@@ -18,7 +18,7 @@ Megjegyzés:
 from __future__ import annotations
 
 from datetime import date
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -46,24 +46,26 @@ if TYPE_CHECKING:
 
 def _hline(parent: QWidget | None = None) -> QFrame:
     line = QFrame(parent)
-    line.setFrameShape(QFrame.HLine)
-    line.setFrameShadow(QFrame.Sunken)
+    line.setFrameShape(QFrame.Shape.HLine)
+    line.setFrameShadow(QFrame.Shadow.Sunken)
     return line
 
 
 def _vline(parent: QWidget | None = None) -> QFrame:
     line = QFrame(parent)
-    line.setFrameShape(QFrame.VLine)
-    line.setFrameShadow(QFrame.Sunken)
+    line.setFrameShape(QFrame.Shape.VLine)
+    line.setFrameShadow(QFrame.Shadow.Sunken)
     return line
 
 
 class AccountsPage(BasePage):
     """Egyszerű Accounts/Wallets oldal."""
 
-    def __init__(self, parent: Optional[QWidget] = None, *, db: Optional["TransactionDatabase"] = None, ) -> None:
+    def __init__(
+        self, parent: QWidget | None = None, *, db: TransactionDatabase | None = None
+    ) -> None:
         super().__init__(parent)
-        self._db: Optional["TransactionDatabase"] = db
+        self._db: TransactionDatabase | None = db
 
         self._year = None
         
@@ -273,7 +275,7 @@ class AccountsPage(BasePage):
         lay.addWidget(value)
         return box, value
 
-    def bind_db(self, db: "TransactionDatabase") -> None:
+    def bind_db(self, db: TransactionDatabase) -> None:
         self._db = db
 
     def reload(self) -> None:

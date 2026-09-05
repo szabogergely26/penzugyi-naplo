@@ -26,8 +26,6 @@ Topology (UI):
 
 from __future__ import annotations
 
-from typing import Optional
-
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -56,7 +54,7 @@ class TransactionsFilterBar(QWidget):
     searchRequested = Signal(str, bool)
     clearRequested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         layout = QHBoxLayout(self)

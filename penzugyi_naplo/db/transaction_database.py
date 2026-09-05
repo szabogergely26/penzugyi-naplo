@@ -58,7 +58,6 @@ Tudatosan NEM UI-függő:
 """
 
 from __future__ import annotations
-from typing import Any
 
 import contextlib
 import os
@@ -66,15 +65,14 @@ import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import Any
 
+from penzugyi_naplo.db.gold_database import ensure_gold_tables
 from penzugyi_naplo.ui.bills.bill_models import (
     BillCardModel,
     MonthlyAmount,
     PeriodicAmount,
 )
-
-from penzugyi_naplo.db.gold_database import ensure_gold_tables
-
 
 # ----------------------------
 # B modell:
@@ -187,6 +185,64 @@ class TransactionRow:
     category_id: int
 
 
+class _TrackedConnection:
+    """
+    Vékony wrapper egy sqlite3.Connection köré.
+
+    Cél: a TransactionDatabase minden write-ja ugyanazon a
+    get_db_connection()-ön keresztül megy, ezért itt, a commit()
+    elkapásával egyetlen ponton tudjuk jelezni "DB-módosítás történt".
+
+    FONTOS: ez a "módosítás történt" jelzés NEM azonos a kézi biztonsági
+    mentéssel (backup)! Ez minden sima tétel-rögzítésre/módosításra is
+    lefut. A statusbar "Utolsó mentés" feliratát NEM ez vezérli, hanem
+    a TransactionDatabase.on_backup() / mark_backup_done() explicit
+    mechanizmusa, amit csak a kézi backup készítése hív meg.
+
+    Minden más metódushívást (cursor, execute, close, stb.)
+    változtatás nélkül továbbenged a valódi kapcsolatnak,
+    így a meglévő 20+ write metódust nem kellett egyenként módosítani.
+
+    Tudatosan NEM Qt-függő (nincs signal/slot itt) - a db réteg
+    marad UI-mentes. A MainWindow egy sima Python callback-kel
+    iratkozik fel (lásd TransactionDatabase.on_save / on_backup / on_restore).
+    """
+
+    def __init__(self, raw_conn: sqlite3.Connection, owner: TransactionDatabase) -> None:
+        self._raw = raw_conn
+        self._owner = owner
+
+    def commit(self) -> None:
+        self._raw.commit()
+        self._notified_this_block = True
+        self._owner._notify_saved()
+
+    def __enter__(self) -> _TrackedConnection:
+        # "with self.get_db_connection() as conn:" minta támogatása.
+        # A sqlite3.Connection saját __enter__-je a nyers connection-t adná
+        # vissza (megkerülve ezt a wrappert), ezért itt kézzel visszaadjuk
+        # magunkat, hogy a blokkon belüli conn.commit() is nálunk fusson át.
+        self._notified_this_block = False
+        self._raw.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # A sqlite3.Connection __exit__-je hiba nélkül automatikusan commit-ol.
+        # Ha a blokkon belül már volt explicit conn.commit() hívás (ami a mi
+        # commit()-unkon ment át és már értesített), itt nem értesítünk újra.
+        was_already_notified = getattr(self, "_notified_this_block", False)
+        result = self._raw.__exit__(exc_type, exc_val, exc_tb)
+        if exc_type is None and not was_already_notified:
+            self._owner._notify_saved()
+        self._notified_this_block = False
+        return result
+
+    def __getattr__(self, name: str):
+        # Minden egyéb hívás (cursor, execute, close, rollback, row_factory...)
+        # simán a valódi sqlite3.Connection-re megy.
+        return getattr(self._raw, name)
+
+
 class TransactionDatabase:
     """
     SQLite tranzakció adatbázis.
@@ -198,14 +254,105 @@ class TransactionDatabase:
 
     def __init__(self, db_name: str = "finance_data.db") -> None:
         self.db_name = os.path.abspath(db_name)
+
+        # Utolsó sikeres DB-módosítás (bármilyen commit) időpontja.
+        # (str, "%Y-%m-%d %H:%M:%S") vagy None, ha még nem történt írás
+        # ebben a folyamatban.
+        #
+        # FONTOS: ez NEM egyezik meg a kézi biztonsági mentéssel (backup)!
+        # Ez minden egyes tétel rögzítésekor/módosításakor is frissül,
+        # tehát csak "utolsó módosítás" jelentéssel bír, nem "utolsó mentés"-sel.
+        # A statusbar "Utolsó mentés" feliratához NE ezt használd - ahhoz lásd
+        # last_backup_ts / on_backup() / mark_backup_done() lentebb.
+        self.last_save_ts: str | None = None
+
+        # Feliratkozók listája, akiket értesítünk minden sikeres commit()-nál.
+        # Sima Python callable-ök (pl. debug/log célra) - nincs Qt import itt.
+        self._on_save_callbacks: list = []
+
+        # Utolsó kézi biztonsági mentés (backup fájl készítés) időpontja.
+        # Ezt SOHA nem frissíti automatikusan a DB réteg saját magától -
+        # kizárólag a mark_backup_done() explicit hívása állítja be, amit
+        # a UI-szintű backup_restore_handlers.handle_backup_database()
+        # hív meg sikeres fájlmásolás után.
+        self.last_backup_ts: str | None = None
+        self._on_backup_callbacks: list = []
+
+        # Utolsó kézi visszatöltés (restore egy backup fájlból) időpontja.
+        # Ugyanígy: csak explicit mark_restore_done() hívásra frissül,
+        # a backup_restore_handlers.handle_restore_database() hívja meg.
+        self.last_restore_ts: str | None = None
+        self._on_restore_callbacks: list = []
+
         self.initialize_db()
         self.ensure_account_valuations_table()
+
+    def on_save(self, callback) -> None:
+        """
+        Feliratkozás: a callback minden sikeres commit() után lefut,
+        egyetlen argumentummal (az új last_save_ts string-gel).
+
+        Megjegyzés: ez "utolsó módosítás", nem "utolsó kézi mentés".
+        A statusbar "Utolsó mentés" jelzéséhez az on_backup()-ot használd.
+        """
+        self._on_save_callbacks.append(callback)
+
+    def _notify_saved(self) -> None:
+        """Belső: last_save_ts frissítése és feliratkozók értesítése."""
+        self.last_save_ts = _now_ts()
+        for callback in list(self._on_save_callbacks):
+            callback(self.last_save_ts)
+
+    def on_backup(self, callback) -> None:
+        """
+        Feliratkozás: a callback minden sikeres KÉZI biztonsági mentés
+        (backup fájl készítés) után lefut, egyetlen argumentummal
+        (az új last_backup_ts string-gel).
+
+        Ezt kell használni a statusbar "Utolsó mentés" feliratához.
+        """
+        self._on_backup_callbacks.append(callback)
+
+    def mark_backup_done(self, ts: str | None = None) -> str:
+        """
+        Explicit jelzés: sikeres kézi biztonsági mentés történt.
+
+        Ezt KIZÁRÓLAG a backup_restore_handlers.handle_backup_database()
+        hívja meg, miután a backup fájl ténylegesen elkészült a lemezen.
+        Semmilyen sima commit() nem hívja meg automatikusan.
+        """
+        self.last_backup_ts = ts or _now_ts()
+        for callback in list(self._on_backup_callbacks):
+            callback(self.last_backup_ts)
+        return self.last_backup_ts
+
+    def on_restore(self, callback) -> None:
+        """
+        Feliratkozás: a callback minden sikeres KÉZI visszatöltés
+        (restore egy backup fájlból) után lefut, egyetlen argumentummal
+        (az új last_restore_ts string-gel).
+
+        Ezt kell használni a statusbar "Utoljára betöltve" feliratához.
+        """
+        self._on_restore_callbacks.append(callback)
+
+    def mark_restore_done(self, ts: str | None = None) -> str:
+        """
+        Explicit jelzés: sikeres kézi visszatöltés (restore) történt.
+
+        Ezt KIZÁRÓLAG a backup_restore_handlers.handle_restore_database()
+        hívja meg, miután a backup fájl ténylegesen visszatöltődött.
+        """
+        self.last_restore_ts = ts or _now_ts()
+        for callback in list(self._on_restore_callbacks):
+            callback(self.last_restore_ts)
+        return self.last_restore_ts
 
     def get_db_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_name)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
-        return conn
+        return _TrackedConnection(conn, self)
 
     @contextlib.contextmanager
     def _conn(self):
@@ -296,8 +443,8 @@ class TransactionDatabase:
 
     #       - ÚJ DB: nincs 'transactions' tábla -> early return a commit után
     #       - RÉGI DB: van 'transactions' -> migráció/ensure a blokk alatt
-    # Emiatt minden "mindig kell" sémát (pl. bills, wallets, valuations) mindkét ágban ensure-olni kell,
-    # különben új DB-nél a return miatt nem jön létre.
+    # Emiatt minden "mindig kell" sémát (pl. bills, wallets, valuations) mindkét ágban
+    # ensure-olni kell, különben új DB-nél a return miatt nem jön létre.
 
     def initialize_db(self) -> None:
         conn = self.get_db_connection()
@@ -410,7 +557,8 @@ class TransactionDatabase:
             cur.execute("ALTER TABLE transactions ADD COLUMN name TEXT")
             # visszatöltés: ahol nincs name, legyen name = description
             cur.execute(
-                "UPDATE transactions SET name = COALESCE(NULLIF(name, ''), description) WHERE name IS NULL OR name = ''"
+                "UPDATE transactions SET name = COALESCE(NULLIF(name, ''), description) "
+                "WHERE name IS NULL OR name = ''"
             )
 
         if "tx_date" not in cols:
@@ -543,7 +691,8 @@ class TransactionDatabase:
             cur.execute(
                 """
                 INSERT INTO transactions
-                    (id, tx_date, tx_type, amount, category_id, description, created_at, year, month)
+                    (id, tx_date, tx_type, amount, category_id, description,
+                     created_at, year, month)
                 VALUES
                     (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
@@ -727,7 +876,9 @@ class TransactionDatabase:
         finally:
             conn.close()
 
-        monthly_map: dict[str, dict[int, list[dict[str, int | str | bool | None]]]] = defaultdict(lambda: defaultdict(list))
+        monthly_map: dict[str, dict[int, list[dict[str, int | str | bool | None]]]] = (
+            defaultdict(lambda: defaultdict(list))
+        )
         periodic_map: dict[str, list[PeriodicAmount]] = defaultdict(list)
 
         for row in rows:
@@ -756,22 +907,21 @@ class TransactionDatabase:
                         }
                     )
 
-            elif category_name in PERIODIC_BILLS:
-                if 1 <= month <= 12:
-                    periodic_map[category_name].append(
-                        PeriodicAmount(
-                            entry_id=int(row["id"]),
-                            month=month,
-                            start=period_start or tx_date,
-                            end=period_end or tx_date,
-                            amount=amount,
-                            invoice_number=invoice_number,
-                            is_paid=True,
-                            is_correction=is_correction,
-                            meter_m3=meter_m3,
-                            meter_mj=meter_mj,
-                        )
+            elif category_name in PERIODIC_BILLS and 1 <= month <= 12:
+                periodic_map[category_name].append(
+                    PeriodicAmount(
+                        entry_id=int(row["id"]),
+                        month=month,
+                        start=period_start or tx_date,
+                        end=period_end or tx_date,
+                        amount=amount,
+                        invoice_number=invoice_number,
+                        is_paid=True,
+                        is_correction=is_correction,
+                        meter_m3=meter_m3,
+                        meter_mj=meter_mj,
                     )
+                )
 
         models: list[BillCardModel] = []
 
@@ -883,9 +1033,9 @@ class TransactionDatabase:
         invoice_number = (data.get("invoice_number") or "").strip() or None
         is_correction = bool(data.get("is_correction", False))
 
-        raw_meter_m3 = data.get("meter_m3", None)
+        raw_meter_m3 = data.get("meter_m3")
         meter_m3 = float(raw_meter_m3) if raw_meter_m3 not in (None, "") else None
-        raw_meter_mj = data.get("meter_mj", None)
+        raw_meter_mj = data.get("meter_mj")
         meter_mj = float(raw_meter_mj) if raw_meter_mj not in (None, "") else None
 
         if (period_start and not period_end) or (period_end and not period_start):
@@ -1208,10 +1358,8 @@ class TransactionDatabase:
             return deleted > 0
 
         except Exception as e:
-            try:
+            with contextlib.suppress(Exception):
                 conn.rollback()
-            except Exception:
-                pass
             print(f"Hiba a törlésnél: {e}")
             return False
         finally:
@@ -1219,8 +1367,10 @@ class TransactionDatabase:
 
     def add_bulk_transactions(self, transactions) -> bool:
         """
-        transactions: list[tuple[date(str), category_id(int), amount(float), description(str), tx_type(optional)]]
-        - amount mindig pozitív legyen; ha negatívat kapsz, abs()-szal mentjük, de 'expense'-re állítjuk
+        transactions: list[tuple[date(str), category_id(int), amount(float),
+            description(str), tx_type(optional)]]
+        - amount mindig pozitív legyen; ha negatívat kapsz, abs()-szal mentjük,
+          de 'expense'-re állítjuk
         """
         try:
             conn = self.get_db_connection()
@@ -1256,7 +1406,8 @@ class TransactionDatabase:
 
                 cur.execute(
                     """
-                    INSERT INTO transactions (tx_date, tx_type, amount, category_id, name, description, created_at, year, month)
+                    INSERT INTO transactions (tx_date, tx_type, amount, category_id, name,
+                        description, created_at, year, month)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
@@ -1360,7 +1511,8 @@ class TransactionDatabase:
         try:
             cur = conn.cursor()
             row = cur.execute(
-                "SELECT planned_income, planned_expense, planned_fixed_expense FROM plans WHERE year=? AND month=?",
+                "SELECT planned_income, planned_expense, planned_fixed_expense "
+                "FROM plans WHERE year=? AND month=?",
                 (y, m),
             ).fetchone()
 
@@ -1370,7 +1522,8 @@ class TransactionDatabase:
                 pf = float(planned_fixed_expense or 0.0)
                 cur.execute(
                     """
-                    INSERT INTO plans (year, month, planned_income, planned_expense, planned_fixed_expense, updated_at)
+                    INSERT INTO plans (year, month, planned_income, planned_expense,
+                        planned_fixed_expense, updated_at)
                     VALUES (?, ?, ?, ?, ?, datetime('now'))
                     """,
                     (y, m, pi, pe, pf),
@@ -1395,7 +1548,8 @@ class TransactionDatabase:
                 cur.execute(
                     """
                     UPDATE plans
-                    SET planned_income=?, planned_expense=?, planned_fixed_expense=?, updated_at=datetime('now')
+                    SET planned_income=?, planned_expense=?, planned_fixed_expense=?,
+                        updated_at=datetime('now')
                     WHERE year=? AND month=?
                     """,
                     (pi, pe, pf, y, m),
@@ -1617,7 +1771,8 @@ class TransactionDatabase:
         cur = conn.cursor()
         rows = cur.execute(
             """
-            SELECT t.id, t.tx_date AS date, c.name as category_name, t.tx_type AS transaction_type, t.amount, t.description
+            SELECT t.id, t.tx_date AS date, c.name as category_name,
+                t.tx_type AS transaction_type, t.amount, t.description
             FROM transactions t
             JOIN categories c ON t.category_id = c.id
             ORDER BY t.tx_date DESC, t.id DESC
@@ -1882,7 +2037,8 @@ class TransactionDatabase:
             cur.execute(
                 """
                 INSERT INTO transaction_items
-                    (transaction_id, item_date, item_name, category_name, unit_price, quantity, amount)
+                    (transaction_id, item_date, item_name, category_name, unit_price,
+                     quantity, amount)
                 VALUES
                     (?, ?, ?, ?, ?, ?, ?)
                 """,

@@ -25,9 +25,6 @@ from penzugyi_naplo.importers.ods_transaction_importer import (
     OdsTransactionImporter,
     PreviewTransaction,
 )
-
-
-
 from penzugyi_naplo.ui.importers.ods_import_pages import (
     FileSelectPage,
     IntroPage,

@@ -24,7 +24,7 @@ Megjegyzés:
 
 from __future__ import annotations
 
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
@@ -41,15 +41,15 @@ class YearTabsBar(QWidget):
     yearChanged = Signal(int)
     allYearsSelected = Signal()
 
-    def __init__(self, years: Iterable[int], parent: Optional[QWidget] = None) -> None:
+    def __init__(self, years: Iterable[int], parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self._years: List[int] = list(years)
+        self._years: list[int] = list(years)
         self._buttons: dict[int, QPushButton] = {}
-        self._active_year: Optional[int] = None
+        self._active_year: int | None = None
 
         self._all_years_active = False
-        self._all_years_button: Optional[QPushButton] = None
+        self._all_years_button: QPushButton | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 8, 12, 8)
@@ -60,7 +60,7 @@ class YearTabsBar(QWidget):
         self._all_years_button.setObjectName("yearTabButton")
         self._all_years_button.setCheckable(True)
         self._all_years_button.setAutoExclusive(True)
-        self._all_years_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._all_years_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self._all_years_button.clicked.connect(
             lambda checked: self.set_all_years_active(emit=True)
         )
@@ -73,7 +73,7 @@ class YearTabsBar(QWidget):
             btn.setObjectName("yearTabButton")
             btn.setCheckable(True)
             btn.setAutoExclusive(True)  # egyszerre csak 1 legyen aktív
-            btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             btn.clicked.connect(
                 lambda checked, year=y: self.set_active_year(year, emit=True)
             )
@@ -90,7 +90,7 @@ class YearTabsBar(QWidget):
         if self._years:
             self.set_active_year(self._years[0], emit=False)
 
-    def active_year(self) -> Optional[int]:
+    def active_year(self) -> int | None:
         return self._active_year
 
     def set_active_year(self, year: int, *, emit: bool = True) -> None:
@@ -178,7 +178,7 @@ class YearTabsBar(QWidget):
         self._all_years_button.setObjectName("yearTabButton")
         self._all_years_button.setCheckable(True)
         self._all_years_button.setAutoExclusive(True)
-        self._all_years_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._all_years_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self._all_years_button.clicked.connect(
             lambda checked: self.set_all_years_active(emit=True)    
         )
@@ -199,7 +199,7 @@ class YearTabsBar(QWidget):
             btn.setObjectName("yearTabButton")
             btn.setCheckable(True)
             btn.setAutoExclusive(True)
-            btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             btn.clicked.connect(
                 lambda checked, year=y: self.set_active_year(year, emit=True)
             )

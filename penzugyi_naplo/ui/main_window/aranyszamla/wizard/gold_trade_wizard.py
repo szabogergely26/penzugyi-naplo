@@ -12,30 +12,23 @@ Feladata:
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import QDate, Qt
 from PySide6.QtWidgets import (
     QButtonGroup,
-   
     QDateEdit,
-    
     QDoubleSpinBox,
-   
-    QLabel,
- 
-    
-    QHBoxLayout,
-    QVBoxLayout,
-    QWizard,
-    QWizardPage,
-   
     QFrame,
-    QWidget,
+    QHBoxLayout,
+    QLabel,
     QRadioButton,
     QTextEdit,
+    QVBoxLayout,
+    QWidget,
+    QWizard,
+    QWizardPage,
 )
 
 from penzugyi_naplo.db.gold_database import add_gold_transaction
-
 
 # közös két-oszlopos oldalhelper:
 
@@ -150,10 +143,7 @@ class GoldTradeWizard(QWizard):
         note = str(self.field("note") or "").strip()
 
         if is_product_purchase:
-            if note:
-                note = f"Termékvásárlás: {note}"
-            else:
-                note = "Termékvásárlás"
+            note = f"Termékvásárlás: {note}" if note else "Termékvásárlás"
 
 
 
@@ -294,7 +284,9 @@ class GoldTradeDataPage(QWizardPage):
         super().__init__(parent)
 
         self.setTitle("Művelet adatai")
-        self.setSubTitle("Add meg, hogy vételről vagy eladásról van szó, majd töltsd ki az összeget.")
+        self.setSubTitle(
+            "Add meg, hogy vételről vagy eladásról van szó, majd töltsd ki az összeget."
+        )
 
         layout, self.side_title_label, self.side_subtitle_label = create_gold_wizard_page_layout(
             self,
@@ -418,7 +410,9 @@ class GoldTradeNotePage(QWizardPage):
         note_label.setObjectName("goldWizardFieldLabel")
 
         self.note_edit = QTextEdit()
-        self.note_edit.setPlaceholderText("Például: GoldTresor vétel, kártyás fizetés, díj levonva...")
+        self.note_edit.setPlaceholderText(
+            "Például: GoldTresor vétel, kártyás fizetés, díj levonva..."
+        )
         self.note_edit.setMinimumHeight(120)
 
         hint = QLabel(

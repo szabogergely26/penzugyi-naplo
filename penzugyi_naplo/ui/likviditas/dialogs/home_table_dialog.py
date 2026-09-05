@@ -73,7 +73,7 @@ class HomeTableDialog(QDialog):
         layout = QVBoxLayout(self)
 
         title = QLabel("Havi összesítő (szerkeszthető)")
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
         self.table = QTableWidget(12, 10)   # sorszám, oszlopszám
@@ -102,7 +102,7 @@ class HomeTableDialog(QDialog):
         self.table.verticalHeader().setVisible(False)
 
         hdr = self.table.horizontalHeader()
-        hdr.setSectionResizeMode(QHeaderView.Fixed)
+        hdr.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
 
         widths = [120, 130, 130, 110, 130, 110, 130, 110, 140, 160]
         for i, w in enumerate(widths):
@@ -110,7 +110,7 @@ class HomeTableDialog(QDialog):
 
         for i, month in enumerate(MONTHS_HU):
             item = QTableWidgetItem(month)
-            item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(i, 0, item)
 
         self.table.itemChanged.connect(self._on_item_changed)
@@ -119,10 +119,10 @@ class HomeTableDialog(QDialog):
 
     def _make_item(self, val: float, editable: bool):
         it = QTableWidgetItem(fmt_huf(val))
-        it.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        it.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
         if not editable:
-            it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+            it.setFlags(it.flags() & ~Qt.ItemFlag.ItemIsEditable)
 
         return it
 

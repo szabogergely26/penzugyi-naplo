@@ -33,30 +33,27 @@ Fontos:
 
 from __future__ import annotations
 
-
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
-
 from PySide6.QtWidgets import (
+    QComboBox,
+    QFileDialog,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
     QLabel,
+    QLineEdit,
+    QMessageBox,
     QPushButton,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWizardPage,
-    QComboBox,
-    QMessageBox,
-    QLineEdit,
-    QFileDialog,
-    QHBoxLayout,
-    QGridLayout,
-    QFrame
 )
-
 
 from penzugyi_naplo.importers.ods_transaction_importer import OdsTransactionImporter
 
@@ -75,7 +72,7 @@ class IntroPage(QWizardPage):
     Csak elmagyarázza, hogy a varázsló mit fog csinálni.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard
@@ -121,13 +118,15 @@ class FileSelectPage(QWizardPage):
         és van-e benne legalább egy munkalap.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard
 
         self.setTitle("ODS fájl kiválasztása")
-        self.setSubTitle("Válaszd ki azt az ODS fájlt, amelyből import előnézetet szeretnél készíteni.")
+        self.setSubTitle(
+            "Válaszd ki azt az ODS fájlt, amelyből import előnézetet szeretnél készíteni."
+        )
 
         layout = QVBoxLayout(self)
 
@@ -260,7 +259,7 @@ class SheetSelectPage(QWizardPage):
         Ez az oldal csak kiválasztja, melyik munkalappal dolgozzon tovább a wizard.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard
@@ -396,7 +395,7 @@ class RowSetupPage(QWizardPage):
         Csak előkészíti a következő előnézeti oldalt.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard
@@ -418,7 +417,7 @@ class RowSetupPage(QWizardPage):
             "és honnan indulnak az adatok."
             "</span>"
         )
-        self.warning_label.setTextFormat(Qt.RichText)
+        self.warning_label.setTextFormat(Qt.TextFormat.RichText)
         self.warning_label.setWordWrap(True)
 
         # Magyarázó blokk.
@@ -437,7 +436,7 @@ class RowSetupPage(QWizardPage):
 
             "<b>A feldolgozott import-előnézet</b> a következő oldalon jelenik meg."
         )
-        self.info_label.setTextFormat(Qt.RichText)
+        self.info_label.setTextFormat(Qt.TextFormat.RichText)
         self.info_label.setWordWrap(True)
 
 
@@ -478,14 +477,14 @@ class RowSetupPage(QWizardPage):
             header_text_label,
             data_start_text_label,
         ):
-            label.setTextFormat(Qt.RichText)
+            label.setTextFormat(Qt.TextFormat.RichText)
 
         summary_layout.addWidget(self.sheet_info_label, 0, 0)
-        summary_layout.addWidget(header_text_label, 0, 1, alignment=Qt.AlignRight)
+        summary_layout.addWidget(header_text_label, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
         summary_layout.addWidget(self.header_row_spin, 0, 2)
 
         summary_layout.addWidget(self.loaded_rows_label, 1, 0)
-        summary_layout.addWidget(data_start_text_label, 1, 1, alignment=Qt.AlignRight)
+        summary_layout.addWidget(data_start_text_label, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
         summary_layout.addWidget(self.data_start_row_spin, 1, 2)
 
         summary_layout.setColumnStretch(0, 1)
@@ -804,7 +803,7 @@ class PreviewPage(QWizardPage):
         Csak a wizard.preview_rows listát tölti fel.
     """
 
-    def __init__(self, wizard: "OdsTransactionImportWizard"):
+    def __init__(self, wizard: OdsTransactionImportWizard):
         super().__init__(wizard)
 
         self.wizard_ref = wizard
@@ -856,7 +855,8 @@ class PreviewPage(QWizardPage):
 
         if importer is None or not sheet_name:
             self.status_label.setText(
-                "Nincs kiválasztott ODS fájl vagy munkalap. Menj vissza, és ellenőrizd a beállításokat."
+                "Nincs kiválasztott ODS fájl vagy munkalap. "
+                "Menj vissza, és ellenőrizd a beállításokat."
             )
             self.completeChanged.emit()
             return

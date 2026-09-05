@@ -5,7 +5,8 @@
 Tranzakció részletező modális ablak
 (ui/dialogs/transaction_details_dialog.py).
 
-Egy kiválasztott tranzakció tételes bontását jeleníti meg (Dátum | Név | Kategória | Egységár | Db | Ár).
+Egy kiválasztott tranzakció tételes bontását jeleníti meg
+(Dátum | Név | Kategória | Egységár | Db | Ár).
 Szükség esetén szerkesztési lehetőséget biztosít az egyes tételekhez.
 
 Csak megjelenítés + interakció, az adatforrás a TransactionDatabase.
@@ -279,7 +280,8 @@ class _ItemEditDialog(QDialog):
         self.ed_unit.textChanged.connect(self._on_unit_or_qty_changed)
         self.ed_qty.textChanged.connect(self._on_unit_or_qty_changed)
 
-        # ha valaki az összeget írja át, és van Db, visszaszámoljuk az egységárat (opcionális, de hasznos)
+        # ha valaki az összeget írja át, és van Db, visszaszámoljuk az egységárat
+        # (opcionális, de hasznos)
         self.ed_amt.editingFinished.connect(self._on_amount_finished)
 
         btns = QHBoxLayout()

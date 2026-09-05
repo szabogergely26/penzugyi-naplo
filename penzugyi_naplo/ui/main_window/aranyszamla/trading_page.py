@@ -31,7 +31,6 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
-
 )
 
 from penzugyi_naplo.db.gold_database import (

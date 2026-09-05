@@ -76,7 +76,12 @@ def get_transaction_symbol(
     if "munkabér" in text or "munkaber" in text or "fizetés" in text or "fizetes" in text:
         return "💼"
 
-    if "családi pótlék" in text or "csaladi potlek" in text or "családi" in text or "csaladi" in text:
+    if (
+        "családi pótlék" in text
+        or "csaladi potlek" in text
+        or "családi" in text
+        or "csaladi" in text
+    ):
         return "👨‍👩‍👧"
 
     if "rehabilitáció" in text or "rehabilitacio" in text or "rehab" in text:

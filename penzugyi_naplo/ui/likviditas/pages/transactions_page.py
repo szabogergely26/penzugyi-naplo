@@ -37,12 +37,12 @@ Topology (UI):
 
 from __future__ import annotations
 
-
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer, QSettings
+from PySide6.QtCore import QSettings, Qt, QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QHBoxLayout,
     QHeaderView,
@@ -54,17 +54,19 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
-    QComboBox,
 )
 
+from penzugyi_naplo.config.config import APP_NAME, ORG_NAME
 from penzugyi_naplo.ui.likviditas.dialogs.transaction_details_dialog import (
     TransactionDetailsDialog,
 )
 from penzugyi_naplo.ui.likviditas.dialogs.transaction_edit_dialog import (
     TransactionEditDialog,
 )
-
-from penzugyi_naplo.config.config import APP_NAME, ORG_NAME
+from penzugyi_naplo.ui.shared.widgets.column_filter_menu import (
+    DateColumnFilterMenu,
+    FlatColumnFilterMenu,
+)
 
 # -Importok vége -
 
@@ -77,7 +79,7 @@ class SortKeyItem(QTableWidgetItem):
         super().__init__(text)
         self.setData(Qt.ItemDataRole.UserRole, sort_key)
 
-    def __lt__(self, other: "QTableWidgetItem") -> bool:
+    def __lt__(self, other: QTableWidgetItem) -> bool:
         a = self.data(Qt.ItemDataRole.UserRole)
         b = other.data(Qt.ItemDataRole.UserRole)
         if a is not None and b is not None:
@@ -218,16 +220,16 @@ class TransactionsPage(QWidget):
         header = self.table.horizontalHeader()
 
         # méretezések – importált régi adatokhoz is stabil
-        header.setSectionResizeMode(0, QHeaderView.Fixed)        # Jelzés
-        header.setSectionResizeMode(1, QHeaderView.Fixed)        # Dátum
-        header.setSectionResizeMode(2, QHeaderView.Interactive)  # Név
-        header.setSectionResizeMode(3, QHeaderView.Fixed)        # Kategória
-        header.setSectionResizeMode(4, QHeaderView.Fixed)        # Egységár
-        header.setSectionResizeMode(5, QHeaderView.Fixed)        # Db
-        header.setSectionResizeMode(6, QHeaderView.Fixed)        # Összesen
-        header.setSectionResizeMode(7, QHeaderView.Interactive)  # Leírás
-        header.setSectionResizeMode(8, QHeaderView.Fixed)        # Típus
-        header.setSectionResizeMode(9, QHeaderView.Fixed)        # Műveletek
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)        # Jelzés
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)        # Dátum
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)  # Név
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)        # Kategória
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)        # Egységár
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)        # Db
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)        # Összesen
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Interactive)  # Leírás
+        header.setSectionResizeMode(8, QHeaderView.ResizeMode.Fixed)        # Típus
+        header.setSectionResizeMode(9, QHeaderView.ResizeMode.Fixed)        # Műveletek
 
         self.table.setColumnWidth(0, 28)     # Jelzés
         self.table.setColumnWidth(1, 105)    # Dátum
@@ -251,6 +253,29 @@ class TransactionsPage(QWidget):
 
         # alap nyíl (az alap rendezést a reload() végén állítod be)
         header.setSortIndicator(1, Qt.SortOrder.DescendingOrder)
+
+        # --- Excel-szerű oszlopszűrő (jobb-klikk a fejlécen) ---
+        # Csak a Dátum (1), Kategória (3) és Típus (8) oszlopokon aktív -
+        # a többi oszlopon (Név, Leírás, stb.) jobb-klikkre nem történik semmi.
+        #
+        # Állapot: None = nincs aktív szűrés az adott oszlopon (minden érték
+        # látszik). Ha van érték a set-ben/dict-ben, csak azok a sorok
+        # látszanak, amik illeszkednek.
+        self._type_filter_selected: set[str] | None = None
+        self._category_filter_selected: set[str] | None = None
+        self._date_filter_selected: set[tuple[int, int]] | None = None
+
+        # Oszlop-index -> (fejléc alapszövege, aktív-e a szűrő ezen az oszlopon)
+        # A fejléc szövegét ez alapján frissítjük (pl. "Típus 🔽" jelzéssel),
+        # hogy a felhasználó lássa, ha valamelyik oszlop szűrve van.
+        self._FILTERABLE_COLUMNS: dict[int, str] = {
+            1: "Dátum",
+            3: "Kategória",
+            8: "Típus",
+        }
+
+        header.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        header.customContextMenuRequested.connect(self._on_header_context_menu)
 
         # --- Layout (csak 1!) ---
         root = QVBoxLayout(self)
@@ -385,7 +410,8 @@ class TransactionsPage(QWidget):
             if quantity < 1:
                 quantity = 1
 
-            # ÚJ: egységár fallback javítva (unit_price > 0 -> azt mutatjuk, különben amount/qty vagy amount)
+            # ÚJ: egységár fallback javítva
+            # (unit_price > 0 -> azt mutatjuk, különben amount/qty vagy amount)
             total = float(tx["amount"] or 0.0)
             up_raw = tx["unit_price"]
 
@@ -402,7 +428,8 @@ class TransactionsPage(QWidget):
 
             # Oszlopok:
             # Oszlopok:
-            # 0 Jelzés | 1 Dátum | 2 Név | 3 Kategória | 4 Egységár | 5 Db | 6 Összesen | 7 Leírás | 8 Típus | 9 Műveletek
+            # 0 Jelzés | 1 Dátum | 2 Név | 3 Kategória | 4 Egységár | 5 Db |
+            # 6 Összesen | 7 Leírás | 8 Típus | 9 Műveletek
 
             detail_text = "⊞" if has_details else ""
             detail_item = QTableWidgetItem(detail_text)
@@ -472,6 +499,13 @@ class TransactionsPage(QWidget):
         # Alap rendezés: Dátum ↓ (0. oszlop)
         self.table.sortItems(1, Qt.SortOrder.DescendingOrder)
         self.table.horizontalHeader().setSortIndicator(1, Qt.SortOrder.DescendingOrder)
+
+        # Excel-szerű oszlopszűrők újra-alkalmazása: a reload() minden
+        # sort újraépít, tehát a korábban beállított szűrő-állapotot
+        # (self._type_filter_selected, stb.) itt kell ismét érvényesíteni,
+        # különben egy keresés/év-váltás után a szűrés "elfelejtődne".
+        self._apply_column_filters()
+        self._refresh_filter_header_labels()
 
     def set_year(self, year: int) -> None:
         self._year = int(year)
@@ -647,5 +681,197 @@ class TransactionsPage(QWidget):
         ok = self.db.delete_transaction(tx_id)
         if ok:
             self.reload()
+
+    # ------------------------------------------------------------------
+    # Excel-szerű oszlopszűrők (jobb-klikk a fejlécen)
+    # ------------------------------------------------------------------
+    #
+    # Csak a Dátum (1), Kategória (3) és Típus (8) oszlopon aktív.
+    # A szűrés kliens-oldali: a már betöltött (reload() által beírt)
+    # sorokból bújt el/mutat egyeseket setRowHidden()-nel, nincs hozzá
+    # újabb DB-lekérdezés. Több oszlop szűrője egyszerre is aktív lehet -
+    # egy sor csak akkor látszik, ha MINDEN aktív szűrőnek megfelel.
+
+    def _on_header_context_menu(self, pos) -> None:
+        """Jobb-klikk a táblázat fejlécén: a megfelelő oszlophoz tartozó
+        Excel-szerű szűrő menü megnyitása, ha az oszlop szűrhető."""
+        header = self.table.horizontalHeader()
+        column = header.logicalIndexAt(pos)
+
+        if column not in self._FILTERABLE_COLUMNS:
+            return
+
+        global_pos = header.mapToGlobal(pos)
+
+        if column == 8:
+            self._open_type_filter_menu(global_pos)
+        elif column == 3:
+            self._open_category_filter_menu(global_pos)
+        elif column == 1:
+            self._open_date_filter_menu(global_pos)
+
+    def _collect_column_values(self, column: int) -> list[str]:
+        """Az adott oszlopban ténylegesen előforduló, egyedi szöveges
+        értékek összegyűjtése a jelenleg betöltött (nem szűrt) sorokból,
+        megjelenési sorrendben."""
+        values: list[str] = []
+        seen: set[str] = set()
+
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, column)
+            if item is None:
+                continue
+            text = item.text()
+            if text not in seen:
+                seen.add(text)
+                values.append(text)
+
+        return values
+
+    def _open_type_filter_menu(self, global_pos) -> None:
+        all_values = self._collect_column_values(8)
+
+        menu = FlatColumnFilterMenu(
+            all_values=all_values,
+            selected_values=self._type_filter_selected,
+            on_change=self._on_type_filter_changed,
+            parent=self.table.horizontalHeader(),
+        )
+        menu.exec(global_pos)
+
+    def _on_type_filter_changed(self, selected: set[str] | None) -> None:
+        self._type_filter_selected = selected
+        self._apply_column_filters()
+        self._refresh_filter_header_labels()
+
+    def _open_category_filter_menu(self, global_pos) -> None:
+        all_values = self._collect_column_values(3)
+
+        menu = FlatColumnFilterMenu(
+            all_values=all_values,
+            selected_values=self._category_filter_selected,
+            on_change=self._on_category_filter_changed,
+            parent=self.table.horizontalHeader(),
+        )
+        menu.exec(global_pos)
+
+    def _on_category_filter_changed(self, selected: set[str] | None) -> None:
+        self._category_filter_selected = selected
+        self._apply_column_filters()
+        self._refresh_filter_header_labels()
+
+    def _collect_date_year_months(self) -> dict[int, set[int]]:
+        """Az adatbázisból már betöltött (Dátum oszlopbeli, "YYYY-MM-DD"
+        formátumú) sorokból Év -> {Hónap, Hónap, ...} térkép építése,
+        a Dátum-szűrő Excel-szerű Év/Hónap csoportosításához."""
+        result: dict[int, set[int]] = {}
+
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 1)
+            if item is None:
+                continue
+
+            raw = item.data(Qt.ItemDataRole.UserRole)
+            date_str = str(raw) if raw is not None else item.text()
+
+            try:
+                year = int(date_str[0:4])
+                month = int(date_str[5:7])
+            except (ValueError, TypeError, IndexError):
+                continue
+
+            result.setdefault(year, set()).add(month)
+
+        return result
+
+    def _open_date_filter_menu(self, global_pos) -> None:
+        year_months = self._collect_date_year_months()
+
+        menu = DateColumnFilterMenu(
+            year_months=year_months,
+            selected_year_months=self._date_filter_selected,
+            on_change=self._on_date_filter_changed,
+            parent=self.table.horizontalHeader(),
+        )
+        menu.exec(global_pos)
+
+    def _on_date_filter_changed(self, selected: set[tuple[int, int]] | None) -> None:
+        self._date_filter_selected = selected
+        self._apply_column_filters()
+        self._refresh_filter_header_labels()
+
+    def _apply_column_filters(self) -> None:
+        """Minden aktív oszlopszűrő egyidejű figyelembevételével eldönti
+        soronként, hogy az adott sor látszódjon-e (setRowHidden).
+
+        Egy sor csak akkor látszik, ha MINDEN aktív szűrőnek (Dátum,
+        Kategória, Típus - amelyik éppen be van kapcsolva) megfelel.
+        """
+        for row in range(self.table.rowCount()):
+            visible = True
+
+            if self._type_filter_selected is not None:
+                item = self.table.item(row, 8)
+                text = item.text() if item is not None else ""
+                if text not in self._type_filter_selected:
+                    visible = False
+
+            if visible and self._category_filter_selected is not None:
+                item = self.table.item(row, 3)
+                text = item.text() if item is not None else ""
+                if text not in self._category_filter_selected:
+                    visible = False
+
+            if visible and self._date_filter_selected is not None:
+                item = self.table.item(row, 1)
+                raw = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+                date_str = str(raw) if raw is not None else (item.text() if item else "")
+                try:
+                    year = int(date_str[0:4])
+                    month = int(date_str[5:7])
+                except (ValueError, TypeError, IndexError):
+                    year = month = -1
+                if (year, month) not in self._date_filter_selected:
+                    visible = False
+
+            self.table.setRowHidden(row, not visible)
+
+    def _refresh_filter_header_labels(self) -> None:
+        """A fejléc-feliratokat kiegészíti egy jelzéssel, ha az adott
+        oszlopon aktív az Excel-szerű szűrés - hogy a felhasználó ne
+        felejtse el, hogy a lista éppen szűrve van.
+
+        A jelzés szöveges (tölcsér-ikon + a felirat szövegének kiemelt
+        színe/vastagsága), nem QSS-alapú - a QHeaderView szekciói nem
+        egyedi widget-ek, ezért oszloponként eltérő QSS-stílust nem lehet
+        rájuk adni; a QTableWidgetItem.setForeground()/setFont() viszont
+        közvetlenül, megbízhatóan hat a fejléc-cella kinézetére.
+        """
+        active_by_column = {
+            1: self._date_filter_selected is not None,
+            3: self._category_filter_selected is not None,
+            8: self._type_filter_selected is not None,
+        }
+
+        # Kiemelő szín aktív szűrésnél - illeszkedik a modern_style_home.qss
+        # meta-mezőknél már használt sötétkék tónushoz (#billMonthMetaInvoiceValue).
+        active_color = QColor("#1d4ed8")
+        inactive_color = QColor("#405065")  # a QHeaderView::section alap színe
+
+        for column, base_label in self._FILTERABLE_COLUMNS.items():
+            is_active = active_by_column[column]
+            label = f"⏷ {base_label}" if is_active else base_label
+
+            header_item = self.table.horizontalHeaderItem(column)
+            if header_item is None:
+                continue
+
+            header_item.setText(label)
+
+            font = header_item.font()
+            font.setBold(is_active)
+            header_item.setFont(font)
+
+            header_item.setForeground(active_color if is_active else inactive_color)
 
     

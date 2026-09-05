@@ -1,4 +1,22 @@
 #!/usr/bin/env bash
+# build-venv.sh
+# ------------------------------
+#
+# Fejlesztői venv (.venv) automatizált létrehozása/frissítése.
+#
+# Mindig a requirements-dev.txt-et telepíti (ami a requirements.txt-et is
+# magában foglalja -r requirements.txt sorral), tehát a Ruff és Pyright is
+# mindig települ - de a szkript maga nem futtat ruff check-et, azt kézzel
+# indítod, amikor szükséges (lásd a szkript végén kiírt emlékeztetőt).
+#
+# Használat:
+#   ./build-venv.sh
+#
+# Amit csinál:
+#   1. Ha nincs .venv, létrehozza. Ha már van, csak frissíti a benne lévő
+#      csomagokat - nem törli/hozza létre újra minden futtatáskor.
+#   2. pip frissítése
+#   3. requirements-dev.txt telepítése
 
 set -euo pipefail
 
@@ -15,43 +33,36 @@ if ! python3 -m venv --help >/dev/null 2>&1; then
     exit 1
 fi
 
-
+# A szkript a projekt gyökeréből fusson, függetlenül attól, honnan hívják.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
 VENV_DIR=".venv"
-PYTHON_BIN="python3"
-REQ_FILE="requirements.txt"
 
-echo "==> Ellenőrzés..."
-
-if [ ! -f "${REQ_FILE}" ]; then
-    echo "HIBA: ${REQ_FILE} nem található!"
-    exit 1
-fi
-
-if ! command -v ${PYTHON_BIN} &> /dev/null; then
-    echo "HIBA: ${PYTHON_BIN} nincs telepítve!"
-    exit 1
-fi
-
-echo "==> Virtuális környezet..."
-
-if [ -d "${VENV_DIR}" ]; then
-    echo "Meglévő .venv használata"
+echo "=== [1/3] venv ellenőrzése (${VENV_DIR}) ==="
+if [ -d "$VENV_DIR" ]; then
+    echo "Már létezik a ${VENV_DIR} - nem hozzuk létre újra, csak frissítjük a függőségeket."
 else
-    echo "Új .venv létrehozása"
-    ${PYTHON_BIN} -m venv "${VENV_DIR}"
+    echo "Nincs még ${VENV_DIR}, létrehozás..."
+    python3 -m venv "$VENV_DIR"
 fi
 
-echo "==> pip frissítése"
-"${VENV_DIR}/bin/python" -m pip install --upgrade pip
+# shellcheck disable=SC1091
+source "${VENV_DIR}/bin/activate"
 
-echo "==> Függőségek telepítése"
-"${VENV_DIR}/bin/pip" install -r "${REQ_FILE}"
+echo "=== [2/3] pip frissítése ==="
+python3 -m pip install --upgrade pip
 
-echo "==> Gyors ellenőrzés (PySide6)"
-"${VENV_DIR}/bin/python" -c "import PySide6; print('PySide6 OK:', PySide6.__version__)"
+echo "=== [3/3] requirements-dev.txt telepítése ==="
+pip install -r requirements-dev.txt
 
-echo
-echo "Kész."
-echo "Aktiválás:"
-echo "source ${VENV_DIR}/bin/activate"
+echo ""
+echo "=== Kész ==="
+echo "which python: $(which python)"
+echo "which pip:    $(which pip)"
+echo ""
+echo "Aktiválás egy új terminálban:"
+echo "  source ${VENV_DIR}/bin/activate"
+echo ""
+echo "Kódellenőrzés (Ruff) kézi futtatása:"
+echo "  ruff check ."

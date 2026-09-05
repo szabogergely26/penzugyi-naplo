@@ -32,6 +32,7 @@ Nem felelőssége:
 
 from __future__ import annotations
 
+from core.utils import format_number_hu, is_valid_date, parse_amount
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -42,8 +43,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QVBoxLayout,
 )
-
-from core.utils import format_number_hu, is_valid_date, parse_amount
 
 # - Importok vége -
 
@@ -100,7 +99,9 @@ class TransactionEditor(QDialog):
         self.layout.addLayout(form_layout)
 
         # --- Buttons ---
-        button_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
+        )
         button_box.accepted.connect(self.save_changes)
         button_box.rejected.connect(self.reject)
         self.layout.addWidget(button_box)
@@ -149,7 +150,8 @@ class TransactionEditor(QDialog):
             QMessageBox.critical(
                 self,
                 "Hiba",
-                "Érvénytelen dátum formátum! Kérjük, YYYY-M-D vagy YYYY-MM-DD formátumot használjon.",
+                "Érvénytelen dátum formátum! "
+                "Kérjük, YYYY-M-D vagy YYYY-MM-DD formátumot használjon.",
             )
             return
 

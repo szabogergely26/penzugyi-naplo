@@ -1,8 +1,9 @@
 """
 Kezdőoldal felső összesítő panelje (HomePage → HomeSummaryPanel).
 
-Aktív évhez tartozó gyors egyenleg/összeg kártyákat mutat (dashboard). A Tranzakciók táblázat nézet külön:
-ui/pages/transactions_page.py (TransactionsPage, QTableWidget).
+Aktív évhez tartozó gyors egyenleg/összeg kártyákat mutat (dashboard).
+A Tranzakciók táblázat nézet külön: ui/pages/transactions_page.py
+(TransactionsPage, QTableWidget).
 """
 
 
@@ -11,10 +12,10 @@ ui/pages/transactions_page.py (TransactionsPage, QTableWidget).
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from PySide6.QtCore import QSettings, Qt, Signal
 from PySide6.QtWidgets import (
+    QAbstractSpinBox,
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
@@ -25,13 +26,12 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QVBoxLayout,
     QWidget,
-    QAbstractSpinBox
 )
 
 # --- importok vége ----
 
 
-def _money_fmt(value: Optional[float]) -> str:
+def _money_fmt(value: float | None) -> str:
     if value is None:
         return "—"
     # egyszerű HU formátum: ezres tagolás szóközzel
@@ -263,10 +263,10 @@ class HomeSummaryPanel(QWidget):
     # -------- Egyenlegek frissítése kívülről --------
     def set_balances(
         self,
-        bank_balance: Optional[float],
-        securities_balance: Optional[float],
-        metal_balance: Optional[float],
-        cash_balance: Optional[float] = 0.0,
+        bank_balance: float | None,
+        securities_balance: float | None,
+        metal_balance: float | None,
+        cash_balance: float | None = 0.0,
     ) -> None:
         self.lbl_bank.setText(_money_fmt(bank_balance))
         self.lbl_sec.setText(_money_fmt(securities_balance))

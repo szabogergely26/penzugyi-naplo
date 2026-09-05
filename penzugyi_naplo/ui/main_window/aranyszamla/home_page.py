@@ -95,12 +95,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QColor
-
+from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsDropShadowEffect,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -109,7 +108,6 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
     QWidget,
-    QGraphicsDropShadowEffect,
 )
 
 from penzugyi_naplo.db.gold_database import (
@@ -117,7 +115,6 @@ from penzugyi_naplo.db.gold_database import (
     get_gold_summary,
     list_gold_physical_items,
 )
-
 
 
 class PhysicalGoldItemCard(QFrame):
@@ -470,6 +467,9 @@ class AranyszamlaHomePage(QWidget):
             empty_label.setObjectName("aranyszamlaHintText")
             empty_label.setWordWrap(True)
             self.physical_cards_layout.addWidget(empty_label)
+            # QGridLayout-nak nincs addStretch()-je (az csak QBoxLayout-oknál
+            # létezik) - a sor-nyújtás a grid-es megfelelője: az üres címke
+            # alatti sor "nyeli el" a felesleges helyet.
             self.physical_cards_layout.setRowStretch(1, 1)
             return
 

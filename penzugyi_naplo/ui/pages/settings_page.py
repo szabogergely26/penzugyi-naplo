@@ -33,22 +33,22 @@ from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
     QVBoxLayout,
-    QDialog,
 )
 
 from penzugyi_naplo.config.config import (
-    APP_NAME, 
+    APP_NAME,
+    DEFAULT_STYLE_MODE,
     ORG_NAME,
     SETTINGS_KEY_STYLE_MODE,
     STYLE_CLASSIC,
     STYLE_MODERN,
     STYLE_MODERN_HOME,
-    DEFAULT_STYLE_MODE,
-    )
+)
 
 # ------ Importok vége -----
 
@@ -89,8 +89,8 @@ class SettingsDialog(QDialog):
         
         
         sep = QFrame(self)
-        sep.setFrameShape(QFrame.HLine)
-        sep.setFrameShadow(QFrame.Sunken)
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
         root.addWidget(sep)
 
         # --- 1) Felület: Menüsor / Szalag ---
@@ -178,7 +178,8 @@ class SettingsDialog(QDialog):
             except Exception as e:
                 if hasattr(self, "status_label"):
                     self.status_label.setText(
-                        "Az eszköztár módja mentve lett, de csak újraindítás után lép teljesen életbe."
+                        "Az eszköztár módja mentve lett, de csak újraindítás után "
+                        "lép teljesen életbe."
                     )
                 print("DEBUG: toolbar mode live apply failed:", e)
 

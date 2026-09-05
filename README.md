@@ -14,6 +14,7 @@ Utoljára frissítve: 2026. augusztus 15.
 
 Ez a dokumentum nem felhasználói kézikönyv, hanem fejlesztői térkép —
 **az Előzetes (Preview) ág aktuális, folyamatban lévő állapotáról**.
+
 Célja, hogy hónapok múlva is gyorsan megtalálható legyen:
 
 - melyik modul hol van,
@@ -23,8 +24,9 @@ Célja, hogy hónapok múlva is gyorsan megtalálható legyen:
 - mik a nyitott célok és kockázatok.
 
 > A `main` (stabil) ág saját, felhasználóknak szóló kézikönyvvel
-> rendelkezik — az nem tartalmazza az itt felsorolt terveket és
-> TODO-kat.
+> rendelkezik. A `windows/Preview` ágnak hasonló, de Windows
+> csomagolás-specifikus fejlesztői kézikönyve van. Egyik sem tartalmazza
+> az itt felsorolt terveket és TODO-kat.
 
 ---
 

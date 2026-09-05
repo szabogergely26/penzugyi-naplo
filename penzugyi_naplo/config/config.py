@@ -13,7 +13,6 @@ ORG_NAME: str = "PenzugyiNaploPreview"
 SETTINGS_KEY_DEV_MODE: str = "app/dev_mode"
 
 
-
 SETTINGS_KEY_STYLE_MODE: str = "ui/style_mode"
 
 STYLE_CLASSIC: str = "classic"
@@ -33,6 +32,46 @@ DB_FILENAME_PROD: str = "transactions.sqlite3"
 DB_FILENAME_DEV: str = "transactions_dev.sqlite3"
 
 
+# -----------------------------
+# Globális alkalmazás-font
+# -----------------------------
+#
+# Ez az EGYETLEN hely, ahol az app betűtípusát megadjuk.
+# A main.py ezt olvassa be és app.setFont(...)-tal állítja be, mielőtt
+# bármilyen QSS betöltődne - így minden oldal, dialógus és widget
+# ugyanazt a fontot kapja, függetlenül attól, hogy az adott gépen
+# éppen mi a rendszer alapértelmezett betűtípusa.
+#
+# Fontos: "Segoe UI" Windows-specifikus font, Linuxon nem létezik -
+# ha ez volt beállítva, Qt egy előre nem kiszámítható rendszer-fallback-re
+# váltott, ami gépenként/frissítésenként eltérő megjelenést okozott.
+#
+# APP_FONT_FALLBACKS: sorrendben kipróbált betűtípus-lista.
+# Az első elérhető (a gépen ténylegesen telepített) fontot használja Qt,
+# az utolsó elem (DejaVu Sans) szinte minden Linux disztribúción
+# alapból telepítve van, ez a végső biztonsági háló.
+APP_FONT_FALLBACKS: tuple[str, ...] = (
+    "Noto Sans",
+    "Ubuntu",
+    "Cantarell",
+    "DejaVu Sans",
+)
+
+APP_FONT_SIZE_PT: int = 9
+
+
+def app_font_family() -> str:
+    """
+    Az app-ban használt betűtípus neve.
+
+    Jelenleg az APP_FONT_FALLBACKS első elemét adja vissza - a tényleges
+    "van-e telepítve" ellenőrzést és a lista bejárását a main.py végzi
+    QFontDatabase segítségével, mert az Qt-inicializálást igényel.
+    Itt csak a preferencia-sorrend forrása van megadva.
+    """
+    return APP_FONT_FALLBACKS[0]
+
+
 # A keresés alapértelmezett hatóköre.
 # Ezt a Beállítások ablak menti, a keresősáv pedig induláskor visszaolvassa.
 SETTINGS_KEY_SEARCH_SCOPE = "search/default_scope"
@@ -47,19 +86,10 @@ SEARCH_SCOPE_ALL_YEARS = "all_years"
 DEFAULT_SEARCH_SCOPE = SEARCH_SCOPE_ACTIVE_YEAR
 
 
-
-
-
-
-
-
-
-
-
-
 # -----------------------------
 # Settings
 # -----------------------------
+
 
 def settings() -> QSettings:
     return QSettings(ORG_NAME, APP_NAME)
@@ -76,6 +106,7 @@ def set_dev_mode(enabled: bool) -> None:
 # -----------------------------
 # Project detection
 # -----------------------------
+
 
 def repo_root() -> Path:
     """
@@ -106,6 +137,7 @@ def is_dev_project() -> bool:
 # Data directories
 # -----------------------------
 
+
 def stable_data_dir() -> Path:
     base = Path(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
     base.mkdir(parents=True, exist_ok=True)
@@ -126,6 +158,7 @@ def active_data_dir() -> Path:
 # DB
 # -----------------------------
 
+
 def active_db_filename() -> str:
     return DB_FILENAME_DEV if is_dev_mode() else DB_FILENAME_PROD
 
@@ -133,9 +166,11 @@ def active_db_filename() -> str:
 def active_db_path() -> Path:
     return active_data_dir() / active_db_filename()
 
+
 # ------------------------------
 # DB files
 # -----------------------------
+
 
 def prod_db_path() -> Path:
     return active_data_dir() / DB_FILENAME_PROD
@@ -143,7 +178,6 @@ def prod_db_path() -> Path:
 
 def dev_db_path() -> Path:
     return active_data_dir() / DB_FILENAME_DEV
-
 
 
 # ---------------------------------
@@ -192,3 +226,82 @@ def set_default_search_scope(scope: str) -> None:
 
     settings = QSettings(ORG_NAME, APP_NAME)
     settings.setValue(SETTINGS_KEY_SEARCH_SCOPE, scope)
+
+
+# ---------------------------------
+# Statusbar: kézi mentés (backup) / betöltés (restore) időbélyegek
+# ---------------------------------
+#
+# Ezek a "Utolsó mentés" / "Utoljára betöltve" statusbar-feliratok
+# perzisztenciáját szolgálják - hogy app-újraindítás után is megmaradjon
+# a legutóbbi kézi biztonsági mentés / visszatöltés időpontja.
+#
+# Tudatosan itt van, nem a transaction_database.py-ban: a DB réteg
+# szándékosan Qt-mentes marad (nincs benne QSettings import), ezért a
+# lemezre írást/olvasást a UI réteg (main_window.py) végzi, ezeken a
+# helpereken keresztül.
+#
+# DB-fájlonként külön kulcs alatt tárolunk (a db_path fájlnevéből képzett
+# kulcs-résszel), hogy pl. a dev és a stabil adatbázis, vagy egy egyéni
+# restore-olt fájl ne írja felül egymás időbélyegét.
+
+SETTINGS_KEY_LAST_BACKUP_PREFIX: str = "db_status/last_backup_ts"
+SETTINGS_KEY_LAST_RESTORE_PREFIX: str = "db_status/last_restore_ts"
+
+
+def _db_status_key(prefix: str, db_path: Path | str) -> str:
+    """
+    QSettings-kulcs összeállítása egy adott DB-fájlhoz.
+
+    A db_path fájlnevét (kiterjesztés nélkül) használjuk elkülönítő
+    részként, pl. "transactions" vagy "transactions_dev" - ez elég ahhoz,
+    hogy a stabil és a dev adatbázis időbélyege ne keveredjen össze,
+    anélkül hogy a teljes (gépfüggő) abszolút útvonalat kulcsként kellene
+    tárolni.
+    """
+    stem = Path(db_path).stem
+    return f"{prefix}/{stem}"
+
+
+def get_last_backup_ts(db_path: Path | str) -> str | None:
+    """
+    A megadott DB-fájlhoz tartozó, legutóbb mentett kézi biztonsági
+    mentés (backup) időbélyegének beolvasása. None, ha még nincs elmentve.
+    """
+    value = settings().value(_db_status_key(SETTINGS_KEY_LAST_BACKUP_PREFIX, db_path))
+    return str(value) if value else None
+
+
+def set_last_backup_ts(db_path: Path | str, ts: str) -> None:
+    """A megadott DB-fájlhoz tartozó "utolsó mentés" időbélyeg elmentése."""
+    settings().setValue(_db_status_key(SETTINGS_KEY_LAST_BACKUP_PREFIX, db_path), ts)
+
+
+def get_last_restore_ts(db_path: Path | str) -> str | None:
+    """
+    A megadott DB-fájlhoz tartozó, legutóbb mentett kézi visszatöltés
+    (restore) időbélyegének beolvasása. None, ha még nincs elmentve.
+    """
+    value = settings().value(_db_status_key(SETTINGS_KEY_LAST_RESTORE_PREFIX, db_path))
+    return str(value) if value else None
+
+
+def set_last_restore_ts(db_path: Path | str, ts: str) -> None:
+    """A megadott DB-fájlhoz tartozó "utoljára betöltve" időbélyeg elmentése."""
+    settings().setValue(_db_status_key(SETTINGS_KEY_LAST_RESTORE_PREFIX, db_path), ts)
+
+
+def clear_backup_restore_status(db_path: Path | str) -> None:
+    """
+    A megadott DB-fájlhoz tartozó "utolsó mentés" és "utoljára betöltve"
+    időbélyegek törlése a perzisztens tárolóból.
+
+    Ezt olyankor kell hívni, amikor a DB-fájl tartalma úgy változik meg,
+    hogy a korábbi mentés/betöltés előzmény már nem értelmezhető rá -
+    jelenleg ez az adatbázis törlése (lásd MainWindow.on_reset_database).
+    Enélkül egy korábbi, lemezen maradt időbélyeg tévesen "visszaszivárogna"
+    a következő induláskor, holott az új, üres DB-nek nincs ilyen előzménye.
+    """
+    s = settings()
+    s.remove(_db_status_key(SETTINGS_KEY_LAST_BACKUP_PREFIX, db_path))
+    s.remove(_db_status_key(SETTINGS_KEY_LAST_RESTORE_PREFIX, db_path))

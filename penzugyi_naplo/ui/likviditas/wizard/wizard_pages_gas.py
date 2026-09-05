@@ -47,11 +47,13 @@ class PageGasAmount(QWizardPage):
         self.setTitle("Gáz számla összege")
         self.setSubTitle("Add meg a kifizetett összeget és a számla adatait.")
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "🔥",
-            "Gáz számla",
-            "Összeg, számla sorszáma és elszámolási időszak.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "🔥",
+                "Gáz számla",
+                "Összeg, számla sorszáma és elszámolási időszak.",
+            )
         )
 
         layout.addWidget(QLabel("Kifizetett összeg (HUF):"))
@@ -190,11 +192,13 @@ class PageGasMeter(QWizardPage):
         self.setTitle("Gáz fogyasztás")
         self.setSubTitle("Add meg a mérőóra fogyasztási adatait (nem kötelező).")
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "📟",
-            "Fogyasztás",
-            "A mérőóra fogyasztási adatai, ha ismertek.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "📟",
+                "Fogyasztás",
+                "A mérőóra fogyasztási adatai, ha ismertek.",
+            )
         )
 
         label = QLabel("Cím: fogyasztás")
@@ -266,11 +270,13 @@ class PageGasSummary(QWizardPage):
         self.setSubTitle("Ellenőrizd az adatokat mentés előtt.")
         self.setFinalPage(True)
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "✅",
-            "Összesítés",
-            "Ellenőrizd az adatokat, majd mentsd el a számlát.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "✅",
+                "Összesítés",
+                "Ellenőrizd az adatokat, majd mentsd el a számlát.",
+            )
         )
 
         self.summary_layout = QVBoxLayout()

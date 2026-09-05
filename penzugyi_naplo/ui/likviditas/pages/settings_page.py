@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import contextlib
 import sys
 from shutil import copy2
-from typing import Optional
 
 from PySide6.QtCore import QProcess, QSettings
 from PySide6.QtWidgets import (
@@ -24,23 +24,22 @@ from PySide6.QtWidgets import (
 
 from penzugyi_naplo.config.config import (
     APP_NAME,
+    DEFAULT_STYLE_MODE,
     ORG_NAME,
     SETTINGS_KEY_STYLE_MODE,
     STYLE_CLASSIC,
     STYLE_MODERN,
     STYLE_MODERN_HOME,
-    DEFAULT_STYLE_MODE,
     active_db_path,
     dev_db_path,
     is_dev_mode,
     prod_db_path,
     set_dev_mode,
-
 )
 
 
 class SettingsPage(QWidget):
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self._settings = QSettings(ORG_NAME, APP_NAME)
@@ -76,9 +75,7 @@ class SettingsPage(QWidget):
             self.side_list.addItem(QListWidgetItem(text))
 
         self.side_list.setCurrentRow(0)
-        self.side_list.currentRowChanged.connect(
-            lambda row: self.stack.setCurrentIndex(row)
-        )
+        self.side_list.currentRowChanged.connect(lambda row: self.stack.setCurrentIndex(row))
 
         # Load
         self._load_values()
@@ -162,10 +159,8 @@ class SettingsPage(QWidget):
         # Signals
         self.cmb_toolbar.currentIndexChanged.connect(self._on_toolbar_changed)
         self.cmb_style.currentIndexChanged.connect(self._on_style_changed)
-        
-        self.cmb_search_scope.currentIndexChanged.connect(
-            self._on_search_scope_changed
-        )
+
+        self.cmb_search_scope.currentIndexChanged.connect(self._on_search_scope_changed)
 
         return page
 
@@ -184,7 +179,7 @@ class SettingsPage(QWidget):
         layout.addWidget(self.chk_dev_mode)
 
         sep = QFrame()
-        sep.setFrameShape(QFrame.HLine)
+        sep.setFrameShape(QFrame.Shape.HLine)
         layout.addWidget(sep)
 
         # DB paths
@@ -215,7 +210,7 @@ class SettingsPage(QWidget):
     # =========================================================
 
     def _load_values(self) -> None:
-       # --- toolbar_mode ---
+        # --- toolbar_mode ---
         self.cmb_toolbar.blockSignals(True)
 
         toolbar_mode = str(self._settings.value("ui/toolbar_mode", "menubar"))
@@ -274,10 +269,8 @@ class SettingsPage(QWidget):
 
         mw = self.window()
         if hasattr(mw, "set_toolbar_mode"):
-            try:
+            with contextlib.suppress(Exception):
                 mw.set_toolbar_mode(mode)
-            except Exception:
-                pass
 
     def _on_search_scope_changed(self) -> None:
         """
@@ -307,8 +300,7 @@ class SettingsPage(QWidget):
         res = QMessageBox.question(
             self,
             "Fejlesztői mód",
-            f"Biztosan szeretnéd a fejlesztői módot {action}?\n\n"
-            "Az alkalmazás újra fog indulni.",
+            f"Biztosan szeretnéd a fejlesztői módot {action}?\n\nAz alkalmazás újra fog indulni.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
@@ -368,7 +360,5 @@ class SettingsPage(QWidget):
 
         mw = self.window()
         if hasattr(mw, "apply_style_mode"):
-            try:
+            with contextlib.suppress(Exception):
                 mw.apply_style_mode(mode)
-            except Exception:
-                pass

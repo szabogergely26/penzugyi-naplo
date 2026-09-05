@@ -20,16 +20,16 @@ Nem felelőssége:
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-import re
-import unicodedata
 from pathlib import Path
 from typing import Any
 
 from odf.opendocument import load
-from odf.table import Table, TableRow, TableCell
+from odf.table import Table, TableCell, TableRow
 from odf.text import P
 
 
@@ -158,7 +158,9 @@ class OdsTransactionImporter:
             if not normalized:
                 continue
 
-            if column_map.date_col is None and self._matches(normalized, ["datum", "date", "nap", "idopont", "ido", "idopontnap"]):
+            if column_map.date_col is None and self._matches(
+                normalized, ["datum", "date", "nap", "idopont", "ido", "idopontnap"]
+            ):
                 column_map.date_col = index
 
             elif column_map.description_col is None and self._matches(

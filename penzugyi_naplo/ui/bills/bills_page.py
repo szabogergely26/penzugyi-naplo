@@ -22,12 +22,12 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
+    QPushButton,
     QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
-    QPushButton,
-    QMessageBox,
 )
 
 from penzugyi_naplo.ui.bills.bill_models import (
@@ -35,7 +35,6 @@ from penzugyi_naplo.ui.bills.bill_models import (
     MonthlyAmount,
     PeriodicAmount,
 )
-
 
 MONTH_NAMES = {
     1: "Január",
@@ -314,9 +313,6 @@ class BillMonthRow(QFrame):
             invoice_value = QLabel(str(invoice_number) if invoice_number else "—")
             invoice_value.setObjectName("billMonthMetaInvoiceValue")
             line.addWidget(invoice_value)
-
-            entry_id = _get_attr(item, "entry_id", None)
-
 
             # Szerkesztés / Törlés gombok (csak akkor, ha van entry_id)
             edit_btn = QPushButton("✎ Szerkesztés")

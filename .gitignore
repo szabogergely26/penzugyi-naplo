@@ -14,8 +14,7 @@ venv/
 logs/
 *.log
 
-# VSCode settings (ha nem akarod verziózni)
-.vscode/
+
 
 # OS junk
 .DS_Store

@@ -84,10 +84,7 @@ class TransactionWizard(QWizard):
 
         # Stabil fallback:
         # ha a bill_provider ki van töltve, akkor ez biztosan bill ág
-        if provider and provider != "Válassz szolgáltatót...":
-            mode = "bill"
-        else:
-            mode = raw_mode
+        mode = "bill" if provider and provider != "Válassz szolgáltatót..." else raw_mode
 
         has_details = bool(self.field("has_details"))
 
@@ -264,7 +261,8 @@ class TransactionWizard(QWizard):
             QMessageBox.critical(
                 self,
                 "Hiba",
-                "Érvénytelen dátum formátum! Kérjük, YYYY-M-D vagy YYYY-MM-DD formátumot használjon.",
+                "Érvénytelen dátum formátum! "
+                "Kérjük, YYYY-M-D vagy YYYY-MM-DD formátumot használjon.",
             )
             return
 
