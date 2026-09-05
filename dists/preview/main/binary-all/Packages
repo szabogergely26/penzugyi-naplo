@@ -4,10 +4,10 @@ Architecture: all
 Maintainer: Gergely Szabó <szabogergely26@gmail.com>
 Depends: python3, libpyside6-py3-6.8, python3-pyside6.qtcharts, python3-odf
 Filename: pool/main/p/penzugyi-naplo-preview/penzugyi-naplo-preview_0.4.0_all.deb
-Size: 11366962
-MD5sum: 32093f367b1469d960e04bcb03a076cf
-SHA1: 1a9bd3732e8d7a73399cf15006565023d591c64b
-SHA256: 816e6527d2d02b2877ef779be60dda50aa31626a992cc01767301f095dda87c8
+Size: 10253132
+MD5sum: 87cf0b1ad9ea1d2c921e672ac13c0144
+SHA1: 4e703240ea8083fe6fd719c222d11ea2fd881138
+SHA256: 1236cf78d16bf914199a988f6fe50b37fae0c4d79dcde00c917f52cbd5105d38
 Section: utils
 Priority: optional
 Description: Pénzügyi Napló (Preview)
