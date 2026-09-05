@@ -59,6 +59,7 @@ Tudatosan NEM UI-függő:
 
 from __future__ import annotations
 
+import contextlib
 import os
 import sqlite3
 from collections import defaultdict
@@ -1257,10 +1258,8 @@ class TransactionDatabase:
             return deleted > 0
 
         except Exception as e:
-            try:
+            with contextlib.suppress(Exception):
                 conn.rollback()
-            except Exception:
-                pass
             print(f"Hiba a törlésnél: {e}")
             return False
         finally:

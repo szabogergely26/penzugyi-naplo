@@ -15,6 +15,7 @@ Fontos:
 - az adatbázis tényleges működését továbbra is a TransactionDatabase kezeli
 """
 
+import contextlib
 import shutil
 from pathlib import Path
 
@@ -166,7 +167,5 @@ def handle_restore_database(window) -> None:
             f"Nem sikerült betölteni:\n{exc}",
         )
 
-        try:
+        with contextlib.suppress(Exception):
             _reopen_db(window, db_path)
-        except Exception:
-            pass

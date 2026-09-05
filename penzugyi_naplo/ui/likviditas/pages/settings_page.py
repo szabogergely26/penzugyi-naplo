@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import sys
 from shutil import copy2
 
@@ -272,10 +273,8 @@ class SettingsPage(QWidget):
 
         mw = self.window()
         if hasattr(mw, "set_toolbar_mode"):
-            try:
+            with contextlib.suppress(Exception):
                 mw.set_toolbar_mode(mode)
-            except Exception:
-                pass
 
     def _on_search_scope_changed(self) -> None:
         """
@@ -366,7 +365,5 @@ class SettingsPage(QWidget):
 
         mw = self.window()
         if hasattr(mw, "apply_style_mode"):
-            try:
+            with contextlib.suppress(Exception):
                 mw.apply_style_mode(mode)
-            except Exception:
-                pass
