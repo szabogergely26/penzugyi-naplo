@@ -91,8 +91,19 @@ cp -a "$ROOT_DIR/assets/." \
       "$PKG_DIR/usr/share/$APP_NAME/assets/"
 
 # KDE / hicolor alkalmazásikonok (penzugyi-naplo-preview.png minden méretben).
+#
+# FONTOS: a packaging/icons/hicolor/ mappa MINDKÉT ikonkészletet tartalmazza,
+# egymás mellett, méretenkénti almappákban (penzugyi-naplo.png a stabil,
+# penzugyi-naplo-preview.png a preview csomaghoz). A --exclude nélkül a
+# sima rsync a stabil "penzugyi-naplo.png" fájlokat is bemásolná ide -
+# ez okozott egy éles dpkg-ütközést telepítéskor ("trying to overwrite
+# .../penzugyi-naplo.png, which is also in package penzugyi-naplo"),
+# mert mindkét csomag ugyanazt a fájlnevet próbálta a rendszerre tenni.
+# A --exclude biztosítja, hogy csak a preview-specifikus ikon kerüljön be.
 if [ -d "$ROOT_DIR/packaging/icons/hicolor" ]; then
-  rsync -a "$ROOT_DIR/packaging/icons/hicolor/" "$PKG_DIR/usr/share/icons/hicolor/"
+  rsync -a \
+    --exclude "penzugyi-naplo.png" \
+    "$ROOT_DIR/packaging/icons/hicolor/" "$PKG_DIR/usr/share/icons/hicolor/"
 fi
 
 # Preview APT szoftverforrás és publikus keyring -- saját fájlnéven,
