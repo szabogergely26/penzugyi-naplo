@@ -131,6 +131,40 @@ chmod 755 "$PKG_DIR/DEBIAN"
 chmod 644 "$PKG_DIR/DEBIAN/control"
 chmod +x "$PKG_DIR/usr/bin/penzugyi-naplo-preview"
 
+# --- Build-időbeli önellenőrzés: nincs-e "idegen" (nem preview-specifikus)
+# fájl a becsomagolt hicolor-ikonok között? ---
+#
+# Ez pontosan azt a hibaosztályt kapja el, ami korábban csak TELEPÍTÉSKOR,
+# egy kriptikus dpkg-ütközéssel derült ki ("trying to overwrite .../
+# penzugyi-naplo.png, which is also in package penzugyi-naplo") - hetekkel/
+# hónapokkal a tényleges build után, amikor valaki (vagy egy git merge)
+# újra bemásolt egy nem preview-specifikus fájlt a packaging/icons/hicolor/
+# forrás-mappába.
+#
+# Ha ez a build lépés innentől kudarcot vall (exit 1), az EGÉSZ workflow
+# pirosra vált a GitHub Actions felületén - ez azért fontos, mert
+# egy build-időben KIÍRT, de a buildet nem megállító figyelmeztetés
+# (sima echo) csak akkor látszana, ha valaki külön rákattint a futásra és
+# kinyitja ezt a konkrét lépést. Egy piros X viszont már a futáslistán,
+# rákattintás nélkül is azonnal látszik.
+HICOLOR_DEST="$PKG_DIR/usr/share/icons/hicolor"
+
+if [ -d "$HICOLOR_DEST" ]; then
+  UNEXPECTED_ICONS="$(find "$HICOLOR_DEST" -type f -name "*.png" ! -name "*-preview.png")"
+
+  if [ -n "$UNEXPECTED_ICONS" ]; then
+    echo "HIBA: a Preview csomagba nem preview-specifikus ikonfájl(ok) kerültek be:" >&2
+    echo "$UNEXPECTED_ICONS" >&2
+    echo "" >&2
+    echo "Ezek valószínűleg a stabil csomag ikonjai, amik ütköznének" >&2
+    echo "telepítéskor a 'penzugyi-naplo' csomaggal. Ellenőrizd a" >&2
+    echo "packaging/icons/hicolor/ forrás-mappa tartalmát: minden ott" >&2
+    echo "lévő .png fájlnak *-preview.png végződésűnek kell lennie," >&2
+    echo "vagy a fenti rsync --exclude listát kell bővíteni." >&2
+    exit 1
+  fi
+fi
+
 dpkg-deb --root-owner-group -Zgzip --build "$PKG_DIR" "$DEB_FILE"
 
 echo "==> Built: $DEB_FILE"
