@@ -46,6 +46,7 @@ Fontos:
 
 from __future__ import annotations
 
+import inspect
 from datetime import datetime
 from pathlib import Path
 
@@ -750,6 +751,12 @@ class MainWindow(QMainWindow):
         self.pages[key] = page
         self.page_stack.addWidget(page)
 
+        try:
+            source_file = inspect.getfile(type(page))
+        except TypeError:
+            source_file = "?"
+        self.log.info(f"OLDAL REGISZTRÁLVA: {key} -> {source_file}")
+
     def set_page(self, key: str) -> None:
         """Aktív oldal váltása."""
 
@@ -775,15 +782,12 @@ class MainWindow(QMainWindow):
         if hasattr(self, "navbar"):
             self.navbar.set_active(key)
 
-        # debug print csak dev módban
-        self.log.d(
-            "SET_PAGE:",
-            key,
-            "index=",
-            self.page_stack.currentIndex(),
-            "widget=",
-            type(self.page_stack.currentWidget()).__name__,
-        )
+        # állandó naplózás: melyik oldal, melyik fájlból
+        try:
+            source_file = inspect.getfile(type(page))
+        except TypeError:
+            source_file = "?"
+        self.log.info(f"AKTÍV OLDAL: {key} -> {source_file}")
 
         # oldal-aktiválás hook
         if hasattr(page, "on_activated"):
