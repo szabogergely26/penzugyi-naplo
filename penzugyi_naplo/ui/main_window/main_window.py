@@ -72,6 +72,11 @@ from penzugyi_naplo.config.config import (
     STYLE_CLASSIC,
     STYLE_MODERN,
     STYLE_MODERN_HOME,
+    clear_backup_restore_status,
+    get_last_backup_ts,
+    get_last_restore_ts,
+    set_last_backup_ts,
+    set_last_restore_ts,
 )
 from penzugyi_naplo.core.app_context import AppContext, AppState
 from penzugyi_naplo.core.logging_utils import DebugFlags, Log
@@ -310,12 +315,39 @@ class MainWindow(QMainWindow):
         # --- Globális statusbar: "Utolsó mentés" / "Utoljára betöltve" ---
         self._build_statusbar()
 
-        # DB mentés-eseményeire feliratkozás (lásd TransactionDatabase.on_save).
-        # Minden sikeres commit() után ez frissíti a statusbar "Mentve" részét.
+        # DB módosítás-eseményeire feliratkozás (lásd TransactionDatabase.on_save).
+        # FONTOS: ez az "utolsó módosítás" jelzés, NEM a kézi mentés/backup!
+        # Minden sima commit() (pl. egy tétel rögzítése) is meghívja ezt.
+        # Jelenleg nincs hozzá statusbar-kimenet, csak a tooltipben van
+        # utalás rá; ha a jövőben kellene valahol megjeleníteni, ide
+        # köthető be egy külön callback.
         self.db.on_save(self._on_db_saved)
 
-        # Kezdeti "betöltve" időbélyeg: az app indulásakor most töltöttük be a DB-t.
-        self._mark_data_loaded()
+        # Statusbar "Utolsó mentés" / "Utoljára betöltve" jelzések:
+        # ezek KIZÁRÓLAG a kézi biztonsági mentésre (backup) illetve
+        # kézi visszatöltésre (restore) frissülnek, nem minden commit-ra
+        # és nem az app indulására (lásd TransactionDatabase.on_backup /
+        # on_restore, valamint backup_restore_handlers.py).
+        self.db.on_backup(self._on_db_backup)
+        self.db.on_restore(self._on_db_restore)
+
+        # Perzisztens állapot betöltése: az "Utolsó mentés" / "Utoljára
+        # betöltve" időbélyegek app-újraindítás után is megmaradnak,
+        # mert a config.py (QSettings) tárolja őket, DB-fájlonként
+        # elkülönítve. Csak akkor töltjük be, ha az induláskor létrejött
+        # friss TransactionDatabase-nek még nincs saját (memóriabeli)
+        # értéke - ez véd az ellen, hogy egy örökölt érték (pl. korábbi
+        # _reopen_db-ből) felülíródjon egy régebbi, lemezes bejegyzéssel.
+        if self.db.last_backup_ts is None:
+            self.db.last_backup_ts = get_last_backup_ts(self.db.db_name)
+        if self.db.last_restore_ts is None:
+            self.db.last_restore_ts = get_last_restore_ts(self.db.db_name)
+
+        # Kezdeti statusbar-feliratok: app induláskor még nem történt ebben
+        # a folyamatban se kézi mentés, se kézi visszatöltés, ezért "—".
+        # Ha a DB-példány már hordoz korábbi last_backup_ts/last_restore_ts
+        # értéket (pl. a fenti perzisztens betöltésből), azt mutatjuk.
+        self._refresh_backup_restore_labels()
 
         # --- Signalok + kezdő állapot ---
         self._connect_core_signals()
@@ -587,12 +619,17 @@ class MainWindow(QMainWindow):
         self.status_last_saved_label = QLabel("Utolsó mentés: —")
         self.status_last_saved_label.setObjectName("statusLastSavedLabel")
         self.status_last_saved_label.setToolTip(
-            "Az adatbázis utolsó módosításának időpontja "
-            "(bármelyik oldalon történt mentés, nem a fájl-szintű biztonsági mentés/backup)."
+            "A legutóbbi kézi biztonsági mentés (backup fájl készítés) "
+            "időpontja. Nem az egyes tételek rögzítésének/módosításának "
+            "időpontja."
         )
 
         self.status_last_loaded_label = QLabel("Utoljára betöltve: —")
         self.status_last_loaded_label.setObjectName("statusLastLoadedLabel")
+        self.status_last_loaded_label.setToolTip(
+            "A legutóbbi kézi visszatöltés (restore egy backup fájlból) "
+            "időpontja. Nem az alkalmazás indításának időpontja."
+        )
 
         status_layout.addStretch(1)
         status_layout.addWidget(self.status_last_saved_label)
@@ -618,22 +655,67 @@ class MainWindow(QMainWindow):
         """
         A TransactionDatabase minden sikeres commit() után ezt hívja meg
         (lásd db.on_save feliratkozás a konstruktorban).
+
+        FONTOS: ez az "utolsó módosítás" jelzés, NEM a kézi mentés/backup!
+        Ez minden sima tétel-rögzítésre/módosításra is lefut, ezért a
+        statusbart szándékosan NEM ez frissíti - lásd _on_db_backup.
+        Jelenleg nincs UI-kimenete; helyben tartva arra az esetre, ha
+        később mégis kellene valahol (pl. debug célra) megjeleníteni.
+        """
+
+    def _on_db_backup(self, raw_ts: str) -> None:
+        """
+        A TransactionDatabase.mark_backup_done() hívja meg sikeres KÉZI
+        biztonsági mentés (backup fájl készítés) után
+        (lásd db.on_backup feliratkozás a konstruktorban).
         """
         self.status_last_saved_label.setText(f"Utolsó mentés: {self._format_status_ts(raw_ts)}")
 
-    def _mark_data_loaded(self) -> None:
-        """
-        "Utoljára betöltve" időbélyeg frissítése a mostani pillanatra.
+        # Perzisztens tárolás: app-újraindítás után is megmaradjon az
+        # időbélyeg. A self.db.db_name-et használjuk kulcsként, hogy
+        # dev/stabil/egyéni DB-fájlok külön kapjanak "Utolsó mentés" infót.
+        set_last_backup_ts(self.db.db_name, raw_ts)
 
-        Hívási pontok: app indítás, adatbázis visszaállítás/reset,
-        illetve minden olyan hely, ahol ténylegesen új adat kerül
-        betöltésre a DB-ből (lásd reload_all_pages, on_restore_database,
-        on_reset_database).
+    def _on_db_restore(self, raw_ts: str) -> None:
         """
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        A TransactionDatabase.mark_restore_done() hívja meg sikeres KÉZI
+        visszatöltés (restore egy backup fájlból) után
+        (lásd db.on_restore feliratkozás a konstruktorban).
+        """
         self.status_last_loaded_label.setText(
-            f"Utoljára betöltve: {self._format_status_ts(now_ts)}"
+            f"Utoljára betöltve: {self._format_status_ts(raw_ts)}"
         )
+
+        # Perzisztens tárolás: app-újraindítás után is megmaradjon az
+        # időbélyeg (lásd _on_db_backup indoklása fentebb).
+        set_last_restore_ts(self.db.db_name, raw_ts)
+
+    def _refresh_backup_restore_labels(self) -> None:
+        """
+        A statusbar "Utolsó mentés" / "Utoljára betöltve" feliratainak
+        szinkronba hozása a jelenlegi self.db állapotával.
+
+        Hívási pontok: konstruktor (induláskor még "—", hacsak a DB-példány
+        nem hordoz örökölt last_backup_ts/last_restore_ts-t), illetve
+        bármikor, amikor a self.db referencia lecserélődik és a meglévő
+        állapotot meg kell jeleníteni anélkül, hogy új mentés/betöltés
+        történt volna.
+        """
+        backup_ts = getattr(self.db, "last_backup_ts", None)
+        if backup_ts:
+            self.status_last_saved_label.setText(
+                f"Utolsó mentés: {self._format_status_ts(backup_ts)}"
+            )
+        else:
+            self.status_last_saved_label.setText("Utolsó mentés: —")
+
+        restore_ts = getattr(self.db, "last_restore_ts", None)
+        if restore_ts:
+            self.status_last_loaded_label.setText(
+                f"Utoljára betöltve: {self._format_status_ts(restore_ts)}"
+            )
+        else:
+            self.status_last_loaded_label.setText("Utoljára betöltve: —")
 
     def _register_core_pages(self) -> None:
         """
@@ -893,14 +975,28 @@ class MainWindow(QMainWindow):
         if db_path.exists():
             db_path.unlink()
 
+        # A perzisztens "Utolsó mentés" / "Utoljára betöltve" bejegyzések
+        # törlése is szükséges: a db_path (fájlnév) reset után ugyanaz
+        # marad, tehát enélkül a régi időbélyeg a következő induláskor
+        # tévesen visszaszivárogna, holott az új, üres DB-nek nincs
+        # backup/restore előzménye.
+        clear_backup_restore_status(db_path)
+
         from penzugyi_naplo.db.transaction_database import TransactionDatabase
 
         self.db = TransactionDatabase(str(db_path))
 
-        # Fontos: új TransactionDatabase példány = új, üres feliratkozó-lista,
-        # ezért a statusbar "Mentve" jelzését újra be kell kötni rá,
-        # különben a reset utáni mentések nem frissítenék a statusbart.
+        # Fontos: új TransactionDatabase példány = új, üres feliratkozó-listák,
+        # ezért a statusbar jelzéseit újra be kell kötni rá, különben a reset
+        # utáni kézi mentések/betöltések nem frissítenék a statusbart.
         self.db.on_save(self._on_db_saved)
+        self.db.on_backup(self._on_db_backup)
+        self.db.on_restore(self._on_db_restore)
+
+        # Az adatbázis-törlés se kézi mentésnek, se kézi visszatöltésnek nem
+        # számít, és az új, üres DB-példánynak nincs backup/restore előzménye
+        # - ezért mindkét statusbar-felirat "—"-re áll vissza.
+        self._refresh_backup_restore_labels()
 
         self.reload_all_pages()
 
@@ -932,9 +1028,12 @@ class MainWindow(QMainWindow):
             if callable(reload_method):
                 reload_method()
 
-        # Ez a metódus ténylegesen újratölti az oldalakat a DB-ből,
-        # ezért itt frissítjük az "Utoljára betöltve" időbélyeget is.
-        self._mark_data_loaded()
+        # FONTOS: itt szándékosan NINCS "Utoljára betöltve" frissítés.
+        # Ez a metódus minden sima oldal-frissítéskor lefut (pl. egy új
+        # tétel rögzítése után is), és a statusbar "Utoljára betöltve"
+        # feliratának KIZÁRÓLAG a kézi visszatöltésre (restore) szabad
+        # frissülnie - lásd TransactionDatabase.mark_restore_done() és
+        # backup_restore_handlers.handle_restore_database().
 
     def show_settings_dialog(self) -> None:
         """

@@ -191,7 +191,13 @@ class _TrackedConnection:
 
     Cél: a TransactionDatabase minden write-ja ugyanazon a
     get_db_connection()-ön keresztül megy, ezért itt, a commit()
-    elkapásával egyetlen ponton tudjuk jelezni "mentés történt".
+    elkapásával egyetlen ponton tudjuk jelezni "DB-módosítás történt".
+
+    FONTOS: ez a "módosítás történt" jelzés NEM azonos a kézi biztonsági
+    mentéssel (backup)! Ez minden sima tétel-rögzítésre/módosításra is
+    lefut. A statusbar "Utolsó mentés" feliratát NEM ez vezérli, hanem
+    a TransactionDatabase.on_backup() / mark_backup_done() explicit
+    mechanizmusa, amit csak a kézi backup készítése hív meg.
 
     Minden más metódushívást (cursor, execute, close, stb.)
     változtatás nélkül továbbenged a valódi kapcsolatnak,
@@ -199,7 +205,7 @@ class _TrackedConnection:
 
     Tudatosan NEM Qt-függő (nincs signal/slot itt) - a db réteg
     marad UI-mentes. A MainWindow egy sima Python callback-kel
-    iratkozik fel (lásd TransactionDatabase.on_save).
+    iratkozik fel (lásd TransactionDatabase.on_save / on_backup / on_restore).
     """
 
     def __init__(self, raw_conn: sqlite3.Connection, owner: TransactionDatabase) -> None:
@@ -249,13 +255,34 @@ class TransactionDatabase:
     def __init__(self, db_name: str = "finance_data.db") -> None:
         self.db_name = os.path.abspath(db_name)
 
-        # Utolsó sikeres mentés időpontja (str, "%Y-%m-%d %H:%M:%S") vagy None,
-        # ha még nem történt mentés ebben a folyamatban.
+        # Utolsó sikeres DB-módosítás (bármilyen commit) időpontja.
+        # (str, "%Y-%m-%d %H:%M:%S") vagy None, ha még nem történt írás
+        # ebben a folyamatban.
+        #
+        # FONTOS: ez NEM egyezik meg a kézi biztonsági mentéssel (backup)!
+        # Ez minden egyes tétel rögzítésekor/módosításakor is frissül,
+        # tehát csak "utolsó módosítás" jelentéssel bír, nem "utolsó mentés"-sel.
+        # A statusbar "Utolsó mentés" feliratához NE ezt használd - ahhoz lásd
+        # last_backup_ts / on_backup() / mark_backup_done() lentebb.
         self.last_save_ts: str | None = None
 
         # Feliratkozók listája, akiket értesítünk minden sikeres commit()-nál.
-        # Sima Python callable-ök (pl. statusbar frissítő függvény) - nincs Qt import itt.
+        # Sima Python callable-ök (pl. debug/log célra) - nincs Qt import itt.
         self._on_save_callbacks: list = []
+
+        # Utolsó kézi biztonsági mentés (backup fájl készítés) időpontja.
+        # Ezt SOHA nem frissíti automatikusan a DB réteg saját magától -
+        # kizárólag a mark_backup_done() explicit hívása állítja be, amit
+        # a UI-szintű backup_restore_handlers.handle_backup_database()
+        # hív meg sikeres fájlmásolás után.
+        self.last_backup_ts: str | None = None
+        self._on_backup_callbacks: list = []
+
+        # Utolsó kézi visszatöltés (restore egy backup fájlból) időpontja.
+        # Ugyanígy: csak explicit mark_restore_done() hívásra frissül,
+        # a backup_restore_handlers.handle_restore_database() hívja meg.
+        self.last_restore_ts: str | None = None
+        self._on_restore_callbacks: list = []
 
         self.initialize_db()
         self.ensure_account_valuations_table()
@@ -264,6 +291,9 @@ class TransactionDatabase:
         """
         Feliratkozás: a callback minden sikeres commit() után lefut,
         egyetlen argumentummal (az új last_save_ts string-gel).
+
+        Megjegyzés: ez "utolsó módosítás", nem "utolsó kézi mentés".
+        A statusbar "Utolsó mentés" jelzéséhez az on_backup()-ot használd.
         """
         self._on_save_callbacks.append(callback)
 
@@ -272,6 +302,51 @@ class TransactionDatabase:
         self.last_save_ts = _now_ts()
         for callback in list(self._on_save_callbacks):
             callback(self.last_save_ts)
+
+    def on_backup(self, callback) -> None:
+        """
+        Feliratkozás: a callback minden sikeres KÉZI biztonsági mentés
+        (backup fájl készítés) után lefut, egyetlen argumentummal
+        (az új last_backup_ts string-gel).
+
+        Ezt kell használni a statusbar "Utolsó mentés" feliratához.
+        """
+        self._on_backup_callbacks.append(callback)
+
+    def mark_backup_done(self, ts: str | None = None) -> str:
+        """
+        Explicit jelzés: sikeres kézi biztonsági mentés történt.
+
+        Ezt KIZÁRÓLAG a backup_restore_handlers.handle_backup_database()
+        hívja meg, miután a backup fájl ténylegesen elkészült a lemezen.
+        Semmilyen sima commit() nem hívja meg automatikusan.
+        """
+        self.last_backup_ts = ts or _now_ts()
+        for callback in list(self._on_backup_callbacks):
+            callback(self.last_backup_ts)
+        return self.last_backup_ts
+
+    def on_restore(self, callback) -> None:
+        """
+        Feliratkozás: a callback minden sikeres KÉZI visszatöltés
+        (restore egy backup fájlból) után lefut, egyetlen argumentummal
+        (az új last_restore_ts string-gel).
+
+        Ezt kell használni a statusbar "Utoljára betöltve" feliratához.
+        """
+        self._on_restore_callbacks.append(callback)
+
+    def mark_restore_done(self, ts: str | None = None) -> str:
+        """
+        Explicit jelzés: sikeres kézi visszatöltés (restore) történt.
+
+        Ezt KIZÁRÓLAG a backup_restore_handlers.handle_restore_database()
+        hívja meg, miután a backup fájl ténylegesen visszatöltődött.
+        """
+        self.last_restore_ts = ts or _now_ts()
+        for callback in list(self._on_restore_callbacks):
+            callback(self.last_restore_ts)
+        return self.last_restore_ts
 
     def get_db_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_name)

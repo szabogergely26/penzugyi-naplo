@@ -226,3 +226,82 @@ def set_default_search_scope(scope: str) -> None:
 
     settings = QSettings(ORG_NAME, APP_NAME)
     settings.setValue(SETTINGS_KEY_SEARCH_SCOPE, scope)
+
+
+# ---------------------------------
+# Statusbar: kézi mentés (backup) / betöltés (restore) időbélyegek
+# ---------------------------------
+#
+# Ezek a "Utolsó mentés" / "Utoljára betöltve" statusbar-feliratok
+# perzisztenciáját szolgálják - hogy app-újraindítás után is megmaradjon
+# a legutóbbi kézi biztonsági mentés / visszatöltés időpontja.
+#
+# Tudatosan itt van, nem a transaction_database.py-ban: a DB réteg
+# szándékosan Qt-mentes marad (nincs benne QSettings import), ezért a
+# lemezre írást/olvasást a UI réteg (main_window.py) végzi, ezeken a
+# helpereken keresztül.
+#
+# DB-fájlonként külön kulcs alatt tárolunk (a db_path fájlnevéből képzett
+# kulcs-résszel), hogy pl. a dev és a stabil adatbázis, vagy egy egyéni
+# restore-olt fájl ne írja felül egymás időbélyegét.
+
+SETTINGS_KEY_LAST_BACKUP_PREFIX: str = "db_status/last_backup_ts"
+SETTINGS_KEY_LAST_RESTORE_PREFIX: str = "db_status/last_restore_ts"
+
+
+def _db_status_key(prefix: str, db_path: Path | str) -> str:
+    """
+    QSettings-kulcs összeállítása egy adott DB-fájlhoz.
+
+    A db_path fájlnevét (kiterjesztés nélkül) használjuk elkülönítő
+    részként, pl. "transactions" vagy "transactions_dev" - ez elég ahhoz,
+    hogy a stabil és a dev adatbázis időbélyege ne keveredjen össze,
+    anélkül hogy a teljes (gépfüggő) abszolút útvonalat kulcsként kellene
+    tárolni.
+    """
+    stem = Path(db_path).stem
+    return f"{prefix}/{stem}"
+
+
+def get_last_backup_ts(db_path: Path | str) -> str | None:
+    """
+    A megadott DB-fájlhoz tartozó, legutóbb mentett kézi biztonsági
+    mentés (backup) időbélyegének beolvasása. None, ha még nincs elmentve.
+    """
+    value = settings().value(_db_status_key(SETTINGS_KEY_LAST_BACKUP_PREFIX, db_path))
+    return str(value) if value else None
+
+
+def set_last_backup_ts(db_path: Path | str, ts: str) -> None:
+    """A megadott DB-fájlhoz tartozó "utolsó mentés" időbélyeg elmentése."""
+    settings().setValue(_db_status_key(SETTINGS_KEY_LAST_BACKUP_PREFIX, db_path), ts)
+
+
+def get_last_restore_ts(db_path: Path | str) -> str | None:
+    """
+    A megadott DB-fájlhoz tartozó, legutóbb mentett kézi visszatöltés
+    (restore) időbélyegének beolvasása. None, ha még nincs elmentve.
+    """
+    value = settings().value(_db_status_key(SETTINGS_KEY_LAST_RESTORE_PREFIX, db_path))
+    return str(value) if value else None
+
+
+def set_last_restore_ts(db_path: Path | str, ts: str) -> None:
+    """A megadott DB-fájlhoz tartozó "utoljára betöltve" időbélyeg elmentése."""
+    settings().setValue(_db_status_key(SETTINGS_KEY_LAST_RESTORE_PREFIX, db_path), ts)
+
+
+def clear_backup_restore_status(db_path: Path | str) -> None:
+    """
+    A megadott DB-fájlhoz tartozó "utolsó mentés" és "utoljára betöltve"
+    időbélyegek törlése a perzisztens tárolóból.
+
+    Ezt olyankor kell hívni, amikor a DB-fájl tartalma úgy változik meg,
+    hogy a korábbi mentés/betöltés előzmény már nem értelmezhető rá -
+    jelenleg ez az adatbázis törlése (lásd MainWindow.on_reset_database).
+    Enélkül egy korábbi, lemezen maradt időbélyeg tévesen "visszaszivárogna"
+    a következő induláskor, holott az új, üres DB-nek nincs ilyen előzménye.
+    """
+    s = settings()
+    s.remove(_db_status_key(SETTINGS_KEY_LAST_BACKUP_PREFIX, db_path))
+    s.remove(_db_status_key(SETTINGS_KEY_LAST_RESTORE_PREFIX, db_path))
