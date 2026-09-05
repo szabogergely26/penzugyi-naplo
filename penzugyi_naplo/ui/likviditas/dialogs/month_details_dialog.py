@@ -329,10 +329,13 @@ class MonthDetailsDialog(QDialog):
         balance_card.add_row("Kiadás eltérés", expense_diff, expense_diff <= 0)
         balance_card.add_row("Megtakarítás eltérés", saving_diff, saving_diff >= 0)
 
-        info_card.add_row("Hó nettó eredménye", row.actual_income - row.actual_expense, (row.actual_income - row.actual_expense) >= 0)
-        info_card.add_row("Tervezett nettó", row.planned_income - row.planned_expense, (row.planned_income - row.planned_expense) >= 0)
-        info_card.add_row("Teljes eltérés", (row.actual_income - row.actual_expense) - (row.planned_income - row.planned_expense),
-                          ((row.actual_income - row.actual_expense) - (row.planned_income - row.planned_expense)) >= 0)
+        actual_net = row.actual_income - row.actual_expense
+        planned_net = row.planned_income - row.planned_expense
+        net_diff = actual_net - planned_net
+
+        info_card.add_row("Hó nettó eredménye", actual_net, actual_net >= 0)
+        info_card.add_row("Tervezett nettó", planned_net, planned_net >= 0)
+        info_card.add_row("Teljes eltérés", net_diff, net_diff >= 0)
 
         grid.addWidget(planned_card, 0, 0)
         grid.addWidget(actual_card, 0, 1)
