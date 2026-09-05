@@ -178,7 +178,8 @@ class SettingsDialog(QDialog):
             except Exception as e:
                 if hasattr(self, "status_label"):
                     self.status_label.setText(
-                        "Az eszköztár módja mentve lett, de csak újraindítás után lép teljesen életbe."
+                        "Az eszköztár módja mentve lett, de csak újraindítás után "
+                        "lép teljesen életbe."
                     )
                 print("DEBUG: toolbar mode live apply failed:", e)
 

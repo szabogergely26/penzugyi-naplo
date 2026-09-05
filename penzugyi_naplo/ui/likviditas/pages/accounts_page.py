@@ -61,7 +61,9 @@ def _vline(parent: QWidget | None = None) -> QFrame:
 class AccountsPage(BasePage):
     """Egyszerű Accounts/Wallets oldal."""
 
-    def __init__(self, parent: QWidget | None = None, *, db: TransactionDatabase | None = None, ) -> None:
+    def __init__(
+        self, parent: QWidget | None = None, *, db: TransactionDatabase | None = None
+    ) -> None:
         super().__init__(parent)
         self._db: TransactionDatabase | None = db
 

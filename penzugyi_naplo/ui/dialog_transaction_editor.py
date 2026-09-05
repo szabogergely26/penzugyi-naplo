@@ -99,7 +99,9 @@ class TransactionEditor(QDialog):
         self.layout.addLayout(form_layout)
 
         # --- Buttons ---
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
+        )
         button_box.accepted.connect(self.save_changes)
         button_box.rejected.connect(self.reject)
         self.layout.addWidget(button_box)
@@ -148,7 +150,8 @@ class TransactionEditor(QDialog):
             QMessageBox.critical(
                 self,
                 "Hiba",
-                "Érvénytelen dátum formátum! Kérjük, YYYY-M-D vagy YYYY-MM-DD formátumot használjon.",
+                "Érvénytelen dátum formátum! "
+                "Kérjük, YYYY-M-D vagy YYYY-MM-DD formátumot használjon.",
             )
             return
 

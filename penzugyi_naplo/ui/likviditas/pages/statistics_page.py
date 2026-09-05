@@ -108,7 +108,9 @@ class StatisticSummaryCard(QFrame):
         self.symbol_label.setStyleSheet(f"color: {accent};")
 
         root.addLayout(text_layout, 1)
-        root.addWidget(self.symbol_label, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        root.addWidget(
+            self.symbol_label, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
 
 
     def set_values(self, value: str, subtitle: str = "") -> None:
@@ -501,15 +503,22 @@ class StatisticsPage(QWidget):
                 period_label=period_label,
             )
         except (sqlite3.Error, ValueError, TypeError) as exc:
-            for (income_card, expense_card, saving_card, saving_rate_card) in self.summary_card_sets:
+            for (
+                income_card,
+                expense_card,
+                saving_card,
+                saving_rate_card,
+            ) in self.summary_card_sets:
                 for card in (income_card, expense_card, saving_card, saving_rate_card):
                     card.set_values("Hiba", "Nem sikerült betölteni")
             print(f"[HIBA] Összegző kártyák frissítése sikertelen: {exc}")
 
         # --- Trenddiagram + havi oszlopdiagram ---
         try:
-            month_labels, income_values, expense_values, saving_values = self._load_period_monthly_totals(
-                active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+            month_labels, income_values, expense_values, saving_values = (
+                self._load_period_monthly_totals(
+                    active_year=active_year, start_date=start_date, end_date=end_date, mode=mode
+                )
             )
 
             self._update_trend_chart(

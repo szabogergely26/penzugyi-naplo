@@ -124,7 +124,9 @@ class FileSelectPage(QWizardPage):
         self.wizard_ref = wizard
 
         self.setTitle("ODS fájl kiválasztása")
-        self.setSubTitle("Válaszd ki azt az ODS fájlt, amelyből import előnézetet szeretnél készíteni.")
+        self.setSubTitle(
+            "Válaszd ki azt az ODS fájlt, amelyből import előnézetet szeretnél készíteni."
+        )
 
         layout = QVBoxLayout(self)
 
@@ -853,7 +855,8 @@ class PreviewPage(QWizardPage):
 
         if importer is None or not sheet_name:
             self.status_label.setText(
-                "Nincs kiválasztott ODS fájl vagy munkalap. Menj vissza, és ellenőrizd a beállításokat."
+                "Nincs kiválasztott ODS fájl vagy munkalap. "
+                "Menj vissza, és ellenőrizd a beállításokat."
             )
             self.completeChanged.emit()
             return

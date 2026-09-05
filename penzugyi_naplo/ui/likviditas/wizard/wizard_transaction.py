@@ -261,7 +261,8 @@ class TransactionWizard(QWizard):
             QMessageBox.critical(
                 self,
                 "Hiba",
-                "Érvénytelen dátum formátum! Kérjük, YYYY-M-D vagy YYYY-MM-DD formátumot használjon.",
+                "Érvénytelen dátum formátum! "
+                "Kérjük, YYYY-M-D vagy YYYY-MM-DD formátumot használjon.",
             )
             return
 

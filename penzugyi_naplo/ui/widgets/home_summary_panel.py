@@ -1,8 +1,9 @@
 """
 Kezdőoldal felső összesítő panelje (HomePage → HomeSummaryPanel).
 
-Aktív évhez tartozó gyors egyenleg/összeg kártyákat mutat (dashboard). A Tranzakciók táblázat nézet külön:
-ui/pages/transactions_page.py (TransactionsPage, QTableWidget).
+Aktív évhez tartozó gyors egyenleg/összeg kártyákat mutat (dashboard).
+A Tranzakciók táblázat nézet külön: ui/pages/transactions_page.py
+(TransactionsPage, QTableWidget).
 """
 
 

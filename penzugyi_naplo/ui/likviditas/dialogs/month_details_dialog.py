@@ -314,7 +314,9 @@ class MonthDetailsDialog(QDialog):
         # Ezeket a mezőneveket igazítsd, ha nálad más a HomeSummaryRow
         planned_card.add_row("Tervezett bevétel", row.planned_income, True)
         planned_card.add_row("Tervezett kiadás", row.planned_expense, False)
-        planned_card.add_row("Tervezett megtakarítás", row.planned_savings, row.planned_savings >= 0)
+        planned_card.add_row(
+            "Tervezett megtakarítás", row.planned_savings, row.planned_savings >= 0
+        )
 
         actual_card.add_row("Valós bevétel", row.actual_income, True)
         actual_card.add_row("Valós kiadás", row.actual_expense, False)

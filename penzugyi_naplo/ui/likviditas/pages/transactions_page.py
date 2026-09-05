@@ -383,7 +383,8 @@ class TransactionsPage(QWidget):
             if quantity < 1:
                 quantity = 1
 
-            # ÚJ: egységár fallback javítva (unit_price > 0 -> azt mutatjuk, különben amount/qty vagy amount)
+            # ÚJ: egységár fallback javítva
+            # (unit_price > 0 -> azt mutatjuk, különben amount/qty vagy amount)
             total = float(tx["amount"] or 0.0)
             up_raw = tx["unit_price"]
 
@@ -400,7 +401,8 @@ class TransactionsPage(QWidget):
 
             # Oszlopok:
             # Oszlopok:
-            # 0 Jelzés | 1 Dátum | 2 Név | 3 Kategória | 4 Egységár | 5 Db | 6 Összesen | 7 Leírás | 8 Típus | 9 Műveletek
+            # 0 Jelzés | 1 Dátum | 2 Név | 3 Kategória | 4 Egységár | 5 Db |
+            # 6 Összesen | 7 Leírás | 8 Típus | 9 Műveletek
 
             detail_text = "⊞" if has_details else ""
             detail_item = QTableWidgetItem(detail_text)

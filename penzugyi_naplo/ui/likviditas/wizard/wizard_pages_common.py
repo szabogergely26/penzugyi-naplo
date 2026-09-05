@@ -47,11 +47,13 @@ class PageTypeSelection(QWizardPage):
             "Válaszd ki, milyen pénzmozgást szeretnél rögzíteni."
         )
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "💰",
-            "Új tranzakció",
-            "Bevétel, kiadás vagy számlabefizetés rögzítése.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "💰",
+                "Új tranzakció",
+                "Bevétel, kiadás vagy számlabefizetés rögzítése.",
+            )
         )
 
         info_label = QLabel("Mit szeretnél rögzíteni?")
@@ -132,11 +134,13 @@ class PageCategorySelection(QWizardPage):
         self.setTitle("Kategória kiválasztása")
         self.setSubTitle("Melyik kategóriához tartozik a tétel és mi a leírása?")
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "🧾",
-            "Tranzakció adatai",
-            "Add meg a név, kategória és dátum adatait.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "🧾",
+                "Tranzakció adatai",
+                "Add meg a név, kategória és dátum adatait.",
+            )
         )
 
         self.category_map: dict[str, int] = {}
@@ -285,11 +289,13 @@ class PageSplitDecision(QWizardPage):
         self.setTitle("Tétel típusa")
         self.setSubTitle("Egy tételként rögzíted, vagy több részletből áll?")
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "🧩",
-            "Tétel típusa",
-            "Döntsd el, hogy egyszerű vagy részletezett tételt rögzítesz.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "🧩",
+                "Tétel típusa",
+                "Döntsd el, hogy egyszerű vagy részletezett tételt rögzítesz.",
+            )
         )
 
         info = QLabel(
@@ -344,11 +350,13 @@ class PageDetails(QWizardPage):
             "Soronként add meg: tételnév;egységár*db vagy tételnév;egységár."
         )
 
-        layout, self.side_title_label, self.side_subtitle_label = create_transaction_wizard_page_layout(
-            self,
-            "📝",
-            "Részletezés",
-            "Több tételből álló kiadás vagy bevétel bontása.",
+        layout, self.side_title_label, self.side_subtitle_label = (
+            create_transaction_wizard_page_layout(
+                self,
+                "📝",
+                "Részletezés",
+                "Több tételből álló kiadás vagy bevétel bontása.",
+            )
         )
 
         hint = QLabel(
@@ -467,6 +475,7 @@ class PageDetails(QWizardPage):
         # Részletezés után mehet az Amount oldalra? Itt a kulcs döntés:
         # - Ha azt akarod, hogy részletezés esetén az Amount oldalt kihagyjuk,
         #   akkor közvetlenül a Finish-re / utolsó oldalra kell menni.
-        # Javaslat: részletezés esetén az Amount oldalt kihagyjuk, és az összeget a details_total adja.
+        # Javaslat: részletezés esetén az Amount oldalt kihagyjuk,
+        #   és az összeget a details_total adja.
 
         return -1  # finish

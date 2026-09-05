@@ -346,8 +346,8 @@ class TransactionDatabase:
 
     #       - ÚJ DB: nincs 'transactions' tábla -> early return a commit után
     #       - RÉGI DB: van 'transactions' -> migráció/ensure a blokk alatt
-    # Emiatt minden "mindig kell" sémát (pl. bills, wallets, valuations) mindkét ágban ensure-olni kell,
-    # különben új DB-nél a return miatt nem jön létre.
+    # Emiatt minden "mindig kell" sémát (pl. bills, wallets, valuations) mindkét ágban
+    # ensure-olni kell, különben új DB-nél a return miatt nem jön létre.
 
     def initialize_db(self) -> None:
         conn = self.get_db_connection()
@@ -460,7 +460,8 @@ class TransactionDatabase:
             cur.execute("ALTER TABLE transactions ADD COLUMN name TEXT")
             # visszatöltés: ahol nincs name, legyen name = description
             cur.execute(
-                "UPDATE transactions SET name = COALESCE(NULLIF(name, ''), description) WHERE name IS NULL OR name = ''"
+                "UPDATE transactions SET name = COALESCE(NULLIF(name, ''), description) "
+                "WHERE name IS NULL OR name = ''"
             )
 
         if "tx_date" not in cols:
@@ -593,7 +594,8 @@ class TransactionDatabase:
             cur.execute(
                 """
                 INSERT INTO transactions
-                    (id, tx_date, tx_type, amount, category_id, description, created_at, year, month)
+                    (id, tx_date, tx_type, amount, category_id, description,
+                     created_at, year, month)
                 VALUES
                     (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
@@ -777,7 +779,9 @@ class TransactionDatabase:
         finally:
             conn.close()
 
-        monthly_map: dict[str, dict[int, list[dict[str, int | str | bool | None]]]] = defaultdict(lambda: defaultdict(list))
+        monthly_map: dict[str, dict[int, list[dict[str, int | str | bool | None]]]] = (
+            defaultdict(lambda: defaultdict(list))
+        )
         periodic_map: dict[str, list[PeriodicAmount]] = defaultdict(list)
 
         for row in rows:
@@ -1266,8 +1270,10 @@ class TransactionDatabase:
 
     def add_bulk_transactions(self, transactions) -> bool:
         """
-        transactions: list[tuple[date(str), category_id(int), amount(float), description(str), tx_type(optional)]]
-        - amount mindig pozitív legyen; ha negatívat kapsz, abs()-szal mentjük, de 'expense'-re állítjuk
+        transactions: list[tuple[date(str), category_id(int), amount(float),
+            description(str), tx_type(optional)]]
+        - amount mindig pozitív legyen; ha negatívat kapsz, abs()-szal mentjük,
+          de 'expense'-re állítjuk
         """
         try:
             conn = self.get_db_connection()
@@ -1303,7 +1309,8 @@ class TransactionDatabase:
 
                 cur.execute(
                     """
-                    INSERT INTO transactions (tx_date, tx_type, amount, category_id, name, description, created_at, year, month)
+                    INSERT INTO transactions (tx_date, tx_type, amount, category_id, name,
+                        description, created_at, year, month)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
@@ -1407,7 +1414,8 @@ class TransactionDatabase:
         try:
             cur = conn.cursor()
             row = cur.execute(
-                "SELECT planned_income, planned_expense, planned_fixed_expense FROM plans WHERE year=? AND month=?",
+                "SELECT planned_income, planned_expense, planned_fixed_expense "
+                "FROM plans WHERE year=? AND month=?",
                 (y, m),
             ).fetchone()
 
@@ -1417,7 +1425,8 @@ class TransactionDatabase:
                 pf = float(planned_fixed_expense or 0.0)
                 cur.execute(
                     """
-                    INSERT INTO plans (year, month, planned_income, planned_expense, planned_fixed_expense, updated_at)
+                    INSERT INTO plans (year, month, planned_income, planned_expense,
+                        planned_fixed_expense, updated_at)
                     VALUES (?, ?, ?, ?, ?, datetime('now'))
                     """,
                     (y, m, pi, pe, pf),
@@ -1442,7 +1451,8 @@ class TransactionDatabase:
                 cur.execute(
                     """
                     UPDATE plans
-                    SET planned_income=?, planned_expense=?, planned_fixed_expense=?, updated_at=datetime('now')
+                    SET planned_income=?, planned_expense=?, planned_fixed_expense=?,
+                        updated_at=datetime('now')
                     WHERE year=? AND month=?
                     """,
                     (pi, pe, pf, y, m),
@@ -1664,7 +1674,8 @@ class TransactionDatabase:
         cur = conn.cursor()
         rows = cur.execute(
             """
-            SELECT t.id, t.tx_date AS date, c.name as category_name, t.tx_type AS transaction_type, t.amount, t.description
+            SELECT t.id, t.tx_date AS date, c.name as category_name,
+                t.tx_type AS transaction_type, t.amount, t.description
             FROM transactions t
             JOIN categories c ON t.category_id = c.id
             ORDER BY t.tx_date DESC, t.id DESC
@@ -1929,7 +1940,8 @@ class TransactionDatabase:
             cur.execute(
                 """
                 INSERT INTO transaction_items
-                    (transaction_id, item_date, item_name, category_name, unit_price, quantity, amount)
+                    (transaction_id, item_date, item_name, category_name, unit_price,
+                     quantity, amount)
                 VALUES
                     (?, ?, ?, ?, ?, ?, ?)
                 """,
